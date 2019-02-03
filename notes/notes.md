@@ -196,11 +196,37 @@ Rocket Equation".
 Equation \ref{eq:tsiolkovsky} gives us a way to quantify the *impulse*
 of a rocket system. Although it is written as a change in velocity, it
 does not necessarily correspond to the *real* change in velocity of
-the rocket. This is because it does not account for aerodynamic drag
-or the effects of gravity, and only describes the true change in
-velocity for the gravity-free vacuum burn described.  However, it
-provides a good way to roughly compare different rocket systems and to
-perform rough assessments of capability.
+the rocket in all situations. This is because it does not account for
+aerodynamic drag or the effects of gravity, and only describes the
+true change in velocity for the gravity-free vacuum burn described.
+However, it provides a good way to roughly compare different rocket
+systems and to perform rough assessments of capability.
+
+The equations of motion of the rocket have this nice closed-form
+solution for a constant burn in a vacuum. However, it's worth pointing
+out that a closed-form solution won't generally be possible once we
+introduce atmouspheric drag. This is the whole point of the rest of the
+workshop.
+
+The approximate Delta-V values for various missions can be calculated
+and tabulated in advance, so that rocket systems which might be
+suitable for them can be discussed. For example, NASA described the
+Delta-V of various stages of the Apollo Lunar Landing missions in the
+following figure:
+
+![NASA summary of energy requirements for a Lunar Landing Mission,
+illustrating the use of Delta-V for mission planning. 
+From [@maynard1966].](
+images/ApolloEnergyRequirementsMSC1966.png)
+
+## Rocket Structure and Propellant Mass Fraction
+
+A rocket must support the fuel it contains as well as carry a payload.
+The more fuel that it carries, the more mass will be required in the
+structure of the rocket to support that fuel (eg. in the form of fuel
+tanks, etc.).
+
+
 
 # Integrating ODEs
 
