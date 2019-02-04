@@ -203,14 +203,14 @@ However, it provides a good way to roughly compare different rocket
 systems and to perform rough assessments of capability.
 
 The equations of motion of the rocket have this nice closed-form
-solution for a constant burn in a vacuum. However, it's worth pointing
-out that a closed-form solution won't generally be possible once we
-introduce atmouspheric drag. This is the whole point of the rest of the
-workshop.
+solution for a constant burn in a vacuum. However, a closed-form
+solution won't generally be possible once we introduce atmouspheric
+drag. This is the whole point of the rest of the workshop.
 
-The approximate Delta-V values for various missions can be calculated
-and tabulated in advance, so that rocket systems which might be
-suitable for them can be discussed. For example, NASA described the
+Many missions use Delta-V as a short-hand for energy requirements
+during various mission phases. It is often used as a way to
+approximate the fuel costs of various parts of a mission, usually
+described as a "Delta-V Budget".  For example, NASA described the
 Delta-V of various stages of the Apollo Lunar Landing missions in the
 following figure:
 
@@ -218,14 +218,6 @@ following figure:
 illustrating the use of Delta-V for mission planning. 
 From [@maynard1966].](
 images/ApolloEnergyRequirementsMSC1966.png)
-
-## Rocket Structure and Propellant Mass Fraction
-
-A rocket must support the fuel it contains as well as carry a payload.
-The more fuel that it carries, the more mass will be required in the
-structure of the rocket to support that fuel (eg. in the form of fuel
-tanks, etc.).
-
 
 
 # Integrating ODEs
