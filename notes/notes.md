@@ -86,7 +86,7 @@ $\defmath{c_\theta}$
 Using these inputs, we can write the following set of coupled ODEs,
 based directly on the equations above:
 \begin{align}
-  \dot{m} &= c_{\dot{m}} \\
+  \dot{m} &= c_{\dot{m}} \label{eq:mdot} \\
   \dot{\bvec{x}} &= \bvec{v} \\
   \dot{\bvec{v}} &= \frac{\bvec{F}}{m} \label{eq:vdot}
 \end{align}
@@ -219,8 +219,29 @@ illustrating the use of Delta-V for mission planning.
 From [@maynard1966].](
 images/ApolloEnergyRequirementsMSC1966.png)
 
+# Integrating The Equations of Motion
 
-# Integrating ODEs
+Solving the rocket equations of motion (Eq
+\ref{eq:mdot}--\ref{eq:vdot}) is an "Initial Value Problem". The idea
+is that by providing initial conditions for the rocket, and knowing
+the time history of its control inputs, we can integrate the equations
+of motion forward through time to know the exact position and other
+state of the rocket at any future time.
+
+During this workshop, we will only plan the trajectory of the rocket.
+We won't consider any of the more intricate details of the rocket's
+guidance, navigation and control (GNC) system. In a real rocket, tiny
+errors accumulate over time between the predicted and actual state,
+usually causing them to drift to the point where the rocket would fail
+to perform as required. These tiny errors are accommodated in real
+(non-toy) rockets by using a closed-loop, feedback control system. In
+feedback control, the expected and actual state can be compared,
+usually with the aim of applying small corrections. We shall be
+assuming that the feasibility of our planned trajectory would not be
+invalidated by a full feedback control system, which is often a
+reasonable assumption.
+
+## The General Initial Value Problem
 
 # Fuel
 
