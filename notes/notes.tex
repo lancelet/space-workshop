@@ -1,0 +1,149 @@
+\documentclass[12pt,openany]{book}
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
+
+\usepackage{amsmath}
+
+\usepackage[numbers]{natbib}
+
+\usepackage[breaklinks,hidelinks]{hyperref}
+
+\usepackage{booktabs}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+
+\usepackage{xcolor}
+
+\usepackage{fancyhdr}
+\pagestyle{plain}
+
+\renewcommand{\contentsname}{Table of Contents}
+
+% Paragraph setting
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
+% Set fonts
+\usepackage{fontspec}
+\setmainfont{Tex Gyre Pagella}
+\setsansfont{Verdana}
+
+% Chapter styling
+\usepackage[grey]{quotchap}
+\makeatletter
+\renewcommand*{\chapnumfont}{%
+  \usefont{T1}{\@defaultcnfont}{b}{n}\fontsize{80}{100}\selectfont% Default: 100/130
+  \color{chaptergrey}%
+}
+\makeatother
+
+% Custom mathematics
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\vecdot}[1]{\ensuremath{\dot{\mathbf{#1}}}}
+
+% Mathematical symbols environment
+\newenvironment{symbols}
+{%
+  \begin{flushright}%
+  \begin{tcolorbox}[enhanced,width=0.9\textwidth,colback=black!8!white,frame hidden]%
+  \begin{tabular}{cp{0.8\textwidth}l}%
+}
+{%
+  \end{tabular}%
+  \end{tcolorbox}%
+  \end{flushright}%
+}
+\newcommand{\unitsforce}{$\mathrm{N}$}
+\newcommand{\unitsmass}{$\mathrm{kg}$}
+\newcommand{\unitsacceleration}{$\mathrm{m}/\mathrm{s}^2$}
+\newcommand{\unitstime}{$\mathrm{s}$}
+\newcommand{\unitsmassflowrate}{$\mathrm{kg}/\mathrm{s}$}
+\newcommand{\unitslength}{$\mathrm{m}$}
+\newcommand{\unitsvelocity}{$\mathrm{m}/\mathrm{s}$}
+\newcommand{\unitsradians}{$\mathrm{radians}$}
+
+\title{
+  The Haskell Space Program\\
+  Planning an Orbital Launch
+}
+\author{
+  Jonathan Merritt
+  \and
+  Luke Clifton
+}
+\date{Feb 2019}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+
+\chapter{Rocket Equations of Motion}
+
+The equations of motion of our rocket are a set of coupled, first-order, ordinary differential equations (ODEs). They describe the related rates of change of quantities that determine the rocket's motion. They provide a basis for all the simulation we will do later.
+
+We will use a point mass model for the rocket. This means that we will model its linear motion, but not any angular motion. For a more complete consideration of these equations, consult \cite{gantmacher1950}.
+
+\section{Governing Equations}
+
+Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the rocket:
+\begin{align}
+  \vec{F} &= m \vecdot{v}  \label{eq:newton2}
+\end{align}
+\begin{symbols}
+  \vec{F} & Force applied to the rocket. & \unitsforce \\
+  $m$ & Instantaneous mass of the rocket, which varies over time. & \unitsmass \\
+  \vecdot{v} & Acceleration of the rocket. & \unitsacceleration
+\end{symbols}
+The rocket burns fuel, causing its mass to decrease over time. The fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate, caused by burning the fuel, and the magnitude of thrust force exerted on the rocket. Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse:
+\begin{align}
+  F_T = g_0\,I_{sp}\,\dot{m}
+\end{align}
+\begin{symbols}
+  $F_T$ & Thrust force magnitude. & \unitsforce \\
+  $g_0$ & Standard gravity (constant) 9.80665. & \unitsacceleration \\
+  $I_{sp}$ & Specific impulse. & \unitstime \\
+  $\dot{m}$ & Mass flow rate of the rocket. & \unitsmassflowrate
+\end{symbols}
+
+\section{Coupled ODEs}
+
+We can write the first-order ODEs describing the rocket motion in the following form, based on the governing equations above:
+\begin{align}
+  \dot{m} &= c_{\dot{m}} \\
+  \vecdot{x} &= \vec{v} \\
+  \vecdot{v} &= \frac{\vec{F}}{m}
+\end{align}
+\begin{symbols}
+  $m$ & Instantaneous mass of the rocket. & \unitsmass \\
+  $c_{\dot{m}}$ & Control signal for the mass flow rate. & \unitsmassflowrate \\
+  $\vec{x}$ & Position of the rocket. & \unitslength \\
+  $\vec{v}$ & Velocity of the rocket. & \unitsvelocity \\ 
+  $\vec{F}$ & Force applied to the rocket. & \unitsforce \\
+\end{symbols}
+The force is decomposed into terms describing thrust, gravity and drag:
+\begin{align}
+  \vec{F} &= \vec{F}_G(\vec{x})
+  + \vec{F}_T(c_{\dot{m}}, c_{\theta})
+  + \vec{F}_D(\ldots)
+\end{align}
+\begin{symbols}
+  \vec{F} & Total force. & \unitsforce \\
+  $\vec{F}_G$ & Force due to gravity. & \unitsforce \\
+  $\vec{x}$ & Position of the rocket. & \unitslength \\
+  $\vec{F}_T$ & Thrust force. & \unitsforce \\
+  $c_{\dot{m}}$ & Control signal for the mass flow rate. & \unitsmassflowrate \\
+  $c_{\theta}$ & Control signal for the thrust orientation. & \unitsradians \\
+  $\vec{F}_D$ & Aerodynamic drag force. & \unitsforce \\
+\end{symbols}
+The remaining details will be described during the following chapters.
+
+\chapter{Tsiolkovsky Rocket Equation and Delta-V}
+
+
+
+\bibliographystyle{plainnat}
+\bibliography{references.bib}
+
+\end{document}
