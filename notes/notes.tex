@@ -80,6 +80,7 @@
 \chapter{Introduction}
 
 \chapter{Rocket Equations of Motion}
+\label{ch:rocket-eom}
 
 The equations of motion of our rocket are a set of coupled, first-order, ordinary differential equations (ODEs). They describe the related rates of change of quantities that determine the rocket's motion. They provide a basis for all the simulation we will do later.
 
@@ -87,61 +88,54 @@ We will use a point mass model for the rocket. This means that we will model its
 
 \section{Governing Equations}
 
-Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the rocket:
+Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the rocket, relating the force applied to the rocket ($\vec{F}$), its instantaneous mass ($m$) and its acceleration ($\vecdot{v}$):
 \begin{align}
   \vec{F} &= m \vecdot{v}  \label{eq:newton2}
 \end{align}
-\begin{symbols}
-  \vec{F} & Force applied to the rocket. & \unitsforce \\
-  $m$ & Instantaneous mass of the rocket, which varies over time. & \unitsmass \\
-  \vecdot{v} & Acceleration of the rocket. & \unitsacceleration
-\end{symbols}
-The rocket burns fuel, causing its mass to decrease over time. The fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate, caused by burning the fuel, and the magnitude of thrust force exerted on the rocket. Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse:
+One complexity of modeling a rocket compared with other point masses is that the mass of the rocket, $m$, varies with time.
+
+Energy released by burning fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate ($\dot{m}$), caused by burning the fuel, and the magnitude of thrust force exerted on the rocket ($F_T$). Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse ($I_{sp}$):
 \begin{align}
-  F_T = g_0\,I_{sp}\,\dot{m}
+  F_T = \left(g_0\,I_{sp}\right)\dot{m}
 \end{align}
-\begin{symbols}
-  $F_T$ & Thrust force magnitude. & \unitsforce \\
-  $g_0$ & Standard gravity (constant) 9.80665. & \unitsacceleration \\
-  $I_{sp}$ & Specific impulse. & \unitstime \\
-  $\dot{m}$ & Mass flow rate of the rocket. & \unitsmassflowrate
-\end{symbols}
+Where $g_0$ is the standard acceleration due to gravity at the surface of the earth ($g_0 = 9.80665\,\mathrm{m}/\mathrm{s}^2$).
 
 \section{Coupled ODEs}
 
-We can write the first-order ODEs describing the rocket motion in the following form, based on the governing equations above:
+We can write a set of first-order ODEs describing the rocket motion in the following form, based on the governing equations above:
 \begin{align}
   \dot{m} &= c_{\dot{m}} \\
   \vecdot{x} &= \vec{v} \\
-  \vecdot{v} &= \frac{\vec{F}}{m}
+  \vecdot{v} &= \frac{\vec{F}}{m} \label{eq:accel}
 \end{align}
-\begin{symbols}
-  $m$ & Instantaneous mass of the rocket. & \unitsmass \\
-  $c_{\dot{m}}$ & Control signal for the mass flow rate. & \unitsmassflowrate \\
-  $\vec{x}$ & Position of the rocket. & \unitslength \\
-  $\vec{v}$ & Velocity of the rocket. & \unitsvelocity \\ 
-  $\vec{F}$ & Force applied to the rocket. & \unitsforce \\
-\end{symbols}
-The force is decomposed into terms describing thrust, gravity and drag:
+in which $c_{\dot{m}}$ is a control signal for the mass flow rate that we will provide as input to the system. The force is decomposed into terms describing thrust ($\vec{F}_T$), gravity ($\vec{F}_G$) and aerodynamic drag ($\vec{F}_D$):
 \begin{align}
   \vec{F} &= \vec{F}_G(\vec{x})
   + \vec{F}_T(c_{\dot{m}}, c_{\theta})
   + \vec{F}_D(\ldots)
 \end{align}
-\begin{symbols}
-  \vec{F} & Total force. & \unitsforce \\
-  $\vec{F}_G$ & Force due to gravity. & \unitsforce \\
-  $\vec{x}$ & Position of the rocket. & \unitslength \\
-  $\vec{F}_T$ & Thrust force. & \unitsforce \\
-  $c_{\dot{m}}$ & Control signal for the mass flow rate. & \unitsmassflowrate \\
-  $c_{\theta}$ & Control signal for the thrust orientation. & \unitsradians \\
-  $\vec{F}_D$ & Aerodynamic drag force. & \unitsforce \\
-\end{symbols}
-The remaining details will be described during the following chapters.
+in which $\vec{x}$ is the position of the rocket and $c_{\theta}$ is a control signal for the thrust orientation. The remaining details will be described during the following chapters.
 
 \chapter{Tsiolkovsky Rocket Equation and Delta-V}
 
+Many discussions of rocket missions start with a quantity know as ``Delta-V''. It comes from the Tsiolkovsky Rocket Equation, which can be derived by integrating the equations of motion from Chapter~\ref{ch:rocket-eom} under certain assumptions.
 
+\section{Derivation of the Tsiolkovsky Equation}
+
+Consider a rocket burning fuel and moving in a consistent direction in a vacuum. There are no gravity or aerodynamic drag forces. If we assume that the mass flow rate of propellant is constant, then we can write the instantaneous mass of the rocket as:
+\begin{align}
+  m(t) &= m_0 - \dot{m} t
+\end{align}
+\begin{symbols}
+  $m$ & Instantaneous mass of the rocket. & \unitsmass \\
+  $m_0$ & Mass of the rocket at the start of the burn, at time $t=0$. & \unitsmass \\
+  $\dot{m}$ & Mass flow rate (positive according to this convention). & \unitsmassflowrate \\
+  $t$ & Time. & \unitstime
+\end{symbols}
+The acceleration of the rocket during this constant burn is given by the equation of motion for the acceleration (Eq~\ref{eq:accel}). Now we can use scalar values, and consider only the thrust force:
+\begin{align}
+  \dot{v} &= \frac{F_T}{m}
+\end{align}
 
 \bibliographystyle{plainnat}
 \bibliography{references.bib}
