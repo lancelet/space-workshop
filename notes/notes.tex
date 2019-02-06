@@ -58,31 +58,6 @@
 }
 \makeatother
 
-% Custom mathematics
-\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
-\newcommand{\vecdot}[1]{\ensuremath{\dot{\mathbf{#1}}}}
-
-% Mathematical symbols environment
-\newenvironment{symbols}
-{%
-  \begin{flushright}%
-  \begin{tcolorbox}[enhanced,width=0.9\textwidth,colback=black!8!white,frame hidden]%
-  \begin{tabular}{cp{0.8\textwidth}l}%
-}
-{%
-  \end{tabular}%
-  \end{tcolorbox}%
-  \end{flushright}%
-}
-\newcommand{\unitsforce}{$\mathrm{N}$}
-\newcommand{\unitsmass}{$\mathrm{kg}$}
-\newcommand{\unitsacceleration}{$\mathrm{m}/\mathrm{s}^2$}
-\newcommand{\unitstime}{$\mathrm{s}$}
-\newcommand{\unitsmassflowrate}{$\mathrm{kg}/\mathrm{s}$}
-\newcommand{\unitslength}{$\mathrm{m}$}
-\newcommand{\unitsvelocity}{$\mathrm{m}/\mathrm{s}$}
-\newcommand{\unitsradians}{$\mathrm{radians}$}
-
 \title{
   The Haskell Space Program\\
   Planning an Orbital Launch
