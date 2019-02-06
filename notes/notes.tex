@@ -28,7 +28,7 @@
 \glsxtrnewsymbol[description={Gravitational force acting on the rocket (\si{\N}).}]{FG}{\ensuremath{\mathbf{F}_G}}
 \glsxtrnewsymbol[description={Thrust force (\si{\N}).}]{FT}{\ensuremath{\mathbf{F}_T}}
 \glsxtrnewsymbol[description={Magnitude of the thrust force (\si{\N}).}]{FTmag}{\ensuremath{F_T}}
-\glsxtrnewsymbol[description={Standard gravity at sea level (constant), $g_0=\num{9.80665}$ (\si{\m\per\s\squared}).}]{g0}{\ensuremath{g_0}}
+\glsxtrnewsymbol[description={Standard acceleration due to gravity at sea level (constant), $g_0=\num{9.80665}$ (\si{\m\per\s\squared}).}]{g0}{\ensuremath{g_0}}
 \glsxtrnewsymbol[description={Specific impulse, $I_{sp}=\gls{ve}/\gls{g0}$ (\si{\s}).}]{Isp}{\ensuremath{I_{sp}}}
 \glsxtrnewsymbol[description={Instantaneous mass of the rocket (\si{\kg}).}]{m}{\ensuremath{m}}
 \glsxtrnewsymbol[description={Mass of the rocket at the start of a burn (\si{\kg}).}]{m0}{\ensuremath{m_0}}
@@ -113,11 +113,7 @@ Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the
 \begin{align}
   \gls{F} &= \gls{m} \dot{\gls{v}}  \label{eq:newton2}
 \end{align}
-One complexity of modeling a rocket compared with other point masses is that the mass of the rocket varies with time. We are using Newton's overdot notation for time derivatives:
-\begin{align}
-  \dot{a} = \frac{da}{d\gls{t}}
-\end{align}
-for some quantity $a$.
+One complexity of modeling a rocket compared with other point masses is that the mass of the rocket varies with time.
 
 Energy released by burning fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate, $\dot{\gls{m}}$, caused by burning the fuel, and the magnitude of thrust force exerted on the rocket, \gls{FTmag}. Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse, \gls{Isp}:
 \begin{align}
