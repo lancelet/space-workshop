@@ -17,6 +17,27 @@
 \usepackage{fancyhdr}
 \pagestyle{plain}
 
+% Glossary of mathematical symbols
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}
+\usepackage[symbols,nogroupskip,sort=none]{glossaries-extra}
+\glsxtrnewsymbol[description={Control signal for fuel mass flow rate (\si{\kg\per\s}).}]{cm}{\ensuremath{c_{\dot{m}}}}
+\glsxtrnewsymbol[description={Control signal for thrust force orientation (radians).}]{ctheta}{\ensuremath{c_{\theta}}}
+\glsxtrnewsymbol[description={Total force on the rocket (\si{\N}).}]{F}{\ensuremath{\mathbf{F}}}
+\glsxtrnewsymbol[description={Aerodynamic drag force acting on the rocket (\si{\N}).}]{FD}{\ensuremath{\mathbf{F}_D}}
+\glsxtrnewsymbol[description={Gravitational force acting on the rocket (\si{\N}).}]{FG}{\ensuremath{\mathbf{F}_G}}
+\glsxtrnewsymbol[description={Thrust force (\si{\N}).}]{FT}{\ensuremath{\mathbf{F}_T}}
+\glsxtrnewsymbol[description={Magnitude of the thrust force (\si{\N}).}]{FTmag}{\ensuremath{F_T}}
+\glsxtrnewsymbol[description={Standard gravity at sea level (constant), $g_0=\num{9.80665}$ (\si{\m\per\s\squared}).}]{g0}{\ensuremath{g_0}}
+\glsxtrnewsymbol[description={Specific impulse, $I_{sp}=\gls{ve}/\gls{g0}$ (\si{\s}).}]{Isp}{\ensuremath{I_{sp}}}
+\glsxtrnewsymbol[description={Instantaneous mass of the rocket (\si{\kg}).}]{m}{\ensuremath{m}}
+\glsxtrnewsymbol[description={Mass of the rocket at the start of a burn (\si{\kg}).}]{m0}{\ensuremath{m_0}}
+\glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
+\glsxtrnewsymbol[description={Velocity of the rocket (\si{\m\per\s}).}]{v}{\ensuremath{\mathbf{v}}}
+\glsxtrnewsymbol[description={Magnitude of the velocity of the rocket (\si{\m\per\s}).}]{vmag}{\ensuremath{v}}
+\glsxtrnewsymbol[description={Average exhaust speed along the engine axis (\si{\m\per\s}).}]{ve}{\ensuremath{v_e}}
+\glsxtrnewsymbol[description={Position of the rocket (\si{\m}).}]{x}{\ensuremath{\mathbf{x}}}
+
 \renewcommand{\contentsname}{Table of Contents}
 
 % Paragraph setting
@@ -88,33 +109,37 @@ We will use a point mass model for the rocket. This means that we will model its
 
 \section{Governing Equations}
 
-Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the rocket, relating the force applied to the rocket ($\vec{F}$), its instantaneous mass ($m$) and its acceleration ($\vecdot{v}$):
+Newton's second law (Eq~\ref{eq:newton2}) is the main equation of motion for the rocket, relating the force applied to the rocket, \gls{F}, its instantaneous mass, \gls{m}, and its acceleration, $\dot{\gls{v}}$:
 \begin{align}
-  \vec{F} &= m \vecdot{v}  \label{eq:newton2}
+  \gls{F} &= \gls{m} \dot{\gls{v}}  \label{eq:newton2}
 \end{align}
-One complexity of modeling a rocket compared with other point masses is that the mass of the rocket, $m$, varies with time.
+One complexity of modeling a rocket compared with other point masses is that the mass of the rocket varies with time. We are using Newton's overdot notation for time derivatives:
+\begin{align}
+  \dot{a} = \frac{da}{d\gls{t}}
+\end{align}
+for some quantity $a$.
 
-Energy released by burning fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate ($\dot{m}$), caused by burning the fuel, and the magnitude of thrust force exerted on the rocket ($F_T$). Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse ($I_{sp}$):
+Energy released by burning fuel creates an ejection of reaction mass from the rocket nozzle, which results in a thrust force. There is a relationship between mass flow rate, $\dot{\gls{m}}$, caused by burning the fuel, and the magnitude of thrust force exerted on the rocket, \gls{FTmag}. Modeling this relationship in full is a complicated hydrodynamics problem. However, we can approximate it as a linear relationship using a coefficient called specific impulse, \gls{Isp}:
 \begin{align}
-  F_T = \left(g_0\,I_{sp}\right)\dot{m}
+  \gls{FTmag} &= \left( \gls{g0} \, \gls{Isp} \right) \dot{\gls{m}}
 \end{align}
-Where $g_0$ is the standard acceleration due to gravity at the surface of the earth ($g_0 = 9.80665\,\mathrm{m}/\mathrm{s}^2$).
+Where \gls{g0} is the standard acceleration due to gravity at the surface of the earth.
 
 \section{Coupled ODEs}
 
 We can write a set of first-order ODEs describing the rocket motion in the following form, based on the governing equations above:
 \begin{align}
-  \dot{m} &= c_{\dot{m}} \\
-  \vecdot{x} &= \vec{v} \\
-  \vecdot{v} &= \frac{\vec{F}}{m} \label{eq:accel}
+  \dot{\gls{m}} &= \gls{cm} \\
+  \dot{\gls{x}} &= \gls{v} \\
+  \dot{\gls{v}} &= \frac{\gls{F}}{\gls{m}} \label{eq:accel}
 \end{align}
-in which $c_{\dot{m}}$ is a control signal for the mass flow rate that we will provide as input to the system. The force is decomposed into terms describing thrust ($\vec{F}_T$), gravity ($\vec{F}_G$) and aerodynamic drag ($\vec{F}_D$):
+in which \gls{cm} is a control signal for the mass flow rate that we will provide as input to the system. The force is decomposed into terms describing thrust, \gls{FT}, gravity, \gls{FG}, and aerodynamic drag, \gls{FG}:
 \begin{align}
-  \vec{F} &= \vec{F}_G(\vec{x})
-  + \vec{F}_T(c_{\dot{m}}, c_{\theta})
-  + \vec{F}_D(\ldots)
+  \gls{F} &= \gls{FG}(\gls{x})
+  + \gls{FT}(\gls{cm},\gls{ctheta})
+  + \gls{FD}(\ldots) 
 \end{align}
-in which $\vec{x}$ is the position of the rocket and $c_{\theta}$ is a control signal for the thrust orientation. The remaining details will be described during the following chapters.
+in which \gls{x} is the position of the rocket and \gls{ctheta} is a control signal for the thrust orientation. The remaining details will be described during the following chapters.
 
 \chapter{Tsiolkovsky Rocket Equation and Delta-V}
 
@@ -124,18 +149,14 @@ Many discussions of rocket missions start with a quantity know as ``Delta-V''. I
 
 Consider a rocket burning fuel and moving in a consistent direction in a vacuum. There are no gravity or aerodynamic drag forces. If we assume that the mass flow rate of propellant is constant, then we can write the instantaneous mass of the rocket as:
 \begin{align}
-  m(t) &= m_0 - \dot{m} t
+  \gls{m}(\gls{t}) &= \gls{m0} - \dot{\gls{m}}\gls{t}
 \end{align}
-\begin{symbols}
-  $m$ & Instantaneous mass of the rocket. & \unitsmass \\
-  $m_0$ & Mass of the rocket at the start of the burn, at time $t=0$. & \unitsmass \\
-  $\dot{m}$ & Mass flow rate (positive according to this convention). & \unitsmassflowrate \\
-  $t$ & Time. & \unitstime
-\end{symbols}
 The acceleration of the rocket during this constant burn is given by the equation of motion for the acceleration (Eq~\ref{eq:accel}). Now we can use scalar values, and consider only the thrust force:
 \begin{align}
-  \dot{v} &= \frac{F_T}{m}
+  \dot{\gls{vmag}} &= \frac{\gls{FTmag}}{\gls{m}}
 \end{align}
+
+\printunsrtglossary[type=symbols,style=long]
 
 \bibliographystyle{plainnat}
 \bibliography{references.bib}
