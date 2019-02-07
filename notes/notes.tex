@@ -1,6 +1,8 @@
 \documentclass[12pt,openany]{book}
 \usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
 
+\usepackage{graphicx}
+
 \usepackage{amsmath}
 
 \usepackage[numbers]{natbib}
@@ -62,6 +64,7 @@
   \color{chaptergrey}%
 }
 \makeatother
+\renewcommand{\bibname}{References}
 
 \title{
   The Haskell Space Program\\
@@ -121,7 +124,7 @@ in which \gls{x} is the position of the rocket and \gls{ctheta} is a control sig
 
 Many discussions of rocket missions start with a quantity know as ``Delta-V''. It comes from the Tsiolkovsky Rocket Equation, which can be derived by integrating the equations of motion from Chapter~\ref{ch:rocket-eom} under certain assumptions.
 
-\section{Derivation of the Tsiolkovsky Equation}
+\section{Derivation of the Tsiolkovsky Rocket Equation}
 
 Consider a rocket burning fuel and moving in a straight line in a vacuum. There are no gravity or aerodynamic drag forces. If we assume that the mass flow rate of propellant is constant, then we can write the instantaneous mass of the rocket as:
 \begin{align}
@@ -155,8 +158,26 @@ If we now identify the change in velocity, $\gls{dv}=\gls{vf}-\gls{v0}$, and the
 \end{align}
 \gls{dv} is the quantity ``Delta-V'', and Equation~\ref{eq:tsiolkovsky} is referred to as the Tsiolkovsky Rocket Equation.
 
+Although it is written as a change in velocity, Eq~\ref{eq:tsiolkovsky} only represents a true change in velocity under conditions without gravity and aerodynamic drag forces. Under other conditions, it provides a comparison value which indicates the energetic requirements of a maneouvre in a form which is independent of the vehicle mass.
+
+\section{Total Delta-V and Mass Ratio}
+
+
+
+\section{Delta-V in Mission Planning}
+
+Often, Delta-V is used during mission planning to approximate either the requirements of a rocket system or the relative costs of different parts of a mission. Many missions describe a so-called ``Delta-V budget'' for this purpose. Figure~\ref{fig:apollo-delta-v} shows an example of this from the Apollo era.
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{images/apollo-delta-v.png}
+  \caption{Summary of energy requirements for an Apollo Lunar Landing Mission, illustrating the use of Delta-V for mission planning.\cite{maynard1966}}
+  \label{fig:apollo-delta-v}
+\end{figure}
+
 \printunsrtglossary[type=symbols,style=long]
 
+\clearpage\phantomsection
+\addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plainnat}
 \bibliography{references.bib}
 
