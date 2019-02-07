@@ -31,10 +31,15 @@
 \glsxtrnewsymbol[description={Standard acceleration due to gravity at sea level (constant), $g_0=\num{9.80665}$ (\si{\m\per\s\squared}).}]{g0}{\ensuremath{g_0}}
 \glsxtrnewsymbol[description={Specific impulse, $I_{sp}=\gls{ve}/\gls{g0}$ (\si{\s}).}]{Isp}{\ensuremath{I_{sp}}}
 \glsxtrnewsymbol[description={Instantaneous mass of the rocket (\si{\kg}).}]{m}{\ensuremath{m}}
-\glsxtrnewsymbol[description={Mass of the rocket at the start of a burn (\si{\kg}).}]{m0}{\ensuremath{m_0}}
+\glsxtrnewsymbol[description={Initial mass of the rocket (\si{\kg}).}]{m0}{\ensuremath{m_0}}
+\glsxtrnewsymbol[description={Final mass of the rocket (\si{\kg}).}]{mf}{\ensuremath{m_f}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
+\glsxtrnewsymbol[description={Final time (\si{\s}).}]{tf}{\ensuremath{t_f}}
 \glsxtrnewsymbol[description={Velocity of the rocket (\si{\m\per\s}).}]{v}{\ensuremath{\mathbf{v}}}
+\glsxtrnewsymbol[description={Initial velocity of the rocket (\si{\m\per\s}).}]{v0}{\ensuremath{v_0}}
+\glsxtrnewsymbol[description={Final velocity of the rocket (\si{\m\per\s}).}]{vf}{\ensuremath{v_f}}
 \glsxtrnewsymbol[description={Magnitude of the velocity of the rocket (\si{\m\per\s}).}]{vmag}{\ensuremath{v}}
+\glsxtrnewsymbol[description={Change in rocket velocity for a free burn (\si{\m\per\s}).}]{dv}{\ensuremath{\Delta v}}
 \glsxtrnewsymbol[description={Average exhaust speed along the engine axis (\si{\m\per\s}).}]{ve}{\ensuremath{v_e}}
 \glsxtrnewsymbol[description={Position of the rocket (\si{\m}).}]{x}{\ensuremath{\mathbf{x}}}
 
@@ -118,14 +123,37 @@ Many discussions of rocket missions start with a quantity know as ``Delta-V''. I
 
 \section{Derivation of the Tsiolkovsky Equation}
 
-Consider a rocket burning fuel and moving in a consistent direction in a vacuum. There are no gravity or aerodynamic drag forces. If we assume that the mass flow rate of propellant is constant, then we can write the instantaneous mass of the rocket as:
+Consider a rocket burning fuel and moving in a straight line in a vacuum. There are no gravity or aerodynamic drag forces. If we assume that the mass flow rate of propellant is constant, then we can write the instantaneous mass of the rocket as:
 \begin{align}
-  \gls{m}(\gls{t}) &= \gls{m0} - \dot{\gls{m}}\gls{t}
+  \gls{m}(\gls{t}) &= \gls{m0} - \dot{\gls{m}}\,\gls{t}
 \end{align}
-The acceleration of the rocket during this constant burn is given by the equation of motion for the acceleration (Eq~\ref{eq:accel}). Now we can use scalar values, and consider only the thrust force:
+where $\gls{m0}$ is the initial mass at the start of the burn. The acceleration of the rocket during this constant burn is given by the equation of motion for the acceleration (Eq~\ref{eq:accel}). Now we can use scalar values, and consider only the thrust force:
 \begin{align}
-  \dot{\gls{vmag}} &= \frac{\gls{FTmag}}{\gls{m}}
+  \dot{\gls{vmag}} &= \frac{\gls{FTmag}}{\gls{m}} \\
+  &= \frac{(\gls{g0}\,\gls{Isp})\,\dot{\gls{m}}}{\gls{m0} - \dot{\gls{m}}\,\gls{t}}
 \end{align}
+The definite integral of the acceleration gives us a final velocity for the rocket, \gls{vf}. We assume that the constant burn occurs between times $\gls{t}=0$ and $\gls{t}=\gls{tf}$:
+\begin{align}
+  \gls{vf} &= \int_0^{\gls{tf}} \dot{\gls{vmag}}\,d\gls{t} \\
+  &= \int_0^{\gls{tf}} \frac{(\gls{g0}\,\gls{Isp})\,\dot{\gls{m}}}{\gls{m0} - \dot{\gls{m}}\,\gls{t}}\,d\gls{t} \\
+  &= \gls{v0} + \left[\frac{(\gls{g0}\,\gls{Isp})\,\dot{\gls{m}}}{-\dot{\gls{m}}}\,\ln\left(\gls{m0}-\dot{\gls{m}}\,\gls{t}\right)\right]_{\gls{t}=0}^{\gls{t}=\gls{tf}} \\
+  &= \gls{v0} - (\gls{g0}\,\gls{Isp})\left(\ln(\gls{m0}-\dot{\gls{m}}\,\gls{tf})-\ln(\gls{m0})\right) \\
+  &= \gls{v0} + (\gls{g0}\,\gls{Isp})\ln\left(\frac{\gls{m0}}{\gls{m0}-\dot{\gls{m}}\,\gls{tf}}\right)
+\end{align}
+In the derivation above, we have used the following integral identity:
+\begin{align}
+  \int \frac{c}{ax+b}\,dx = \frac{c}{a}\,\ln\left|ax+b\right| + C
+\end{align} 
+and this rule for subtracted logarithms:
+\begin{align}
+  \ln(a) - \ln(b) = \ln\left(\frac{a}{b}\right)
+\end{align}
+If we now identify the change in velocity, $\gls{dv}=\gls{vf}-\gls{v0}$, and the final mass, $\gls{mf}=\gls{m0}-\dot{\gls{m}}\,\gls{tf}$, the equation for \gls{dv} is then:
+\begin{align}
+  \gls{dv} &= (\gls{g0}\,\gls{Isp})\,\ln\left(\frac{\gls{m0}}{\gls{mf}}\right) \\
+  &= \gls{ve}\ln\left(\frac{\gls{m0}}{\gls{mf}}\right) \label{eq:tsiolkovsky}
+\end{align}
+\gls{dv} is the quantity ``Delta-V'', and Equation~\ref{eq:tsiolkovsky} is referred to as the Tsiolkovsky Rocket Equation.
 
 \printunsrtglossary[type=symbols,style=long]
 
