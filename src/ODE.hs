@@ -36,6 +36,7 @@ eulerStep h t yv fv = Sized.zipWith scalarEulerStep yv (fv (t, yv))
 {-# INLINE eulerStep #-}
 
 
+-- | Add two vectors element-wise.
 vadd
   :: forall a n v. (V.Vector v a, Num a)
   => Sized.Vector v n a
@@ -44,6 +45,8 @@ vadd
 vadd = Sized.zipWith (+)
 {-# INLINE vadd #-}
 
+
+-- | Subtract one vector from another element-wise.
 vsub
   :: forall a n v. (V.Vector v a, Num a)
   => Sized.Vector v n a
@@ -52,6 +55,8 @@ vsub
 vsub = Sized.zipWith (-)
 {-# INLINE vsub #-}
 
+
+-- | Scale a vector by a scalar coefficient.
 vscale
   :: forall a n v. (V.Vector v a, Num a)
   => a
@@ -66,6 +71,7 @@ data Rk45StepResult v n a
     { state :: Sized.Vector v n a
     , err   :: Sized.Vector v n a
     }
+
 
 -- | Computes a single step of RK45.
 --
