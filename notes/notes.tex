@@ -83,6 +83,12 @@
 
 \chapter{Introduction}
 
+Numerical methods: TODO: list numerical methods we cover.
+
+Haskell libraries: TODO: list Haskell libraries we cover.
+
+Rocket theory: TODO: list rocket theory topics we cover.
+
 \chapter{Rocket Equations of Motion}
 \label{ch:rocket-eom}
 
@@ -160,19 +166,29 @@ If we now identify the change in velocity, $\gls{dv}=\gls{vf}-\gls{v0}$, and the
 
 Although it is written as a change in velocity, Eq~\ref{eq:tsiolkovsky} only represents a true change in velocity under conditions without gravity and aerodynamic drag forces. Under other conditions, it provides a comparison value which indicates the energetic requirements of a maneouvre in a form which is independent of the vehicle mass.
 
-\section{Total Delta-V and Mass Ratio}
+\section{Total Delta-V and Propellant Mass Fraction}
 
-
+TODO
 
 \section{Delta-V in Mission Planning}
 
-Often, Delta-V is used during mission planning to approximate either the requirements of a rocket system or the relative costs of different parts of a mission. Many missions describe a so-called ``Delta-V budget'' for this purpose. Figure~\ref{fig:apollo-delta-v} shows an example of this from the Apollo era.
+Often, Delta-V is used during conceptual mission planning to approximate either the requirements of a rocket system or the relative costs of different parts of a mission. Many missions describe a so-called ``Delta-V budget'' for this purpose. Figure~\ref{fig:apollo-delta-v} shows an example of this from the Apollo era.
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth]{images/apollo-delta-v.png}
   \caption{Summary of energy requirements for an Apollo Lunar Landing Mission, illustrating the use of Delta-V for mission planning.\cite{maynard1966}}
   \label{fig:apollo-delta-v}
 \end{figure}
+
+\chapter{Integration of ODEs}
+\chapter{Rocket Trajectory Optimization}
+\chapter{Orbital Statics}
+\section{Circular Orbits}
+\section{Elliptical Orbits}
+\section{Hohmann Transfer Orbit -- Instantaneous Impulse}
+\section{Hohmann Transfer Orbit -- Finite Impulse}
+\chapter{Aerodynamic Drag and Atmospheric Modeling}
+\chapter{Optimisation of Orbital Launch}
 
 \printunsrtglossary[type=symbols,style=long]
 
