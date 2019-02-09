@@ -1,6 +1,6 @@
-name:                launch-workshop
+name:                haskell-orbital-launch
 version:             0.1.0.0
-github:              "lancelet/launch-workshop"
+github:              "lancelet/haskell-orbital-launch"
 license:             BSD3
 author:              "Jonathan Merritt and Luke Clifton"
 maintainer:          "j.s.merritt@gmail.com"
@@ -41,7 +41,7 @@ executables:
     source-dirs:         app
     ghc-options:         *ghc-options
     dependencies:
-    - launch-workshop
+    - haskell-orbital-launch
 
 tests:
   launch-workshop-test:
@@ -49,4 +49,4 @@ tests:
     source-dirs:         test
     ghc-options:         *ghc-options
     dependencies:
-    - launch-workshop
+    - haskell-orbital-launch
