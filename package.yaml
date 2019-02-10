@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- gnuplot
 - vector
 - vector-sized
 
@@ -28,6 +29,7 @@ library:
   source-dirs: src
 
 _ghc-options: &ghc-options
+  - -O2
   - -threaded
   - -rtsopts
   - -with-rtsopts=-N
@@ -35,11 +37,12 @@ _ghc-options: &ghc-options
   - -Wincomplete-uni-patterns
   - -Wincomplete-record-updates
   - -Wmissing-import-lists
+  - -ddump-simpl
 
 executables:
-  launch-workshop-exe:
+  ode-examples:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         app/ode-examples
     ghc-options:         *ghc-options
     dependencies:
     - haskell-orbital-launch

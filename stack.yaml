@@ -39,6 +39,15 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 # extra-deps: []
+# Pending haskell-chart inclusion in Stackage
+#   Issue: https://github.com/timbod7/haskell-chart/issues/200
+# - git: https://github.com/timbod7/haskell-chart.git
+#   commit: 23e9739b80ecbb6fe70c4a7989714414f9f915c7
+#   subdirs:
+#   - chart
+#   - chart-cairo
+# - cairo-0.13.6.0
+# - gtk2hs-buildtools-0.13.5.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

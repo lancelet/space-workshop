@@ -16,6 +16,31 @@ data Event v n a
     , testFunction :: (a, Sized.Vector v n a) -> a
     }
 
+type StepIntegrator v n a
+  = a -> a -> Sized.Vector v n a -> ((a, Sized.Vector v n a) -> Sized.Vector v n a) -> Sized.Vector v n a
+  
+odeFixedSteps
+  :: forall a n v. (V.Vector v a, Num a)
+  => StepIntegrator v n a
+  -- ^ Integrator to use
+  -> [a]
+  -- ^ Evaluation times
+  -> Sized.Vector v n a
+  -- ^ state vector at initial time
+  -> ((a, Sized.Vector v n a) -> Sized.Vector v n a)
+  -- ^ function from time and state to gradient vector
+  -> [(a, Sized.Vector v n a)]
+  -- ^ state vector set
+odeFixedSteps integrator times y0 f = scanl step b0 times
+  where
+    b0 :: (a, Sized.Vector v n a)
+    b0 = (head times, y0)
+
+    step :: (a, Sized.Vector v n a) -> a -> (a, Sized.Vector v n a)
+    step (ti, y) tf = (tf, integrator (tf - ti) ti y f)
+
+
+
 -- | Computes a single step of Euler integration.
 eulerStep
   :: forall a n v. (V.Vector v a, Num a)
@@ -29,10 +54,7 @@ eulerStep
   -- ^ function from time and state vector to gradient vector
   -> Sized.Vector v n a
   -- ^ state vector after the step
-eulerStep h t yv fv = Sized.zipWith scalarEulerStep yv (fv (t, yv))
-  where
-    scalarEulerStep :: a -> a -> a
-    scalarEulerStep y dvdt = y + h * dvdt
+eulerStep h t y f = y `vadd` (h `vscale` f (t, y))
 {-# INLINE eulerStep #-}
 
 
