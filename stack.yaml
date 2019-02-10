@@ -18,7 +18,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-13.6
+resolver: lts-12.26
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -48,6 +48,12 @@ packages:
 #   - chart-cairo
 # - cairo-0.13.6.0
 # - gtk2hs-buildtools-0.13.5.0
+extra-deps:
+- indexed-list-literals-0.2.1.2
+- vector-sized-1.2.0.0
+- Chart-1.9
+- Chart-diagrams-1.9
+- SVGFonts-1.6.0.3
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
