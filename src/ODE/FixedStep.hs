@@ -35,7 +35,7 @@ type Stepper v a
 
 
 -- | Performs integration given a nonempty list of steps.
-fixedStepIntegrate
+integrate
   :: forall a v. (Num a, Fractional a)
   => Ops v a           -- ^ Operations on vector type v.
   -> Stepper v a       -- ^ Stepper function.
@@ -43,7 +43,7 @@ fixedStepIntegrate
   -> NonEmpty a        -- ^ Nonempty list of steps.
   -> (a -> v -> v)     -- ^ Variable and state to derivatives.
   -> NonEmpty (a, v)   -- ^ Output of the integration.
-fixedStepIntegrate ops stepper y0 xs f
+integrate ops stepper y0 xs f
   = (x0, y0) <| NonEmpty.scanl step (x0, y0) xs
   where
     x0 :: a
