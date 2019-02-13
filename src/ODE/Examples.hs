@@ -51,8 +51,8 @@ plotSHM = do
     params = SHMParameters { mass = 1.0, kSpring = 3.0 }
 
     analytic = fmap (shmAnalytic params) timesAnalytic
-    eulerI = FixedStep.integrate FixedStep.tuple2Ops FixedStep.eulerStep
-    rk4I = FixedStep.integrate FixedStep.tuple2Ops FixedStep.rk4Step
+    eulerI = FixedStep.integrate (FixedStep.eulerStep FixedStep.tuple2Ops)
+    rk4I = FixedStep.integrate (FixedStep.rk4Step FixedStep.tuple2Ops)
 
     euler :: [(Double, Double)]
     euler = fmap (\(t, (x, _)) -> (t, x))

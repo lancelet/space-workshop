@@ -27,8 +27,7 @@ tuple2Ops
 
 -- | Stepper function.
 type Stepper v a
-  = Ops v a
- -> a
+  = a
  -> (a, v)
  -> (a -> v -> v)
  -> (a, v)
@@ -37,20 +36,19 @@ type Stepper v a
 -- | Performs integration given a nonempty list of steps.
 integrate
   :: forall a v. (Num a, Fractional a)
-  => Ops v a           -- ^ Operations on vector type v.
-  -> Stepper v a       -- ^ Stepper function.
+  => Stepper v a       -- ^ Stepper function.
   -> v                 -- ^ Initial state.
   -> NonEmpty a        -- ^ Nonempty list of steps.
   -> (a -> v -> v)     -- ^ Variable and state to derivatives.
   -> NonEmpty (a, v)   -- ^ Output of the integration.
-integrate ops stepper y0 xs f
+integrate stepper y0 xs f
   = (x0, y0) <| NonEmpty.scanl step (x0, y0) xs
   where
     x0 :: a
     x0 = NonEmpty.head xs
 
     step :: (a, v) -> a -> (a, v)
-    step (ti, yi) tf = stepper ops (tf - ti) (ti, yi) f
+    step (ti, yi) tf = stepper (tf - ti) (ti, yi) f
 
   
 -- | Performs a single step of Euler integration.
