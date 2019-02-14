@@ -24,6 +24,7 @@ dependencies:
 - Chart
 - Chart-diagrams
 - lens
+- mtl
 - random
 - vector
 - vector-sized

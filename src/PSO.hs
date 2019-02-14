@@ -3,8 +3,13 @@ module PSO where
 
 -- http://clerc.maurice.free.fr/pso/SPSO_descriptions.pdf
 
-import System.Random (RandomGen)
-import qualified Data.List.NonEmpty as NonEmpty
+import Control.Monad (forM)
+import           Control.Monad.State.Lazy (MonadState)
+import qualified Control.Monad.State.Lazy as State
+import           Data.List                (maximumBy)
+import qualified Data.List.NonEmpty       as NonEmpty
+import           Data.Ord                 (comparing)
+import           System.Random            (RandomGen, mkStdGen, random)
 
 data Particle c v
   = Particle
@@ -16,63 +21,78 @@ data Particle c v
     } deriving (Show)
 
 
-data Ops v
+data Ops c v
   = Ops
-    { zero :: v
-    }
+    { zero      :: v
+    , scalarMul :: c -> v -> v
+    , addVec    :: v -> v -> v }
 
-opsDouble :: Ops Double
+opsDouble :: Ops Double Double
 opsDouble
   = Ops
-    { zero = 0.0 }
+    { zero = 0.0
+    , scalarMul = \c x -> c * x
+    , addVec = \x y -> x + y }
 
 
 
-  
--- TODO: Refactor this; unfoldr is adding a lot of complexity.
-newParticles
-  :: forall g c v.
-     (RandomGen g)
-  => Ops v                -- ^ Operations
+{-
+step
+  :: (Ord c, RandomGen g)
+  => Ops c v              -- ^ Operations
   -> g                    -- ^ Initial random state
-  -> Int                  -- ^ Number of particles
-  -> (g -> (v, g))        -- ^ Random position function
-  -> (v -> c)             -- ^ Fitness function
-  -> ([Particle c v], g)  -- ^ New particles
-newParticles ops gen n posFn fitFn
-  = (fmap fst uf, (snd . last) uf)
+  -> [Particle c v]       -- ^ Input list of particles
+  -> ([Particle c v], g)  -- ^ Updated particles and output random state
+step ops gen particles = undefined
+-}
 
-  where
 
-    uf :: [(Particle c v, g)]
-    uf = NonEmpty.toList $ NonEmpty.unfoldr ufun (gen, n)
+-- | Find the global best position of a list of particles.
+globalBestPosition
+  :: (Ord c)
+  => [Particle c v]
+  -> v
+globalBestPosition particles =
+  bestPosition $ maximumBy (comparing bestFitness) particles
 
-    ufun :: (g, Int) -> ((Particle c v, g), Maybe (g, Int))
-    ufun (curGen, i) = ((particle, nextGen), maybeNext)
-      where
-        (particle, nextGen) = newParticle ops curGen posFn fitFn
-        maybeNext = if i > 1
-                    then Just (nextGen, i - 1)
-                    else Nothing
+
+
+-- | Generate a list of new particles.
+newParticles
+  :: (RandomGen g, MonadState g m)
+  => Ops c v           -- ^ Operations
+  -> Int               -- ^ Number of particles
+  -> m v               -- ^ Random position function
+  -> (v -> c)          -- ^ Fitness function
+  -> m [Particle c v]  -- ^ New particles
+newParticles ops n posFn fitFn
+  = forM [1..n] (const $ newParticle ops posFn fitFn)
   
-  
+
 -- | Generate one new particle.
 newParticle
-  :: (RandomGen g)
-  => Ops v              -- ^ Operations
-  -> g                  -- ^ Initial random state
-  -> (g -> (v, g))      -- ^ Random position function
-  -> (v -> c)           -- ^ Fitness function
-  -> (Particle c v, g)  -- ^ New particle
-newParticle ops gen posFn fitFn
-  = (particle, gen')
+  :: (RandomGen g, MonadState g m)
+  => Ops c v           -- ^ Operations
+  -> m v               -- ^ Random position function
+  -> (v -> c)          -- ^ Fitness function
+  -> m (Particle c v)  -- ^ New particle
+newParticle ops posFn fitFn = do
+  position <- posFn
+  let fitness = fitFn position
+  pure Particle
+    { position = position
+    , velocity = zero ops
+    , fitness = fitness
+    , bestPosition = position
+    , bestFitness = fitness
+    }
+
+
+testNewParticles :: [Particle Double Double]
+testNewParticles = State.evalState (newParticles opsDouble 5 posFn (const 1)) s0
   where
-    particle = Particle
-               { position = p
-               , velocity = zero ops
-               , fitness = f
-               , bestPosition = p
-               , bestFitness = f 
-               }
-    (p, gen') = posFn gen
-    f = fitFn p
+    s0 = mkStdGen 0
+
+    posFn :: (RandomGen g, MonadState g m) => m Double
+    posFn = State.state random
+  
