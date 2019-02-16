@@ -4,7 +4,7 @@ module PSO where
 -- http://clerc.maurice.free.fr/pso/SPSO_descriptions.pdf
 
 import           Control.Monad            (forM)
-import           Control.Monad.Loops      (iterateWhile)
+import           Control.Monad.Loops      (iterateWhile, iterateUntilM)
 import           Control.Monad.State.Lazy (MonadState)
 import qualified Control.Monad.State.Lazy as State
 import           Data.List                (maximumBy)
@@ -25,6 +25,9 @@ data Params c
     { cognitiveAccelCoeff :: c
     , socialAccelCoeff    :: c
     , inertiaWeight       :: c
+    , objectiveFitness    :: c
+    , maxIterations       :: Int
+    , nParticles          :: Int
     }
 
 defaultParams :: (Floating c) => Params c
@@ -32,6 +35,9 @@ defaultParams = Params
   { cognitiveAccelCoeff = 0.5 + log 2.0
   , socialAccelCoeff    = 0.5 + log 2.0
   , inertiaWeight       = 1.0 / (2.0 * log 2.0)
+  , objectiveFitness    = 0.01
+  , maxIterations       = 100
+  , nParticles          = 40
   }
 
 data Ops c v
@@ -42,7 +48,7 @@ data Ops c v
     , subVec    :: v -> v -> v
     , radius    :: v -> c
     , fromList  :: (Int, [c] -> v)
-    , toList    :: v -> [c] }
+    , confine   :: v -> v }
 
 opsDouble :: Ops Double Double
 opsDouble
@@ -53,13 +59,43 @@ opsDouble
     , subVec = \x y -> x - y
     , radius = id
     , fromList = doubleFromList
-    , toList = \x -> [x] }
+    , confine = id }
   where
     doubleFromList :: (Int, [Double] -> Double)
     doubleFromList = (1, f)
       where
         f [x] = x
         f _   = error "Can only produce a Double from a single-element list!"
+
+
+pso
+  :: forall g m c v. (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
+  => Params c
+  -> Ops c v
+  -> m v
+  -> (v -> c)
+  -> m (v, c, Int)
+pso params ops randPos fitFn = do
+  -- Init
+  particles <- newParticles ops (nParticles params) randPos fitFn
+  -- Run until we terminate
+  let
+    shouldTerminate :: ([Particle c v], Int) -> Bool
+    shouldTerminate (_, n) | n > (maxIterations params) = True
+    shouldTerminate (ps, _) | bestFitness (globalBestParticle ps) <= (objectiveFitness params) = True
+    shouldTerminate _ = False
+
+    action :: ([Particle c v], Int) -> m ([Particle c v], Int)
+    action (ps, n) = do
+      ps' <- step params ops fitFn ps
+      pure (ps', n + 1)
+  
+  (particles', n) <- iterateUntilM shouldTerminate action (particles, 0)
+  
+  let
+    globalBest = globalBestParticle particles'
+  
+  pure (bestPosition globalBest, bestFitness globalBest, n)
 
 
 step
@@ -102,7 +138,7 @@ step params ops fitFn particles = sequence $ fmap stepParticle particles
       let
         hyp = r *^ hyp1 ^+^ g
         v' = omega *^ v ^+^ (hyp ^-^ x)
-        x' = x ^+^ v'
+        x' = (confine ops) $ x ^+^ v'
         fitn' = fitFn x'
       pure $ Particle
         { position = x'
@@ -172,4 +208,5 @@ testNewParticles = State.evalState (newParticles opsDouble 5 posFn (const 1)) s0
 
     posFn :: (RandomGen g, MonadState g m) => m Double
     posFn = State.state random
+
 
