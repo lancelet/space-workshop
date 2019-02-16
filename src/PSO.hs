@@ -27,6 +27,13 @@ data Params c
     , inertiaWeight       :: c
     }
 
+defaultParams :: (Floating c) => Params c
+defaultParams = Params
+  { cognitiveAccelCoeff = 0.5 + log 2.0
+  , socialAccelCoeff    = 0.5 + log 2.0
+  , inertiaWeight       = 1.0 / (2.0 * log 2.0)
+  }
+
 data Ops c v
   = Ops
     { zero      :: v
@@ -34,7 +41,8 @@ data Ops c v
     , addVec    :: v -> v -> v
     , subVec    :: v -> v -> v
     , radius    :: v -> c
-    , fromList  :: (Int, [c] -> v) }
+    , fromList  :: (Int, [c] -> v)
+    , toList    :: v -> [c] }
 
 opsDouble :: Ops Double Double
 opsDouble
@@ -44,7 +52,8 @@ opsDouble
     , addVec = \x y -> x + y
     , subVec = \x y -> x - y
     , radius = id
-    , fromList = doubleFromList }
+    , fromList = doubleFromList
+    , toList = \x -> [x] }
   where
     doubleFromList :: (Int, [Double] -> Double)
     doubleFromList = (1, f)
@@ -55,13 +64,12 @@ opsDouble
 
 step
   :: forall g m c v. (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
-  => Params c
-  -> Ops c v
-  -> (v -> c)
-  -> (Particle c v -> Particle c v)
-  -> [Particle c v]
-  -> m [Particle c v]
-step params ops fitFn confineFn particles = sequence $ fmap stepParticle particles
+  => Params c                        -- ^ SPO Parameters
+  -> Ops c v                         -- ^ Operations
+  -> (v -> c)                        -- ^ Fitness function
+  -> [Particle c v]                  -- ^ List of particles before the step
+  -> m [Particle c v]                -- ^ List of particles after the step
+step params ops fitFn particles = sequence $ fmap stepParticle particles
   where
     gbp :: Particle c v
     gbp = globalBestParticle particles
@@ -96,7 +104,7 @@ step params ops fitFn confineFn particles = sequence $ fmap stepParticle particl
         v' = omega *^ v ^+^ (hyp ^-^ x)
         x' = x ^+^ v'
         fitn' = fitFn x'
-      pure $ confineFn $ Particle
+      pure $ Particle
         { position = x'
         , velocity = v'
         , fitness = fitn'
