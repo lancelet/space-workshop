@@ -48,7 +48,7 @@ hyperSample
   :: (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
   => Ops c v
   -> m v
-hyperSample ops = fl <$> iterateWhile (\xs -> (radius xs) > 1.0) boxSample
+hyperSample ops = fl <$> iterateWhile (\xs -> (radius xs) < 1.0) boxSample
   where
     (n, fl) = fromList ops
     boxSample = forM [1..n] (const $ State.state random)
