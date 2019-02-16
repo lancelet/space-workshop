@@ -98,6 +98,33 @@ pso params ops randPos fitFn = do
   pure (bestPosition globalBest, bestFitness globalBest, n)
 
 
+psoAnim
+  :: forall g m c v. (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
+  => Params c
+  -> Ops c v
+  -> m v
+  -> Int
+  -> (v -> c)
+  -> m ([[Particle c v]])
+psoAnim params ops randPos nSteps fitFn = do
+  -- Init
+  particles <- newParticles ops (nParticles params) randPos fitFn
+  -- Run until we terminate
+  let
+    shouldTerminate :: ([[Particle c v]], Int) -> Bool
+    shouldTerminate (_, n) | n >= nSteps = True
+    shouldTerminate _ = False
+
+    action :: ([[Particle c v]], Int) -> m ([[Particle c v]], Int)
+    action (pps, n) = do
+      ps' <- step params ops fitFn (head pps)
+      pure (ps' : pps, n + 1)
+
+  steps :: ([[Particle c v]], Int) <- iterateUntilM shouldTerminate action ([particles], nSteps)
+
+  pure (reverse $ fst steps)
+
+
 step
   :: forall g m c v. (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
   => Params c                        -- ^ SPO Parameters
