@@ -24,6 +24,7 @@ dependencies:
 - Chart
 - Chart-diagrams
 - lens
+- monad-loops
 - mtl
 - random
 - vector

@@ -4,12 +4,12 @@ module PSO where
 -- http://clerc.maurice.free.fr/pso/SPSO_descriptions.pdf
 
 import Control.Monad (forM)
+import Control.Monad.Loops (iterateWhile)
 import           Control.Monad.State.Lazy (MonadState)
 import qualified Control.Monad.State.Lazy as State
 import           Data.List                (maximumBy)
-import qualified Data.List.NonEmpty       as NonEmpty
 import           Data.Ord                 (comparing)
-import           System.Random            (RandomGen, mkStdGen, random)
+import           System.Random            (RandomGen, mkStdGen, random, Random)
 
 data Particle c v
   = Particle
@@ -25,26 +25,34 @@ data Ops c v
   = Ops
     { zero      :: v
     , scalarMul :: c -> v -> v
-    , addVec    :: v -> v -> v }
+    , addVec    :: v -> v -> v
+    , fromList  :: (Int, [c] -> v) }
 
 opsDouble :: Ops Double Double
 opsDouble
   = Ops
     { zero = 0.0
     , scalarMul = \c x -> c * x
-    , addVec = \x y -> x + y }
+    , addVec = \x y -> x + y
+    , fromList = doubleFromList }
+  where
+    doubleFromList :: (Int, [Double] -> Double)
+    doubleFromList = (1, f)
+      where
+        f [x] = x
+        f _ = error "Can only produce a Double from a single-element list!"
 
 
-
-{-
-step
-  :: (Ord c, RandomGen g)
-  => Ops c v              -- ^ Operations
-  -> g                    -- ^ Initial random state
-  -> [Particle c v]       -- ^ Input list of particles
-  -> ([Particle c v], g)  -- ^ Updated particles and output random state
-step ops gen particles = undefined
--}
+-- | Pick a point strictly inside the unit hypersphere.
+hyperSample
+  :: (RandomGen g, MonadState g m, Floating c, Ord c, Random c)
+  => Ops c v
+  -> m v
+hyperSample ops = fl <$> iterateWhile (\xs -> (radius xs) > 1.0) boxSample
+  where
+    (n, fl) = fromList ops
+    boxSample = forM [1..n] (const $ State.state random)
+    radius xs = sqrt $ sum $ fmap (** 2) xs
 
 
 -- | Find the global best position of a list of particles.
@@ -77,14 +85,14 @@ newParticle
   -> (v -> c)          -- ^ Fitness function
   -> m (Particle c v)  -- ^ New particle
 newParticle ops posFn fitFn = do
-  position <- posFn
-  let fitness = fitFn position
+  p <- posFn
+  let fitn = fitFn p
   pure Particle
-    { position = position
+    { position = p
     , velocity = zero ops
-    , fitness = fitness
-    , bestPosition = position
-    , bestFitness = fitness
+    , fitness = fitn
+    , bestPosition = p
+    , bestFitness = fitn
     }
 
 
