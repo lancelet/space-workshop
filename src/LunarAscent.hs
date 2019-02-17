@@ -66,7 +66,7 @@ lmAscentStageFuelBurnMass = 2252.0  -- kg
 stateInit :: State
 stateInit
   = State
-    { mass = lmAscentStageDryMass + lmAscentStageFuelBurnMass + 200.0 -- extra 200kg?
+    { mass = lmAscentStageDryMass + lmAscentStageFuelBurnMass + 250.0 -- extra 250kg?
     , px = 0.0
     , py = lunarRadius * 1000.0 -- m
     , vx = 0.0
@@ -108,7 +108,7 @@ attitudeGuidance :: Double -> Double
 attitudeGuidance time | time < 10 = 0
                       -- | otherwise = (time - 8.6) * 7.0
                       | time < 16 = (time - 8.6) * 7.0
-                      | otherwise = 52.0 + (time - 16.0) * 0.096 {- 9.0E-2 -}
+                      | otherwise = 52.0 + (time - 16.0) * 0.0932 {- 9.0E-2 -}
 
 lmAscentStageThrust :: Double
 lmAscentStageThrust = 15600.0  -- N
