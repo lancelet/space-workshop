@@ -23,7 +23,11 @@ dependencies:
 - base >= 4.7 && < 5
 - Chart
 - Chart-diagrams
+- diagrams-core
+- diagrams-lib
+- diagrams-svg
 - lens
+- linear
 - vector
 - vector-sized
 
@@ -39,12 +43,18 @@ _ghc-options: &ghc-options
   - -Wincomplete-uni-patterns
   - -Wincomplete-record-updates
   - -Wmissing-import-lists
-  - -ddump-simpl
 
 executables:
   ode-examples:
     main:                Main.hs
     source-dirs:         app/ode-examples
+    ghc-options:         *ghc-options
+    dependencies:
+    - haskell-orbital-launch
+
+  lunar-ascent:
+    main:                Main.hs
+    source-dirs:         app/lunar-ascent
     ghc-options:         *ghc-options
     dependencies:
     - haskell-orbital-launch
