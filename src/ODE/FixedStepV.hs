@@ -1,9 +1,10 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 module ODE.FixedStepV where
 
-import Data.AffineSpace (AffineSpace, Diff, (.+^))
-import Data.VectorSpace (VectorSpace, Scalar, (*^))
+import           Data.AffineSpace (AffineSpace, Diff, (.+^))
+import           Data.VectorSpace (Scalar, VectorSpace, (*^))
+
 
 eulerStep
   :: ( AffineSpace as
