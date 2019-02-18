@@ -30,6 +30,7 @@ dependencies:
 - linear
 - vector
 - vector-sized
+- vector-space
 
 library:
   source-dirs: src
