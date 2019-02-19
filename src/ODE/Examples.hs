@@ -2,12 +2,12 @@
 
 module ODE.Examples where
 
-import qualified Graphics.Rendering.Chart.Easy as Chart
+import           Control.Lens                              ((.=))
+import qualified Data.List.NonEmpty                        as NonEmpty
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as ChartDiagrams
-import qualified Data.List.NonEmpty as NonEmpty
-import Control.Lens ((.=))
+import qualified Graphics.Rendering.Chart.Easy             as Chart
 
-import qualified ODE.FixedStep as FixedStep
+import qualified ODE.FixedStepV                            as FixedStep
 
 -------------------------------------------------------------------------------
 -- Simple Harmonic Oscillator
@@ -16,13 +16,13 @@ import qualified ODE.FixedStep as FixedStep
 
 data SHMParameters
   = SHMParameters
-    { mass :: Double
-    , kSpring :: Double 
+    { mass    :: Double
+    , kSpring :: Double
     }
 
 
-shm :: SHMParameters -> (Double, Double) -> (Double, Double)
-shm params (x, v) = (xdot, vdot)
+shm :: SHMParameters -> (Double, (Double, Double)) -> (Double, Double)
+shm params (_, (x, v)) = (xdot, vdot)
   where
     xdot = v
     vdot = -k * x / m
@@ -51,18 +51,16 @@ plotSHM = do
     params = SHMParameters { mass = 1.0, kSpring = 3.0 }
 
     analytic = fmap (shmAnalytic params) timesAnalytic
-    eulerI = FixedStep.integrate (FixedStep.eulerStep FixedStep.tuple2Ops)
-    rk4I = FixedStep.integrate (FixedStep.rk4Step FixedStep.tuple2Ops)
 
     euler :: [(Double, Double)]
     euler = fmap (\(t, (x, _)) -> (t, x))
       $ NonEmpty.toList
-      $ eulerI y0 (NonEmpty.fromList times) (const (shm params))
+      $ FixedStep.integrate FixedStep.eulerStep y0 (NonEmpty.fromList times) (shm params)
 
     rk4 :: [(Double, Double)]
     rk4 = fmap (\(t, (x, _)) -> (t, x))
       $ NonEmpty.toList
-      $ rk4I y0 (NonEmpty.fromList times) (const (shm params))
+      $ FixedStep.integrate FixedStep.rk4Step y0 (NonEmpty.fromList times) (shm params)
 
   ChartDiagrams.toFile Chart.def "ode_examples_shm.svg" $ do
     Chart.layout_title .= "Simple Harmonic Oscillator - Analytic vs Numerical"
