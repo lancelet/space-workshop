@@ -133,7 +133,7 @@ eom mdot thrust (time, state) =
     fG = fGMag *^ (normalize (-p))
 
     -- force due to thrust
-    dirP = (pi / 2.0) - atan2 (p ^. _x) (p ^. _y)
+    dirP = (pi / 2.0) - atan2 (p ^. _y) (p ^. _x)
     dir = dirP + ((attitudeGuidance time) * pi / 180.0)
     -- dir = (attitudeGuidance time) * pi / 180.0
     phi = (pi / 2.0) - dir
