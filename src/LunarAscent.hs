@@ -1,8 +1,13 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE TemplateHaskell #-}
 module LunarAscent where
 
+import           Control.Lens         ((^.), makeLenses)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty   as NonEmpty
 import           Diagrams.Backend.SVG (B)
@@ -12,9 +17,12 @@ import qualified Diagrams.Prelude     as D
 import           Linear               ((*^), (^+^))
 import           Linear.Metric        (norm, normalize)
 import           Linear.V2            (V2 (V2), _x, _y)
-import Control.Lens ((^.))
+import Data.AffineSpace (AffineSpace,(.+^), (.-.), Diff)
+import GHC.Generics (Generic)
+import Data.AdditiveGroup (AdditiveGroup)
+import Data.VectorSpace (VectorSpace)
 
-import qualified ODE.FixedStep        as ODE
+import qualified ODE.FixedStepV       as ODE
 
 {-
 Apollo parameters are taken from:
@@ -47,14 +55,44 @@ csmOrbit
   = D.circle ((8 * csmOrbitHeight) + lunarRadius)  -- additional scaling here
   # D.lc D.gray
 
+
+data DState
+  = DState
+    { _dmass :: !Double
+    , _dpx   :: !Double
+    , _dpy   :: !Double
+    , _dvx   :: !Double
+    , _dvy   :: !Double
+    } deriving (Generic, AdditiveGroup, VectorSpace, Show)
+makeLenses ''DState
+
 data State
   = State
-    { mass :: !Double
-    , px   :: !Double
-    , py   :: !Double
-    , vx   :: !Double
-    , vy   :: !Double
-    } deriving (Show)
+    { _mass :: !Double
+    , _px   :: !Double
+    , _py   :: !Double
+    , _vx   :: !Double
+    , _vy   :: !Double
+    } deriving (Generic, Show)
+makeLenses ''State
+
+instance AffineSpace State where
+  type Diff State = DState
+  s1 .-. s2 = DState
+              { _dmass = s1 ^. mass - s2 ^. mass
+              , _dpx   = s1 ^. px   - s2 ^. px
+              , _dpy   = s1 ^. py   - s2 ^. py
+              , _dvx   = s1 ^. vx   - s2 ^. vx
+              , _dvy   = s1 ^. vy   - s2 ^. vy
+              }
+  s .+^ ds = State
+             { _mass = s ^. mass + ds ^. dmass
+             , _px   = s ^. px   + ds ^. dpx
+             , _py   = s ^. py   + ds ^. dpy
+             , _vx   = s ^. vx   + ds ^. dvx
+             , _vy   = s ^. vy   + ds ^. dvy
+             }
+
 
 
 lmAscentStageDryMass :: Double
@@ -66,33 +104,11 @@ lmAscentStageFuelBurnMass = 2252.0  -- kg
 stateInit :: State
 stateInit
   = State
-    { mass = lmAscentStageDryMass + lmAscentStageFuelBurnMass + 250.0 -- extra 250kg?
-    , px = 0.0
-    , py = lunarRadius * 1000.0 -- m
-    , vx = 0.0
-    , vy = 0.0
-    }
-
-
-stateOps :: ODE.Ops State Double
-stateOps
-  = ODE.Ops
-    { ODE.scalarMul = \c state ->
-        State
-        { mass = c * mass state
-        , px = c * px state
-        , py = c * py state
-        , vx = c * vx state
-        , vy = c * vy state
-        }
-    , ODE.addVec = \s1 s2 ->
-        State
-        { mass = mass s1 + mass s2
-        , px = px s1 + px s2
-        , py = py s1 + py s2
-        , vx = vx s1 + vx s2
-        , vy = vy s1 + vy s2
-        }
+    { _mass = lmAscentStageDryMass + lmAscentStageFuelBurnMass + 250.0 -- extra 250kg?
+    , _px = 0.0
+    , _py = lunarRadius * 1000.0 -- m
+    , _vx = 0.0
+    , _vy = 0.0
     }
 
 
@@ -113,11 +129,11 @@ attitudeGuidance time | time < 10 = 0
 lmAscentStageThrust :: Double
 lmAscentStageThrust = 15600.0  -- N
 
-eom :: Double -> Double -> Double -> State -> State
-eom mdot thrust time state =
+eom :: Double -> Double -> (Double, State) -> DState
+eom mdot thrust (time, state) =
   let
-    p = V2 (px state) (py state)
-    m = mass state
+    p = V2 (state ^. px) (state ^. py)
+    m = state ^. mass
 
     -- radius of the vehicle
     r = norm p
@@ -127,7 +143,7 @@ eom mdot thrust time state =
     fG = fGMag *^ (normalize (-p))
 
     -- force due to thrust
-    dirP = (pi / 2.0) - atan2 (py state) (px state)
+    dirP = (pi / 2.0) - atan2 (state ^. py) (state ^. px)
     dir = dirP + ((attitudeGuidance time) * pi / 180.0)
     -- dir = (attitudeGuidance time) * pi / 180.0
     phi = (pi / 2.0) - dir
@@ -140,35 +156,34 @@ eom mdot thrust time state =
     a = (1.0 / m) *^ f
 
     -- mdot = - lmAscentStageFuelBurnMass / 438.0  -- kg / s
-    pxdot = vx state
-    pydot = vy state
-    vxdot = a ^. _x
-    vydot = a ^. _y
+    dpx' = state ^. vx
+    dpy' = state ^. vy 
+    dvx' = a ^. _x
+    dvy' = a ^. _y
   in
-    State
-    { mass = mdot
-    , px = pxdot
-    , py = pydot
-    , vx = vxdot
-    , vy = vydot
+    DState
+    { _dmass = mdot
+    , _dpx = dpx'
+    , _dpy = dpy'
+    , _dvx = dvx'
+    , _dvy = dvy'
     }
 
 
 ascent :: [(Double, State)]
 ascent =
   let
-    integrator = ODE.integrate (ODE.rk4Step stateOps)
     steps = 0.0 :| [1.0, 2.0 .. 438.0 ]
-    -- steps = 0.0 :| [ 1.0, 2.0 .. 60.0 ]
   in
-    NonEmpty.toList $ integrator stateInit steps
-                      (eom (-lmAscentStageFuelBurnMass / 438.0) lmAscentStageThrust)
+    NonEmpty.toList
+    $ ODE.integrate ODE.rk4Step stateInit steps
+      (eom (-lmAscentStageFuelBurnMass / 438.0) lmAscentStageThrust)
 
 
 orbit :: [(Double, State)]
 orbit =
   let
-    integrator = ODE.integrate (ODE.rk4Step stateOps)
+    integrator = ODE.integrate ODE.rk4Step
     steps = 438.0 :| [450.0, 500.0 .. 10000.0 ]
     state0 = snd . last $ ascent
   in
@@ -179,28 +194,28 @@ fancyOrbitScale :: (Double, Double) -> (Double, Double)
 fancyOrbitScale (x, y) = (x', y')
   where
     scale = 8.0
-    
+
     r = sqrt (x*x + y*y)
     theta = atan2 y x
 
     r' = scale * (r - lunarRadius) + lunarRadius
     x' = r' * cos theta
     y' = r' * sin theta
-  
+
 
 ascentDia :: Diagram B
 ascentDia =
   let
-    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (px s / 1000.0, py s / 1000.0)) ascent
+    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (s ^. px / 1000.0, s ^. py / 1000.0)) ascent
   in
     D.fromVertices pos
     # D.lc D.red
-  
+
 
 orbitDia :: Diagram B
 orbitDia =
   let
-    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (px s / 1000.0, py s / 1000.0)) orbit
+    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (s ^. px / 1000.0, s ^. py / 1000.0)) orbit
   in
     D.fromVertices pos
     # D.lc D.green
@@ -211,7 +226,7 @@ renderDiagram =
   let
     dia = D.frame 100.0 $ ascentDia <> orbitDia <> csmOrbit <> moon
     endBurn = snd . last $ ascent
-    pEndBurn = V2 (px endBurn) (py endBurn)
+    pEndBurn = V2 (endBurn ^. px) (endBurn ^. py)
     rEndBurn = norm pEndBurn
     altitudeEndBurn = rEndBurn - (lunarRadius * 1000.0)
   in do
