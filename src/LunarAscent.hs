@@ -20,7 +20,8 @@ import           Linear.V2            (V2 (V2), _x, _y)
 import Data.AffineSpace (AffineSpace,(.+^), (.-.), Diff)
 import GHC.Generics (Generic)
 import Data.AdditiveGroup (AdditiveGroup)
-import Data.VectorSpace (VectorSpace)
+import Data.VectorSpace (VectorSpace, (^/))
+import Data.VectorSpace.Free ()
 
 import qualified ODE.FixedStepV       as ODE
 
@@ -59,20 +60,16 @@ csmOrbit
 data DState
   = DState
     { _dmass :: !Double
-    , _dpx   :: !Double
-    , _dpy   :: !Double
-    , _dvx   :: !Double
-    , _dvy   :: !Double
+    , _dpos  :: !(V2 Double)
+    , _dvel  :: !(V2 Double)
     } deriving (Generic, AdditiveGroup, VectorSpace, Show)
 makeLenses ''DState
 
 data State
   = State
     { _mass :: !Double
-    , _px   :: !Double
-    , _py   :: !Double
-    , _vx   :: !Double
-    , _vy   :: !Double
+    , _pos  :: !(V2 Double)
+    , _vel  :: !(V2 Double)
     } deriving (Generic, Show)
 makeLenses ''State
 
@@ -80,19 +77,14 @@ instance AffineSpace State where
   type Diff State = DState
   s1 .-. s2 = DState
               { _dmass = s1 ^. mass - s2 ^. mass
-              , _dpx   = s1 ^. px   - s2 ^. px
-              , _dpy   = s1 ^. py   - s2 ^. py
-              , _dvx   = s1 ^. vx   - s2 ^. vx
-              , _dvy   = s1 ^. vy   - s2 ^. vy
+              , _dpos  = s1 ^. pos  - s2 ^. pos
+              , _dvel  = s1 ^. vel  - s2 ^. vel
               }
   s .+^ ds = State
              { _mass = s ^. mass + ds ^. dmass
-             , _px   = s ^. px   + ds ^. dpx
-             , _py   = s ^. py   + ds ^. dpy
-             , _vx   = s ^. vx   + ds ^. dvx
-             , _vy   = s ^. vy   + ds ^. dvy
+             , _pos  = s ^. pos  + ds ^. dpos
+             , _vel  = s ^. vel  + ds ^. dvel
              }
-
 
 
 lmAscentStageDryMass :: Double
@@ -105,10 +97,8 @@ stateInit :: State
 stateInit
   = State
     { _mass = lmAscentStageDryMass + lmAscentStageFuelBurnMass + 250.0 -- extra 250kg?
-    , _px = 0.0
-    , _py = lunarRadius * 1000.0 -- m
-    , _vx = 0.0
-    , _vy = 0.0
+    , _pos = V2 0 (lunarRadius * 1000)  -- m
+    , _vel = V2 0 0
     }
 
 
@@ -132,8 +122,8 @@ lmAscentStageThrust = 15600.0  -- N
 eom :: Double -> Double -> (Double, State) -> DState
 eom mdot thrust (time, state) =
   let
-    p = V2 (state ^. px) (state ^. py)
     m = state ^. mass
+    p = state ^. pos
 
     -- radius of the vehicle
     r = norm p
@@ -143,7 +133,7 @@ eom mdot thrust (time, state) =
     fG = fGMag *^ (normalize (-p))
 
     -- force due to thrust
-    dirP = (pi / 2.0) - atan2 (state ^. py) (state ^. px)
+    dirP = (pi / 2.0) - atan2 (p ^. _x) (p ^. _y)
     dir = dirP + ((attitudeGuidance time) * pi / 180.0)
     -- dir = (attitudeGuidance time) * pi / 180.0
     phi = (pi / 2.0) - dir
@@ -153,20 +143,13 @@ eom mdot thrust (time, state) =
     f = fG ^+^ fT
 
     -- acceleration
-    a = (1.0 / m) *^ f
+    a = f ^/ m
 
-    -- mdot = - lmAscentStageFuelBurnMass / 438.0  -- kg / s
-    dpx' = state ^. vx
-    dpy' = state ^. vy 
-    dvx' = a ^. _x
-    dvy' = a ^. _y
   in
     DState
     { _dmass = mdot
-    , _dpx = dpx'
-    , _dpy = dpy'
-    , _dvx = dvx'
-    , _dvy = dvy'
+    , _dpos  = state ^. vel
+    , _dvel  = a
     }
 
 
@@ -190,8 +173,8 @@ orbit =
     NonEmpty.toList $ integrator state0 steps (eom 0 0)
 
 
-fancyOrbitScale :: (Double, Double) -> (Double, Double)
-fancyOrbitScale (x, y) = (x', y')
+fancyOrbitScale :: V2 Double -> V2 Double
+fancyOrbitScale (V2 x y) = V2 x' y'
   where
     scale = 8.0
 
@@ -206,18 +189,18 @@ fancyOrbitScale (x, y) = (x', y')
 ascentDia :: Diagram B
 ascentDia =
   let
-    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (s ^. px / 1000.0, s ^. py / 1000.0)) ascent
+    pp = fmap (\(_, s) -> D.P . fancyOrbitScale $ s ^. pos ^/ 1000) ascent
   in
-    D.fromVertices pos
+    D.fromVertices pp
     # D.lc D.red
 
 
 orbitDia :: Diagram B
 orbitDia =
   let
-    pos = fmap (\(_, s) -> D.p2 . fancyOrbitScale $ (s ^. px / 1000.0, s ^. py / 1000.0)) orbit
+    pp = fmap (\(_, s) -> D.P . fancyOrbitScale $ s ^. pos ^/ 1000.0) orbit
   in
-    D.fromVertices pos
+    D.fromVertices pp
     # D.lc D.green
 
 
@@ -226,7 +209,7 @@ renderDiagram =
   let
     dia = D.frame 100.0 $ ascentDia <> orbitDia <> csmOrbit <> moon
     endBurn = snd . last $ ascent
-    pEndBurn = V2 (endBurn ^. px) (endBurn ^. py)
+    pEndBurn = endBurn ^. pos
     rEndBurn = norm pEndBurn
     altitudeEndBurn = rEndBurn - (lunarRadius * 1000.0)
   in do

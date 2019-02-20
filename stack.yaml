@@ -54,6 +54,10 @@ extra-deps:
 - Chart-1.9
 - Chart-diagrams-1.9
 - SVGFonts-1.6.0.3
+- github: lancelet/pragmatic-show
+  commit: 1fd39d6c17c5755cfd98cf15e9acf56ecf27a77f
+- github: lancelet/free-vector-spaces
+  commit: 1e8ee994ef66d31ed74303addd6433154f514236
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

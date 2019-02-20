@@ -26,6 +26,7 @@ dependencies:
 - diagrams-core
 - diagrams-lib
 - diagrams-svg
+- free-vector-spaces
 - lens
 - linear
 - vector
