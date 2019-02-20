@@ -1,29 +1,29 @@
+{-# LANGUAGE DeriveAnyClass            #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE StandaloneDeriving        #-}
+{-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE TemplateHaskell #-}
 module LunarAscent where
 
-import           Control.Lens         ((^.), makeLenses)
-import           Data.List.NonEmpty   (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty   as NonEmpty
-import           Diagrams.Backend.SVG (B)
-import qualified Diagrams.Backend.SVG as SVG
-import           Diagrams.Prelude     (Diagram, ( # ))
-import qualified Diagrams.Prelude     as D
-import           Linear               ((*^), (^+^))
-import           Linear.Metric        (norm, normalize)
-import           Linear.V2            (V2 (V2), _x, _y)
-import Data.AffineSpace (AffineSpace,(.+^), (.-.), Diff)
-import GHC.Generics (Generic)
-import Data.AdditiveGroup (AdditiveGroup)
-import Data.VectorSpace (VectorSpace, (^/))
-import Data.VectorSpace.Free ()
+import           Control.Lens          (makeLenses, (^.))
+import           Data.AdditiveGroup    (AdditiveGroup)
+import           Data.AffineSpace      (AffineSpace, Diff, (.+^), (.-.))
+import           Data.List.NonEmpty    (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty    as NonEmpty
+import           Data.VectorSpace      (VectorSpace, (^/))
+import           Data.VectorSpace.Free ()
+import           Diagrams.Backend.SVG  (B)
+import qualified Diagrams.Backend.SVG  as SVG
+import           Diagrams.Prelude      (Diagram, ( # ))
+import qualified Diagrams.Prelude      as D
+import           GHC.Generics          (Generic)
+import           Linear                ((*^), (^+^))
+import           Linear.Metric         (norm, normalize)
+import           Linear.V2             (V2 (V2), _x, _y)
 
-import qualified ODE.FixedStepV       as ODE
+import qualified ODE.FixedStepV        as ODE
 
 {-
 Apollo parameters are taken from:
@@ -135,7 +135,6 @@ eom mdot thrust (time, state) =
     -- force due to thrust
     dirP = (pi / 2.0) - atan2 (p ^. _y) (p ^. _x)
     dir = dirP + ((attitudeGuidance time) * pi / 180.0)
-    -- dir = (attitudeGuidance time) * pi / 180.0
     phi = (pi / 2.0) - dir
     fT = thrust *^ V2 (cos phi) (sin phi)
 
