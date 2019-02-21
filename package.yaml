@@ -29,6 +29,7 @@ dependencies:
 - free-vector-spaces
 - lens
 - linear
+- OpenGL
 - sdl2
 - sdl2-gfx
 - sdl2-ttf

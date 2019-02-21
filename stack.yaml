@@ -53,6 +53,7 @@ extra-deps:
 - vector-sized-1.2.0.0
 - Chart-1.9
 - Chart-diagrams-1.9
+# - sdl2-2.4.1.0
 - SVGFonts-1.6.0.3
 - github: lancelet/pragmatic-show
   commit: 1fd39d6c17c5755cfd98cf15e9acf56ecf27a77f
