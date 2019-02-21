@@ -29,6 +29,9 @@ dependencies:
 - free-vector-spaces
 - lens
 - linear
+- sdl2
+- sdl2-gfx
+- sdl2-ttf
 - vector-space
 
 library:
@@ -55,6 +58,13 @@ executables:
   lunar-ascent:
     main:                Main.hs
     source-dirs:         app/lunar-ascent
+    ghc-options:         *ghc-options
+    dependencies:
+    - haskell-orbital-launch
+
+  clearcoat-test:
+    main:                Main.hs
+    source-dirs:         app/clearcoat-test
     ghc-options:         *ghc-options
     dependencies:
     - haskell-orbital-launch
