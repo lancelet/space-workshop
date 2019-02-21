@@ -23,7 +23,7 @@ import           Linear                ((*^), (^+^))
 import           Linear.Metric         (norm, normalize)
 import           Linear.V2             (V2 (V2), _x, _y)
 
-import qualified ODE.FixedStepV        as ODE
+import qualified ODE.FixedStep         as ODE
 
 {-
 Apollo parameters are taken from:

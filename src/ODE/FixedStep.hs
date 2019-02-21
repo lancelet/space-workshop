@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
-module ODE.FixedStepV where
+module ODE.FixedStep where
 
 import           Data.AffineSpace   (AffineSpace, Diff, (.+^))
 import           Data.List.NonEmpty (NonEmpty)

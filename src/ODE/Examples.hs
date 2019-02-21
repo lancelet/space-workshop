@@ -7,7 +7,7 @@ import qualified Data.List.NonEmpty                        as NonEmpty
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as ChartDiagrams
 import qualified Graphics.Rendering.Chart.Easy             as Chart
 
-import qualified ODE.FixedStepV                            as FixedStep
+import qualified ODE.FixedStep                             as FixedStep
 
 -------------------------------------------------------------------------------
 -- Simple Harmonic Oscillator
