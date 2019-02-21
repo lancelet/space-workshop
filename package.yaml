@@ -29,8 +29,6 @@ dependencies:
 - free-vector-spaces
 - lens
 - linear
-- vector
-- vector-sized
 - vector-space
 
 library:
