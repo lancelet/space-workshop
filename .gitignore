@@ -1,5 +1,6 @@
 .stack-work/
-launch-workshop.cabal
+*.cabal
+.DS_Store
 *~
 *.aux
 *.bbl
@@ -10,3 +11,6 @@ launch-workshop.cabal
 *.out
 *.pdf
 *.toc
+*.png
+*.svg
+*.gif
