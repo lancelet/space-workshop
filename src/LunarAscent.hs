@@ -130,11 +130,11 @@ eom mdot thrust (time, state) =
 
     -- force due to gravity
     fGMag = gravitationalConstant * lunarMass * m / (r*r)
-    fG = fGMag *^ (normalize (-p))
+    fG = fGMag *^ normalize (-p)
 
     -- force due to thrust
     dirP = (pi / 2.0) - atan2 (p ^. _y) (p ^. _x)
-    dir = dirP + ((attitudeGuidance time) * pi / 180.0)
+    dir = dirP + (attitudeGuidance time * pi / 180.0)
     phi = (pi / 2.0) - dir
     fT = thrust *^ V2 (cos phi) (sin phi)
 
