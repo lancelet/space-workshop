@@ -1,12 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ClearCoat.Test where
 
-import           Control.Monad             (unless)
-import           Data.Map.Strict           (Map)
-import           Data.Text                 (Text)
-import qualified Graphics.Rendering.OpenGL as GL
-import           Linear                    (V2 (V2))
-import           SDL                       (($=))
+import qualified Control.Concurrent.STM.TBQueue as TBQueue
+import           Control.Monad                  (mapM_)
+import qualified Control.Monad.STM              as STM
+import qualified Data.IORef                     as IORef
+import           Data.Maybe                     (mapMaybe)
+import qualified Graphics.Rendering.OpenGL      as GL
+import           Linear                         (V2 (V2))
+import           SDL                            (($=))
 import qualified SDL
 
 test :: IO ()
@@ -27,38 +29,99 @@ test = do
   SDL.showWindow window
   _ <- SDL.glCreateContext window
 
+  let app = testWidget
+  appState <- IORef.newIORef (initState app)  -- TODO: proper statee
+  eventQueue <- STM.atomically $ TBQueue.newTBQueue 100
+
+
+  -- TODO: a lot of the event processing could be done purely
+  
+  let queueSDLEvents = do
+        sdlEvents <- SDL.pollEvents
+        let appEvents = mapMaybe translateSDLEvent sdlEvents
+        mapM_ (STM.atomically . (TBQueue.writeTBQueue eventQueue)) appEvents
+
+  let processEvents = do
+        hasEvent <- STM.atomically $ TBQueue.isEmptyTBQueue eventQueue
+        if hasEvent
+          then do
+            state <- IORef.readIORef appState
+            event <- STM.atomically $ TBQueue.readTBQueue eventQueue
+            case (handleEvent app) state event of
+              NextQuit -> pure EventLoopQuit
+              NextContinue (state', newEvents) -> do
+                mapM_ (STM.atomically . (TBQueue.writeTBQueue eventQueue)) newEvents
+                IORef.writeIORef appState state'
+                processEvents
+          else
+            pure EventLoopContinue
+
+
   let loop = do
-        events <- SDL.pollEvents
-        let quit = elem SDL.QuitEvent $ map SDL.eventPayload events
-
         GL.clear [GL.ColorBuffer]
-        SDL.glSwapWindow window
+        queueSDLEvents
+        status <- processEvents
+        case status of
+          EventLoopQuit -> pure ()
+          EventLoopContinue -> do
+            SDL.glSwapWindow window
+            loop
 
-        unless quit loop
+
   loop
 
   SDL.destroyWindow window
   SDL.quit
 
 
--- | Something like App from Brick
-data App s e
-  = App
-    { draw        :: s -> DrawInfo -> Picture
-    , handleEvent :: s -> Event e -> Maybe (s, [Event e])
-    , styleMap    :: s -> StyleMap
+testWidget :: Widget () ()
+testWidget
+  = Widget
+    { draw = const testDraw
+    , handleEvent = const testHandleEvent
+    , initState = ()
     }
+
+
+testDraw :: DrawInfo -> Picture
+testDraw info = Rectangle (bounds info)
+
+
+testHandleEvent :: Event e -> Next ((), [Event e])
+testHandleEvent EventQuit = NextQuit
+testHandleEvent _         = NextContinue ((), [])
+
+
+translateSDLEvent :: SDL.Event -> Maybe (Event e)
+translateSDLEvent (SDL.Event _ SDL.QuitEvent) = Just EventQuit
+translateSDLEvent _                           = Nothing
+
+-- | Something like App from Brick
+data Widget s e
+  = Widget
+    { draw        :: s -> DrawInfo -> Picture
+    , handleEvent :: s -> Event e -> Next (s, [Event e])
+    , initState   :: s
+    }
+
+
+data EventLoopState
+  = EventLoopQuit
+  | EventLoopContinue
+
+
+data Next a
+  = NextQuit
+  | NextContinue a
+
+
+data EventState = EventState
+
 
 data DrawInfo
   = DrawInfo
     { bounds :: !Rect
     } deriving (Show)
-
-data StyleName = StyleName [Text]
-
-data Attr = Attr
-
-newtype StyleMap = StyleMap (Map StyleName Attr)
 
 
 data Rect
@@ -75,4 +138,5 @@ data Picture
 
 
 data Event e
-  = CustomEvent e
+  = EventCustom e
+  | EventQuit

@@ -30,10 +30,12 @@ dependencies:
 - free-vector-spaces
 - lens
 - linear
+- mtl
 - OpenGL
 - sdl2
 - sdl2-gfx
 - sdl2-ttf
+- stm
 - text
 - vector-space
 
