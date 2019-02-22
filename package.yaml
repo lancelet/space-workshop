@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - Chart
 - Chart-diagrams
+- containers
 - diagrams-core
 - diagrams-lib
 - diagrams-svg
@@ -33,6 +34,7 @@ dependencies:
 - sdl2
 - sdl2-gfx
 - sdl2-ttf
+- text
 - vector-space
 
 library:

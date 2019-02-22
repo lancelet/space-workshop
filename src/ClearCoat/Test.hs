@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ClearCoat.Test where
 
-import Control.Monad (unless)
-import SDL(($=))
-import Linear (V2(V2))
-import qualified SDL
+import           Control.Monad             (unless)
+import           Data.Map.Strict           (Map)
+import           Data.Text                 (Text)
 import qualified Graphics.Rendering.OpenGL as GL
+import           Linear                    (V2 (V2))
+import           SDL                       (($=))
+import qualified SDL
 
 test :: IO ()
 test = do
@@ -37,3 +39,40 @@ test = do
 
   SDL.destroyWindow window
   SDL.quit
+
+
+-- | Something like App from Brick
+data App s e
+  = App
+    { draw        :: s -> DrawInfo -> Picture
+    , handleEvent :: s -> Event e -> Maybe (s, [Event e])
+    , styleMap    :: s -> StyleMap
+    }
+
+data DrawInfo
+  = DrawInfo
+    { bounds :: !Rect
+    } deriving (Show)
+
+data StyleName = StyleName [Text]
+
+data Attr = Attr
+
+newtype StyleMap = StyleMap (Map StyleName Attr)
+
+
+data Rect
+  = Rect
+    { x      :: !Float
+    , y      :: !Float
+    , width  :: !Float
+    , height :: !Float
+    } deriving (Eq, Show)
+
+
+data Picture
+  = Rectangle Rect
+
+
+data Event e
+  = CustomEvent e
