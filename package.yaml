@@ -21,8 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
 - Chart
 - Chart-diagrams
+- colour
 - containers
 - diagrams-core
 - diagrams-lib
@@ -37,6 +39,7 @@ dependencies:
 - sdl2-ttf
 - stm
 - text
+- vector
 - vector-space
 
 library:

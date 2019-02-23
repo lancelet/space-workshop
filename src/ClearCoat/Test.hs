@@ -1,15 +1,24 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module ClearCoat.Test where
 
 import qualified Control.Concurrent.STM.TBQueue as TBQueue
-import           Control.Monad                  (mapM_)
+import           Control.Lens                   ((^.))
+import           Control.Monad                  (mapM_, unless)
 import qualified Control.Monad.STM              as STM
+import qualified Data.ByteString                as BS
+import           Data.Colour                    (Colour)
+import qualified Data.Colour.Names              as Colour.Names
 import qualified Data.IORef                     as IORef
 import           Data.Maybe                     (mapMaybe)
+import qualified Data.Vector.Storable           as V
+import           Foreign.C.Types                (CInt)
 import qualified Graphics.Rendering.OpenGL      as GL
-import           Linear                         (V2 (V2))
+import           Linear                         (V2 (V2), _x, _y)
 import           SDL                            (($=))
 import qualified SDL
+import           System.Exit                    (exitFailure)
+import qualified System.IO                      as SysIO
 
 test :: IO ()
 test = do
@@ -29,21 +38,25 @@ test = do
   SDL.showWindow window
   _ <- SDL.glCreateContext window
 
+
+  -- Compile shaders and stuff
+  shaders <- initPrograms
+
   let app = testWidget
   appState <- IORef.newIORef (initState app)  -- TODO: proper statee
   eventQueue <- STM.atomically $ TBQueue.newTBQueue 100
 
 
   -- TODO: a lot of the event processing could be done purely
-  
+
   let queueSDLEvents = do
         sdlEvents <- SDL.pollEvents
         let appEvents = mapMaybe translateSDLEvent sdlEvents
         mapM_ (STM.atomically . (TBQueue.writeTBQueue eventQueue)) appEvents
 
   let processEvents = do
-        hasEvent <- STM.atomically $ TBQueue.isEmptyTBQueue eventQueue
-        if hasEvent
+        noEvents <- STM.atomically $ TBQueue.isEmptyTBQueue eventQueue
+        if (not noEvents)
           then do
             state <- IORef.readIORef appState
             event <- STM.atomically $ TBQueue.readTBQueue eventQueue
@@ -58,12 +71,25 @@ test = do
 
 
   let loop = do
-        GL.clear [GL.ColorBuffer]
         queueSDLEvents
         status <- processEvents
         case status of
           EventLoopQuit -> pure ()
           EventLoopContinue -> do
+            state <- IORef.readIORef appState
+            -- wsz :: V2 CInt <- SDL.get $ SDL.windowSize window
+            wsz :: V2 CInt <- SDL.glGetDrawableSize window
+            putStrLn $ "wsz = " ++ show wsz
+            let drawInfo = DrawInfo (Rect 0 0 (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)))
+            GL.scissor $= Nothing
+            GL.clearColor $= GL.Color4 0 0 0 0
+            GL.clear [GL.ColorBuffer]
+            GL.viewport $= (GL.Position 0 0, GL.Size (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)))
+            GL.matrixMode $= GL.Projection
+            GL.loadIdentity
+            GL.ortho 0 (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)) 0 (-1) 1
+            GL.matrixMode $= GL.Modelview 0
+            epoxyDraw shaders ((draw app) state drawInfo)
             SDL.glSwapWindow window
             loop
 
@@ -84,7 +110,10 @@ testWidget
 
 
 testDraw :: DrawInfo -> Picture
-testDraw info = Rectangle (bounds info)
+testDraw info
+  = Rectangle fill NoStroke (bounds info)
+  where
+    fill = FillConstant (Colour.Names.blue)
 
 
 testHandleEvent :: Event e -> Next ((), [Event e])
@@ -134,9 +163,138 @@ data Rect
 
 
 data Picture
-  = Rectangle Rect
+  = Rectangle !Fill !Stroke !Rect
+
+
+data Fill
+  = NoFill
+  | FillConstant !(Colour Double)
+
+
+data Stroke
+  = NoStroke
 
 
 data Event e
   = EventCustom e
   | EventQuit
+
+
+epoxyDraw :: Shaders -> Picture -> IO ()
+epoxyDraw shaders picture = do
+  case picture of
+    Rectangle fill stroke rect -> epoxyDrawRectangle shaders fill stroke rect
+
+
+epoxyDrawRectangle :: Shaders -> Fill -> Stroke -> Rect -> IO ()
+epoxyDrawRectangle shaders fill _ rect = do
+  GL.currentProgram $= Just (progConstant . programs $ shaders)
+  GL.vertexAttribArray (attribCoord2d . attribTable $ shaders) $= GL.Enabled
+  let
+    Rect rx ry rw rh = rect
+    verts :: V.Vector Float
+    verts = V.fromList
+      [    rx,    ry
+      ,    rx, ry+rh
+      , rx+rw, ry+rh
+      , rx+rw,    ry
+      ,    rx,    ry
+      , rx+rw, ry+rh
+      ]
+    color :: GL.Color4 Float
+    color = case fill of
+      NoFill         -> GL.Color4 0 0 1 1
+      FillConstant _ -> GL.Color4 0 1 0 1
+  putStrLn $ "verts = " ++ show verts
+
+
+  V.unsafeWith verts $ \ptr ->
+    GL.vertexAttribPointer (attribCoord2d . attribTable $ shaders)
+      $= (GL.ToFloat, GL.VertexArrayDescriptor 2 GL.Float 0 ptr)
+  colorUniform <- GL.uniformLocation (progConstant . programs $ shaders) "surface_color"
+  GL.uniform colorUniform $= color
+  GL.drawArrays GL.Triangles 0 6
+  GL.vertexAttribArray (attribCoord2d . attribTable $ shaders) $= GL.Disabled
+
+
+data Shaders
+  = Shaders
+    { programs    :: Programs
+    , attribTable :: AttribTable
+    }
+
+data Programs
+  = Programs
+    { progConstant :: GL.Program
+    }
+
+data AttribTable
+  = AttribTable
+    { attribCoord2d :: GL.AttribLocation }
+
+
+initPrograms :: IO Shaders
+initPrograms = do
+
+  -- compile vertex shader
+  vertexShader <- GL.createShader GL.VertexShader
+  GL.shaderSourceBS vertexShader $= vertexShaderSrc
+  GL.compileShader vertexShader
+  vsOK <- GL.get $ GL.compileStatus vertexShader
+  unless vsOK $ do
+    SysIO.hPutStrLn SysIO.stderr "Error in vertex shader"
+    exitFailure
+
+  -- compile fragment shader
+  fragShader <- GL.createShader GL.FragmentShader
+  GL.shaderSourceBS fragShader $= constantFragShaderSrc
+  GL.compileShader fragShader
+  fsOK <- GL.get $ GL.compileStatus fragShader
+  unless fsOK $ do
+    SysIO.hPutStrLn SysIO.stderr "Error in fragment shader"
+
+  -- create a program
+  program <- GL.createProgram
+  GL.attachShader program vertexShader
+  GL.attachShader program fragShader
+  GL.attribLocation program "coord2d" $= GL.AttribLocation 0
+  GL.linkProgram program
+  linkOK <- GL.get $ GL.linkStatus program
+  GL.validateProgram program
+  status <- GL.get $ GL.validateStatus program
+  unless (linkOK && status) $ do
+    SysIO.hPutStrLn SysIO.stderr "GL.linkProgram error"
+    plog <- GL.get $ GL.programInfoLog program
+    putStrLn plog
+    exitFailure
+
+  return
+    Shaders
+    { programs =
+        Programs
+        { progConstant = program }
+    , attribTable =
+        AttribTable
+        { attribCoord2d = GL.AttribLocation 0 }
+    }
+
+
+vertexShaderSrc :: BS.ByteString
+vertexShaderSrc = BS.intercalate "\n"
+  [ "attribute vec2 coord2d;"
+  , ""
+  , "void main(void) {"
+  , "  gl_Position = gl_ModelViewProjectionMatrix * vec4(coord2d, 0.0, 1.0);"
+  , "}"
+  ]
+
+
+constantFragShaderSrc :: BS.ByteString
+constantFragShaderSrc = BS.intercalate "\n"
+  [ "uniform vec4 surface_color;"
+  , ""
+  , "void main(void) {"
+  -- , "  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"
+  , "  gl_FragColor = surface_color;"
+  , "}"
+  ]
