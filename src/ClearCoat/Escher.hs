@@ -4,7 +4,16 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module ClearCoat.Escher where
+module ClearCoat.Escher
+  ( -- * Types
+    Tri(Tri)
+  , TriMesh(TriMesh)
+  , Path(Path)
+  , PathWidth(PathWidth)
+  , MitreLimit(MitreLimit)
+    -- * Functions
+  , strokePathMitre
+  ) where
 
 import           Control.Lens  ((^.))
 import qualified Data.Foldable as Foldable
@@ -90,7 +99,7 @@ strokePathMitre (MitreLimit m) (PathWidth w) (Path vsf) =
             ( n12^._y * n23^._x / n12^._x - n23^._y)
         q3 = q4 ^+^ (t *^ n12)
       in
-        -- handle the mitering case
+        -- handle the mitre limit case
         if t <= m
         then
           TriMesh
@@ -109,4 +118,3 @@ strokePathMitre (MitreLimit m) (PathWidth w) (Path vsf) =
             ]
   in
     strokeSegmentPairs (Foldable.toList vsf)
-
