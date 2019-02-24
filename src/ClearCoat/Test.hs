@@ -2,11 +2,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module ClearCoat.Test where
 
+import qualified ClearCoat.Jelly                as Jelly
+import qualified ClearCoat.Types                as CCT
 import qualified Control.Concurrent.STM.TBQueue as TBQueue
 import           Control.Lens                   ((^.))
 import           Control.Monad                  (mapM_, unless)
 import qualified Control.Monad.STM              as STM
 import qualified Data.ByteString                as BS
+import qualified Data.Colour as Colour
 import           Data.Colour                    (Colour)
 import qualified Data.Colour.Names              as Colour.Names
 import qualified Data.IORef                     as IORef
@@ -14,7 +17,7 @@ import           Data.Maybe                     (mapMaybe)
 import qualified Data.Vector.Storable           as V
 import           Foreign.C.Types                (CInt)
 import qualified Graphics.Rendering.OpenGL      as GL
-import           Linear                         (V2 (V2), _x, _y)
+import           Linear                         (V2 (V2), _x, _y, V3 (V3), M23)
 import           SDL                            (($=))
 import qualified SDL
 import           System.Exit                    (exitFailure)
@@ -32,7 +35,8 @@ test = do
               SDL.defaultWindow
               { SDL.windowInitialSize = V2 800 600
               , SDL.windowHighDPI = True
-              , SDL.windowOpenGL = Just SDL.defaultOpenGL
+              , SDL.windowOpenGL = Just $ SDL.defaultOpenGL
+                  { SDL.glProfile = SDL.Core SDL.Normal 4 1 }
               , SDL.windowResizable = True
               }
   SDL.showWindow window
@@ -40,12 +44,16 @@ test = do
 
 
   -- Compile shaders and stuff
-  shaders <- initPrograms
+  -- shaders <- initPrograms
 
   let app = testWidget
   appState <- IORef.newIORef (initState app)  -- TODO: proper statee
   eventQueue <- STM.atomically $ TBQueue.newTBQueue 100
 
+  maybeJellyGLResources <- Jelly.initJellyGLResources
+  jellyGLResources <- case maybeJellyGLResources of
+    Just z -> pure z
+    Nothing -> exitFailure
 
   -- TODO: a lot of the event processing could be done purely
 
@@ -81,6 +89,7 @@ test = do
             wsz :: V2 CInt <- SDL.glGetDrawableSize window
             putStrLn $ "wsz = " ++ show wsz
             let drawInfo = DrawInfo (Rect 0 0 (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)))
+            {-
             GL.scissor $= Nothing
             GL.clearColor $= GL.Color4 0 0 0 0
             GL.clear [GL.ColorBuffer]
@@ -90,6 +99,26 @@ test = do
             GL.ortho 0 (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)) 0 (-1) 1
             GL.matrixMode $= GL.Modelview 0
             epoxyDraw shaders ((draw app) state drawInfo)
+            -}
+            GL.clearColor $= GL.Color4 0 0 0 0
+            GL.clear [GL.ColorBuffer]
+            GL.viewport $= (GL.Position 0 0, GL.Size (fromIntegral (wsz^._x)) (fromIntegral (wsz^._y)))
+            
+
+            -- temporary extra drawing
+            Jelly.drawPath
+              jellyGLResources
+              (V2 (V3 (1.0/400.0)          0  (-1))
+                  (V3          0  (-1.0/300.0)  1))
+              (Colour.withOpacity Colour.Names.blue (1 :: Double))
+              (CCT.MitreLimit 50)
+              (CCT.PathWidth 20)
+              (CCT.Path
+               [ V2 (100.0 :: Double) 100.0
+               , V2 500.0 500.0
+               ])
+              
+  
             SDL.glSwapWindow window
             loop
 
@@ -243,6 +272,8 @@ initPrograms = do
   vsOK <- GL.get $ GL.compileStatus vertexShader
   unless vsOK $ do
     SysIO.hPutStrLn SysIO.stderr "Error in vertex shader"
+    slog <- GL.get $ GL.shaderInfoLog vertexShader
+    putStrLn slog
     exitFailure
 
   -- compile fragment shader
@@ -251,7 +282,9 @@ initPrograms = do
   GL.compileShader fragShader
   fsOK <- GL.get $ GL.compileStatus fragShader
   unless fsOK $ do
+    slog <- GL.get $ GL.shaderInfoLog fragShader
     SysIO.hPutStrLn SysIO.stderr "Error in fragment shader"
+    putStrLn slog
 
   -- create a program
   program <- GL.createProgram
@@ -260,9 +293,9 @@ initPrograms = do
   GL.attribLocation program "coord2d" $= GL.AttribLocation 0
   GL.linkProgram program
   linkOK <- GL.get $ GL.linkStatus program
-  GL.validateProgram program
-  status <- GL.get $ GL.validateStatus program
-  unless (linkOK && status) $ do
+  -- GL.validateProgram program
+  -- status <- GL.get $ GL.validateStatus program
+  unless (linkOK {- && status -}) $ do
     SysIO.hPutStrLn SysIO.stderr "GL.linkProgram error"
     plog <- GL.get $ GL.programInfoLog program
     putStrLn plog
@@ -281,20 +314,28 @@ initPrograms = do
 
 vertexShaderSrc :: BS.ByteString
 vertexShaderSrc = BS.intercalate "\n"
-  [ "attribute vec2 coord2d;"
+  [ "#version 410 core"
+  , ""
+  , "layout (location = 0) in vec2 coord2d;"
+  , ""
+  , "uniform mat4 xform;"    -- 2D transformation
   , ""
   , "void main(void) {"
-  , "  gl_Position = gl_ModelViewProjectionMatrix * vec4(coord2d, 0.0, 1.0);"
+  , "  vec3 xy = xform * vec3(coord2d.x, coord2d.y, 1);"
+  , "  gl_Position = vec4(xy.x / xy.z, xy.y / xy.z);"
   , "}"
   ]
 
 
 constantFragShaderSrc :: BS.ByteString
 constantFragShaderSrc = BS.intercalate "\n"
-  [ "uniform vec4 surface_color;"
+  [ "#version 410 core"
+  , ""
+  , "uniform vec4 surface_color;"
+  , "out vec4 FragColor;"
   , ""
   , "void main(void) {"
   -- , "  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"
-  , "  gl_FragColor = surface_color;"
+  , "  FragColor = surface_color;"
   , "}"
   ]

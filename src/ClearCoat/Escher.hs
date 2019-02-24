@@ -1,8 +1,6 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE QuantifiedConstraints      #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 
 module ClearCoat.Escher
   ( -- * Types
@@ -20,6 +18,10 @@ import qualified Data.Foldable as Foldable
 import           Linear        (V2, (*^), (^+^), (^-^), _x, _y)
 import qualified Linear        as Linear
 
+import           ClearCoat.Types ( Path(Path)
+                                 , PathWidth(PathWidth)
+                                 , MitreLimit(MitreLimit))
+
 data Tri a
   = Tri {-# UNPACK #-} !(V2 a)
         {-# UNPACK #-} !(V2 a)
@@ -32,22 +34,15 @@ newtype TriMesh t a
 instance (forall q. Semigroup (t q)) => Semigroup (TriMesh t a) where
   (TriMesh x) <> (TriMesh y) = TriMesh (x <> y)
 
-newtype Path t a
-  = Path (t (V2 a))
-
-newtype PathWidth a = PathWidth a
-
-newtype MitreLimit a = MitreLimit a
-
-
+-- | Stroke a path with a mitre limit.
 strokePathMitre
   :: forall t a.
      ( Foldable t
      , RealFloat a, Linear.Epsilon a )
-  => MitreLimit a
-  -> PathWidth a
-  -> Path t a
-  -> TriMesh [] a
+  => MitreLimit a  -- ^ Mitre limit.
+  -> PathWidth a   -- ^ Width of the path.
+  -> Path t a      -- ^ Incoming path (must have at least 2 points).
+  -> TriMesh [] a  -- ^ Triangular mesh.
 strokePathMitre (MitreLimit m) (PathWidth w) (Path vsf) =
   let
     strokeSegmentPairs :: [V2 a] -> TriMesh [] a

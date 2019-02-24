@@ -49,6 +49,7 @@ packages:
 # - cairo-0.13.6.0
 # - gtk2hs-buildtools-0.13.5.0
 extra-deps:
+- derive-storable-0.1.2.0
 - diagrams-postscript-1.4.1
 - github: lancelet/pragmatic-show
   commit: a76a40b013c6f98f281bd3fae3a5e5f1b99ef007
