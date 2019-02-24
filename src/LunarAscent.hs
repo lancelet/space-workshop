@@ -112,7 +112,6 @@ lunarMass = 7.342E22  -- kg
 
 attitudeGuidance :: Double -> Double
 attitudeGuidance time | time < 10 = 0
-                      -- | otherwise = (time - 8.6) * 7.0
                       | time < 16 = (time - 8.6) * 7.0
                       | otherwise = 52.0 + (time - 16.0) * 0.0932 {- 9.0E-2 -}
 
