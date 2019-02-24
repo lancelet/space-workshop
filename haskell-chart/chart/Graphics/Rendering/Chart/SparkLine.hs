@@ -1,0 +1,169 @@
+---------------------------------------------------------------
+-- |
+-- Module      : Graphics.Rendering.Chart.Sparkline
+-- Copyright   : (c) Hitesh Jasani, 2008, Malcolm Wallace 2011, Tim Docker 2014
+-- License     : BSD3
+--
+-- Sparklines are mini graphs inspired by Edward Tufte; see
+-- <http://www.edwardtufte.com/bboard/q-and-a-fetch-msg?msg_id=0001OR>
+-- and
+-- <http://en.wikipedia.org/wiki/Sparkline> for more information.
+--
+-- The original implementation (by Hitesh Jasani) used the gd
+-- package as a backend renderer, and is still available at
+-- <http://hackage.haskell.org/package/hsparklines>.
+--
+-- The present version integrates with
+-- the Chart package, in the sense that Sparklines are just another
+-- kind of (@ToRenderable a => a@), so they can be composed into grids
+-- and used with the rest of Chart.
+--
+-- > dp :: [Double]
+-- > dp = [24,21,32.3,24,15,34,43,55,57,72,74,75,73,72,55,44]
+-- >
+-- > sl = SparkLine barSpark dp
+-- > fopts = FileOptions (sparkSize sl) PNG
+-- > renderableToFile fopts (sparkLineToRenderable sl) "bar_spark.png" 
+-- >
+---------------------------------------------------------------
+
+module Graphics.Rendering.Chart.SparkLine
+  ( -- * SparkLine type
+    SparkLine(..)
+    -- * Drawing options
+  , SparkOptions(..)
+  , smoothSpark
+  , barSpark
+    -- * Size calculation
+  , sparkSize
+    -- * Rendering function
+  , renderSparkLine
+  , sparkLineToRenderable
+  , sparkWidth
+  ) where
+
+import Control.Monad
+import Data.List
+import Data.Ord
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Renderable
+import Data.Colour
+import Data.Colour.Names
+
+-- | A sparkline is a single sequence of data values, treated as y-values.
+--   The x-values are anonymous and implicit in the sequence.
+data SparkLine = SparkLine { sl_options :: SparkOptions
+                           , sl_data    :: [Double]
+                           }
+
+-- | Options to render the sparklines in different ways.
+data SparkOptions = SparkOptions
+  { so_smooth     :: Bool            -- ^ smooth or bars
+  , so_step       :: Int             -- ^ step size
+  , so_height     :: Int             -- ^ graph height (pixels)
+  , so_limits     :: (Double,Double) -- ^ data point limits
+  , so_bgColor    :: Colour Double   -- ^ background color
+  , so_minColor   :: Colour Double   -- ^ color of minimum datapoint
+  , so_maxColor   :: Colour Double   -- ^ color of maximum datapoint
+  , so_lastColor  :: Colour Double   -- ^ color of last datapoint
+  , so_minMarker  :: Bool            -- ^ display minimum marker
+  , so_maxMarker  :: Bool            -- ^ display maximum marker
+  , so_lastMarker :: Bool            -- ^ display last marker
+  } deriving (Show)
+
+-- | Default options for a smooth sparkline.
+smoothSpark :: SparkOptions
+smoothSpark  = SparkOptions
+  { so_smooth     = True
+  , so_step       = 2
+  , so_height     = 20
+  , so_limits     = (0,100)
+  , so_bgColor    = white
+  , so_minColor   = red
+  , so_maxColor   = green
+  , so_lastColor  = blue
+  , so_minMarker  = True
+  , so_maxMarker  = True
+  , so_lastMarker = True
+  }
+
+-- | Default options for a barchart sparkline.
+barSpark :: SparkOptions
+barSpark  = smoothSpark { so_smooth=False }
+
+-- | Create a renderable from a SparkLine.
+sparkLineToRenderable :: SparkLine -> Renderable ()
+sparkLineToRenderable sp = Renderable
+            { minsize = let (w,h) = sparkSize sp in return (fromIntegral w , fromIntegral h)
+            , render  = \_rect-> renderSparkLine sp
+            }
+
+instance ToRenderable SparkLine where
+  toRenderable = sparkLineToRenderable
+
+-- | Compute the width of a SparkLine, for rendering purposes.
+sparkWidth :: SparkLine -> Int
+sparkWidth SparkLine{sl_options=opt, sl_data=ds} =
+  let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
+      extrawidth | so_smooth opt = 0
+                 | otherwise  = bw * length ds
+      bw | so_smooth opt = 0
+         | otherwise  = 2
+  in w
+
+-- | Return the width and height of the SparkLine.
+sparkSize :: SparkLine -> (Int,Int)
+sparkSize s = (sparkWidth s, so_height (sl_options s))
+
+-- | Render a SparkLine to a drawing surface.
+renderSparkLine :: SparkLine -> BackendProgram (PickFn ())
+renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
+  let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
+      extrawidth | so_smooth opt = 0
+                 | otherwise  = bw * length ds
+      bw | so_smooth opt = 0
+         | otherwise  = 2
+      h = so_height opt 
+      dmin = fst (so_limits opt)
+      dmax = snd (so_limits opt)
+      coords = zipWith (\x y-> Point (fi x) y)
+                       [1,(1+bw+so_step opt)..(1+(so_step opt+bw)*(length ds))]
+                       [ fi h - ( (y-dmin) /
+                                  ((dmax-dmin+1) / fi (h-4)) )
+                         | y <- ds ]
+      -- remember y increases as we go down the page
+      minpt = maximumBy (comparing p_y) coords
+      maxpt = minimumBy (comparing p_y) coords
+      endpt = last coords
+      boxpt :: Point -> Rect
+      boxpt (Point x y) = Rect (Point (x-1)(y-1)) (Point (x+1)(y+1))
+      fi    :: (Num b, Integral a) => a -> b
+      fi    = fromIntegral
+  in do
+
+  withFillStyle (solidFillStyle (opaque (so_bgColor opt))) $ do
+    fillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
+  if so_smooth opt
+    then do
+      withLineStyle (solidLine 1 (opaque grey)) $ do
+        p <- alignStrokePoints coords
+        strokePointPath p
+    else do
+      withFillStyle (solidFillStyle (opaque grey)) $ do
+        forM_ coords $ \ (Point x y) ->
+          fillPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
+  when (so_minMarker opt) $ do
+      withFillStyle (solidFillStyle (opaque (so_minColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt minpt))
+        fillPath p
+  when (so_maxMarker opt) $ do
+      withFillStyle (solidFillStyle (opaque (so_maxColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt maxpt))
+        fillPath p
+  when (so_lastMarker opt) $ do
+      withFillStyle (solidFillStyle (opaque (so_lastColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt endpt))
+        fillPath p
+  return nullPickFn
+
