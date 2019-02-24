@@ -18,7 +18,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-12.26
+resolver: lts-13.8
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -49,16 +49,16 @@ packages:
 # - cairo-0.13.6.0
 # - gtk2hs-buildtools-0.13.5.0
 extra-deps:
-- indexed-list-literals-0.2.1.2
-- vector-sized-1.2.0.0
-- Chart-1.9
-- Chart-diagrams-1.9
+# - Chart-1.9
+# - Chart-diagrams-1.9
 # - sdl2-2.4.1.0
 - SVGFonts-1.6.0.3
 - github: lancelet/pragmatic-show
-  commit: 1fd39d6c17c5755cfd98cf15e9acf56ecf27a77f
+  commit: a76a40b013c6f98f281bd3fae3a5e5f1b99ef007
 - github: lancelet/free-vector-spaces
   commit: 1e8ee994ef66d31ed74303addd6433154f514236
+- ./haskell-chart/chart
+- ./haskell-chart/chart-diagrams
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

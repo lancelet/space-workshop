@@ -1,1 +1,0 @@
-../chart-tests/tests/Prices.hs

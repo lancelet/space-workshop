@@ -1,4 +1,0 @@
-[submodule "haskell-chart"]
-	path = haskell-chart
-	url = https://github.com/lancelet/haskell-chart.git
-	branch = lts-13.8-fixes

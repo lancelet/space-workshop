@@ -1,7 +1,0 @@
-packages:
-  chart/
-  chart-cairo/
-  chart-diagrams/
-  chart-tests/
-  chart-gtk/
-  chart-gtk3/
