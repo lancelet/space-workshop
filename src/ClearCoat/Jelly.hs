@@ -54,6 +54,8 @@ initJellyGLResources :: IO (Maybe JellyGLResources)
 initJellyGLResources = runMaybeT $ do
   vao <- GL.genObjectName
   GL.bindVertexArrayObject $= Just vao
+  vbo <- GL.genObjectName
+  GL.bindBuffer GL.ArrayBuffer $= Just vbo
   
   vertexShader <- MaybeT $ compileShader GL.VertexShader baseVertexSrc
   constantShader <- MaybeT $ compileShader GL.FragmentShader constantFragSrc
@@ -170,9 +172,9 @@ linkProgram :: [GL.Shader] -> IO (Maybe GL.Program)
 linkProgram shaders = do
   program <- GL.createProgram
   mapM_ (GL.attachShader program) shaders
+  GL.bindFragDataLocation program "FragColor" $= 0
   GL.linkProgram program
   linkOK <- GL.get $ GL.linkStatus program
-  GL.bindFragDataLocation program "color" $= 0
   -- GL.validateProgram program
   -- validateOK <- GL.get $ GL.validateStatus program
   if (linkOK {- && validateOK -})
@@ -192,9 +194,8 @@ baseVertexSrc = BS.intercalate "\n"
   , "uniform mat4 projection;"
   , ""
   , "void main(void) {"
-  , "  gl_Position = vec4(coord2d.x, coord2d.y, 0, 1);"
-  -- , "  gl_Position = vec4(0.001 * coord2d.x - 100, 0.001 * coord2d.y, 0, 1);"
-  -- , "  gl_Position = projection * vec4(coord2d.x, coord2d.y, 0, 1);"
+  -- , "  gl_Position = projection * vec4(coord2d, 0, 1);"
+  , "  gl_Position = vec4(coord2d, 0, 1);"
   , "}"
   ]
 
@@ -210,3 +211,4 @@ constantFragSrc = BS.intercalate "\n"
   , "  FragColor = surface_color;"
   , "}"
   ]
+

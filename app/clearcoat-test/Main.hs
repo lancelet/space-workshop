@@ -1,6 +1,6 @@
 module Main where
 
-import qualified ClearCoat.Test
+import qualified ClearCoat.Test2
 
 main :: IO ()
-main = ClearCoat.Test.test
+main = ClearCoat.Test2.test
