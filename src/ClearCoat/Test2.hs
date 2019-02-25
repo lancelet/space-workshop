@@ -85,9 +85,9 @@ tempDraw window res = do
   uColor <- GL.uniformLocation prog "surface_color"
   uProjection <- GL.uniformLocation prog "projection"
   GL.uniform uColor $= (GL.Color4 0 0 1 1 :: GL.Color4 Float)
-  mat <- Jelly.mat23GLMatrix $
-           (V2 (V3 1 0 1)
-               (V3 0 1 1) :: V2 (V3 Double))
+  mat :: GL.GLmatrix Float <- Jelly.mat23GLMatrix $
+           (V2 (V3 1 0 0)
+               (V3 0 1 0) :: V2 (V3 Float))
   GL.uniform uProjection $= mat
 
   -- set up vertex data

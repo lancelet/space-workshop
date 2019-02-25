@@ -194,8 +194,7 @@ baseVertexSrc = BS.intercalate "\n"
   , "uniform mat4 projection;"
   , ""
   , "void main(void) {"
-  -- , "  gl_Position = projection * vec4(coord2d, 0, 1);"
-  , "  gl_Position = vec4(coord2d, 0, 1);"
+  , "  gl_Position = projection * vec4(coord2d, 0, 1);"
   , "}"
   ]
 
