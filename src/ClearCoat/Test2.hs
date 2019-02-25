@@ -68,8 +68,10 @@ tempDraw window res = do
   let glWinSize = fmap fromIntegral winSize
   let dWinSize = fmap fromIntegral winSize
 
-  GL.clearColor $= GL.Color4 0.03 0.09 0.17 0
+  GL.clearColor $= GL.Color4 0.03 0.09 0.17 0.5
   GL.clear [GL.ColorBuffer]
+  GL.blend $= GL.Enabled
+  GL.blendFunc $= (GL.OneMinusDstAlpha, GL.DstAlpha)
 
   GL.viewport $= ( GL.Position 0 0
                  , GL.Size (glWinSize^._x) (glWinSize^._y) )
@@ -117,7 +119,7 @@ tempDraw window res = do
     (V2 (V3 (2.0/dWinSize^._x)                  0  (-1))
         (V3                 0  (-2.0/dWinSize^._y)   1 ))
      -- 0.64 0.26 0.15 : Orange color
-    (Colour.withOpacity orange 1)
+    (Colour.withOpacity orange 0.5)
     (CCT.MitreLimit 25)
     (CCT.PathWidth 50)
     (CCT.Path
@@ -131,7 +133,7 @@ tempDraw window res = do
     (V2 (V3 (2.0/dWinSize^._x)                  0  (-1))
         (V3                 0  (-2.0/dWinSize^._y)   1 ))
      -- 0.64 0.26 0.15 : Orange color
-    (Colour.withOpacity orange 1)
+    (Colour.withOpacity orange 0.5)
     (CCT.MitreLimit 25)
     (CCT.PathWidth 50)
     (CCT.Path
