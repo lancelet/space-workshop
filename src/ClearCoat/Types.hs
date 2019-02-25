@@ -2,9 +2,9 @@ module ClearCoat.Types where
 
 import Linear (V2)
 
-newtype Path t a
-  = Path (t (V2 a))
+newtype Path
+  = Path [V2 Float]
 
-newtype PathWidth a = PathWidth a
+newtype PathWidth = PathWidth Float
 
-newtype MitreLimit a = MitreLimit a
+newtype MitreLimit = MitreLimit Float

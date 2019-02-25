@@ -110,11 +110,11 @@ test = do
               jellyGLResources
               (V2 (V3 (1.0/400.0)          0  (-1))
                   (V3          0  (-1.0/300.0)  1))
-              (Colour.withOpacity Colour.Names.blue (1 :: Double))
+              (Colour.withOpacity Colour.Names.blue (1 :: Float))
               (CCT.MitreLimit 50)
               (CCT.PathWidth 20)
               (CCT.Path
-               [ V2 (100.0 :: Double) 100.0
+               [ V2 (100.0 :: Float) 100.0
                , V2 500.0 500.0
                ])
               

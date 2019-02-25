@@ -2,6 +2,7 @@
 
 module ClearCoat.Jelly where
 
+import           Control.Lens              ((^.))
 import           Control.Monad             (mapM_)
 import           Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
 import qualified Data.ByteString.Char8     as BS
@@ -10,38 +11,30 @@ import qualified Data.Colour               as Colour
 import qualified Data.Colour.SRGB          as SRGB
 import qualified Data.Foldable             as Foldable
 import qualified Data.Vector.Storable      as V
+import           Foreign.Ptr               (nullPtr)
+import           Foreign.Storable          (sizeOf)
 import           Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
-import           Linear                    (V2 (V2), M23, _x, _y, _z)
+import           Linear                    (M23, V2 (V2), _x, _y, _z)
 import qualified Linear                    as Linear
-import Control.Lens ((^.))
-import Foreign.Ptr (nullPtr)
 
 import qualified ClearCoat.Escher          as Escher
 import           ClearCoat.Types           (MitreLimit, Path, PathWidth)
 
 
 drawPath
-  :: ( Foldable t
-     , RealFloat a, Linear.Epsilon a, V.Storable a, GL.MatrixComponent a, Show a
-     , Real b )
-  => JellyGLResources
-  -> M23 a
-  -> AlphaColour b
-  -> MitreLimit a
-  -> PathWidth a
-  -> Path t a
+  :: JellyGLResources
+  -> M23 Float
+  -> AlphaColour Float
+  -> MitreLimit
+  -> PathWidth
+  -> Path
   -> IO ()
 drawPath res projection colour mitreLimit width path =
   let
     mesh = Escher.strokePathMitre mitreLimit width path
   in do
-    -- shadeConstantTriMesh res projection (Colour.alphaColourConvert colour) mesh
-    shadeConstantTriMesh res projection (Colour.alphaColourConvert colour)
-      ( Escher.TriMesh
-        [ Escher.Tri (V2 0 1) (V2 (-1) (-1)) (V2 1 (-1)) ]
-        -- [ Escher.Tri (V2 0 (0.4)) (V2 (-0.4) (-0.4)) (V2 (0.4) (-0.4)) ]
-      )
+    shadeConstantTriMesh res projection (Colour.alphaColourConvert colour) mesh
 
 
 data JellyGLResources
@@ -56,7 +49,7 @@ initJellyGLResources = runMaybeT $ do
   GL.bindVertexArrayObject $= Just vao
   vbo <- GL.genObjectName
   GL.bindBuffer GL.ArrayBuffer $= Just vbo
-  
+
   vertexShader <- MaybeT $ compileShader GL.VertexShader baseVertexSrc
   constantShader <- MaybeT $ compileShader GL.FragmentShader constantFragSrc
 
@@ -67,50 +60,42 @@ initJellyGLResources = runMaybeT $ do
 
 
 shadeConstantTriMesh
-  :: ( Foldable t
-     , V.Storable a, GL.MatrixComponent a, Num a )
-  => JellyGLResources
-  -> M23 a
+  :: JellyGLResources
+  -> M23 Float
   -> AlphaColour Float
-  -> Escher.TriMesh t a
+  -> Escher.TriMesh
   -> IO ()
 shadeConstantTriMesh res projection colour mesh = do
   let coord2d = GL.AttribLocation 0
-  let vs = triMesh2Vec mesh
+  let vertices = triMesh2Vec mesh
+  let size = fromIntegral $ (V.length vertices) * sizeOf (V.head vertices)
   let prog = progConstant res
   let glcolor = alphaColourToColor4 colour
+
   GL.currentProgram $= (Just prog)
-  colorUniform <- GL.uniformLocation prog "surface_color"
-  projectionUniform <- GL.uniformLocation prog "projection"
-  GL.uniform colorUniform $= glcolor
+
+  -- uniforms
+  uColor <- GL.uniformLocation prog "surface_color"
+  uProjection <- GL.uniformLocation prog "projection"
+  GL.uniform uColor $= glcolor
   mat <- mat23GLMatrix projection
-  GL.uniform projectionUniform $= mat
+  GL.uniform uProjection $= mat
 
-  vertexBuffer <- GL.genObjectName
-  GL.bindBuffer GL.ArrayBuffer $= Just vertexBuffer
-  V.unsafeWith vs $ \ptr -> do
-    let size = fromIntegral (V.length vs)
+  -- setup vertex data
+  V.unsafeWith vertices $ \ptr ->
     GL.bufferData GL.ArrayBuffer $= (size, ptr, GL.StaticDraw)
-  GL.vertexAttribPointer coord2d $=
-    (GL.ToFloat, GL.VertexArrayDescriptor 2 GL.Float 0 nullPtr)
-  {-
-  V.unsafeWith vs $ \ptr -> do
-    GL.vertexAttribPointer coord2d $=
-      (GL.ToFloat, GL.VertexArrayDescriptor 2 GL.Float 0 ptr)
-  -}
-  GL.vertexAttribArray coord2d $= GL.Enabled
+  GL.vertexAttribPointer (GL.AttribLocation 0) $=
+    ( GL.ToFloat
+    , GL.VertexArrayDescriptor
+        2
+        GL.Float
+        0
+        nullPtr
+    )
 
-  GL.validateProgram prog
-  validateOK <- GL.get $ GL.validateStatus prog
-  if not validateOK then do
-    putStrLn "GL.linkProgram error:"
-    plog <- GL.get $ GL.programInfoLog prog
-    putStrLn plog
-    else pure ()
-  
-  GL.drawArrays GL.Triangles 0 (fromIntegral (V.length vs))
+  GL.vertexAttribArray coord2d $= GL.Enabled
+  GL.drawArrays GL.Triangles 0 (fromIntegral (V.length vertices))
   GL.vertexAttribArray coord2d $= GL.Disabled
-  -- GL.bindVertexArrayObject $= Nothing
 
 
 alphaColourToColor4 :: AlphaColour Float -> GL.Color4 Float
@@ -130,26 +115,23 @@ mat23GLMatrix
 mat23GLMatrix m = do
   let
     r = m^._x
-    s = m^._y 
+    s = m^._y
     components =
       [ r^._x, r^._y, 0, r^._z
       , s^._x, s^._y, 0, s^._z
       ,     0,     0, 1,     0
       ,     0,     0, 0,     1 ]
   GL.newMatrix (GL.RowMajor) components
-  
+
 
 triMesh2Vec
-  :: ( Foldable t
-     , V.Storable a )
-  => Escher.TriMesh t a
-  -> V.Vector a
+  :: Escher.TriMesh
+  -> V.Vector (GL.Vertex2 Float)
 triMesh2Vec (Escher.TriMesh tris) =
   let
-    stri (Escher.Tri (V2 x1 y1) (V2 x2 y2) (V2 x3 y3))
-      = [ x1, y1, x2, y2, x3, y3 ]
+    triToList (Escher.Tri p1 p2 p3) = [ p1, p2, p3 ]
   in
-    V.fromList . concat . fmap stri . Foldable.toList $ tris
+    V.fromList . concat . fmap triToList . Foldable.toList $ tris
 
 
 compileShader :: GL.ShaderType -> BS.ByteString -> IO (Maybe GL.Shader)
@@ -188,7 +170,7 @@ linkProgram shaders = do
 
 baseVertexSrc :: BS.ByteString
 baseVertexSrc = BS.intercalate "\n"
-  [ "#version 410 core"  -- 
+  [ "#version 410 core"  --
   , ""
   , "layout(location = 0) in vec2 coord2d;"
   , "uniform mat4 projection;"

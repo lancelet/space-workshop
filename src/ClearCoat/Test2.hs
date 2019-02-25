@@ -4,6 +4,9 @@ module ClearCoat.Test2 where
 
 import           Control.Lens              ((^.))
 import           Control.Monad             (unless)
+import qualified Data.Colour               as Colour
+import qualified Data.Colour.Names         as Colour.Names
+import qualified Data.Colour.SRGB          as SRGB
 import qualified Data.Vector.Storable      as V
 import           Foreign.C.Types           (CInt)
 import           Foreign.Ptr               (nullPtr)
@@ -15,6 +18,7 @@ import qualified SDL
 import           System.Exit               (exitFailure)
 
 import qualified ClearCoat.Jelly           as Jelly
+import qualified ClearCoat.Types           as CCT
 
 -- Best Haskell tutorial I've found:
 --  https://github.com/ericnething/opengl-sdl-tutorial/tree/master/3-Rendering-with-OpenGL
@@ -62,8 +66,9 @@ tempDraw window res = do
 
   winSize :: V2 CInt <- SDL.glGetDrawableSize window
   let glWinSize = fmap fromIntegral winSize
+  let dWinSize = fmap fromIntegral winSize
 
-  GL.clearColor $= GL.Color4 0 0 0 0
+  GL.clearColor $= GL.Color4 0.03 0.09 0.17 0
   GL.clear [GL.ColorBuffer]
 
   GL.viewport $= ( GL.Position 0 0
@@ -102,7 +107,37 @@ tempDraw window res = do
         nullPtr  -- offset
     )
   GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Enabled
-  GL.drawArrays GL.Triangles 0 3  -- second index is number of vertices
+  -- GL.drawArrays GL.Triangles 0 3  -- second index is number of vertices
   GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Disabled
+
+  let orange = SRGB.sRGB 0.64 0.26 0.15
+
+  Jelly.drawPath
+    res
+    (V2 (V3 (2.0/dWinSize^._x)                  0  (-1))
+        (V3                 0  (-2.0/dWinSize^._y)   1 ))
+     -- 0.64 0.26 0.15 : Orange color
+    (Colour.withOpacity orange 1)
+    (CCT.MitreLimit 25)
+    (CCT.PathWidth 50)
+    (CCT.Path
+       [ V2 200.0 200.0
+       , V2 800.0 800.0
+       , V2 1400.0 200.0
+       ])
+
+  Jelly.drawPath
+    res
+    (V2 (V3 (2.0/dWinSize^._x)                  0  (-1))
+        (V3                 0  (-2.0/dWinSize^._y)   1 ))
+     -- 0.64 0.26 0.15 : Orange color
+    (Colour.withOpacity orange 1)
+    (CCT.MitreLimit 25)
+    (CCT.PathWidth 50)
+    (CCT.Path
+       [ V2 600.0 200.0
+       , V2 800.0 600.0
+       , V2 1000.0 200.0
+       ])
 
   SDL.glSwapWindow window
