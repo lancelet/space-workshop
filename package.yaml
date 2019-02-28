@@ -21,18 +21,27 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- gnuplot
 
 library:
   source-dirs: src
 
+_ghc-options: &ghc-options
+  - -O2
+  - -threaded
+  - -rtsopts
+  - -with-rtsopts=-N
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Wmissing-import-lists
+
 executables:
-  space-workshop-exe:
+
+  mcdrag-validation:
     main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    source-dirs:         app/mcdrag-validation
+    ghc-options:         *ghc-options
     dependencies:
     - space-workshop
 
@@ -40,9 +49,6 @@ tests:
   space-workshop-test:
     main:                Spec.hs
     source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    ghc-options:         *ghc-options
     dependencies:
     - space-workshop
