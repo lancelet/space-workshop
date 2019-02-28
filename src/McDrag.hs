@@ -27,6 +27,10 @@ known valid range.
 module McDrag where
 
 
+-------------------------------------------------------------------------------
+-- Types
+-------------------------------------------------------------------------------
+
 -- | Free stream Mach number.
 newtype Mach a = Mach a
 
@@ -43,11 +47,66 @@ newtype HeadLength a = HeadLength a
 newtype HeadShape a = HeadShape a
 
 
+-- | Head meplat diameter (calibers).
 newtype HeadMeplatDiam a = HeadMeplatDiam a
 
 
 -- | Drag term due to the conical head of the projectile.
-newtype HeadDrag a = HeadDrag a
+newtype HeadDrag a = HeadDrag { unHeadDrag :: a }
+
+
+-------------------------------------------------------------------------------
+-- Head Drag
+-------------------------------------------------------------------------------
+
+-- | Head drag.
+--
+--   To compute overall head drag, we blend between the subsonic, transonic
+--   and supersonic regimes.
+headDrag
+  :: (Floating a, Ord a)
+  => Mach a
+  -> HeadLength a
+  -> HeadShape a
+  -> HeadMeplatDiam a
+  -> HeadDrag a
+headDrag mach headLength headShape headMeplatDiam =
+  let
+    Mach m = mach
+    HeadLength ln = headLength
+    HeadMeplatDiam dm = headMeplatDiam
+
+    tau = (1.0 - dm) / ln
+
+    -- mcrit is the critical Mach number, below with the transonic regime
+    --  produces zero drag and can be ignored
+    mcrit = (1.0 + 0.552 * tau**(4.0/5.0))**(-0.5)
+    ss = unHeadDrag
+       $ headDragSupersonic mach headLength headShape headMeplatDiam
+    ts = unHeadDrag
+       $ headDragTransonic mach headLength headMeplatDiam
+
+    -- critw is a linear blending width from subsonic to transonic;
+    --  it's expressed as a fraction of the width from the critical Mach
+    --  number to Mach 1
+    critw = (1.0 / 5.0) * (1.0 - mcrit)
+    -- tsw is a linear blending width from transonic to supersonic;
+    --  it's an absolute Mach number value
+    tsw = 0.2
+ 
+    hd
+      | m < (mcrit + critw) = lerp (mcrit, 0) (mcrit + critw, ts) m
+      | otherwise           = lerp (1.0, ts) (1.0 + tsw, ss) m
+  in
+    HeadDrag hd
+
+{-# SPECIALIZE headDrag
+  :: Mach Float
+  -> HeadLength Float
+  -> HeadShape Float
+  -> HeadMeplatDiam Float
+  -> HeadDrag Float
+  #-}
 
 
 -- | Drag on the head of a projectile at supersonic speeds.
@@ -79,6 +138,14 @@ headDragSupersonic mach headLength headShape headMeplatDiam =
     $ ((c1 - c2*tau**2)/z) * (tau * sqrt z)**(c3 + c4 * tau)
       + (pi / 4.0) * k * dm**2
 
+{-# SPECIALIZE headDragSupersonic
+  :: Mach Float
+  -> HeadLength Float
+  -> HeadShape Float
+  -> HeadMeplatDiam Float
+  -> HeadDrag Float
+  #-}
+
 
 -- | Drag on the head of a projectile at transonic speeds.
 --
@@ -98,3 +165,28 @@ headDragTransonic (Mach m) (HeadLength ln) (HeadMeplatDiam dm) =
     HeadDrag
     $ 0.368 * tau**(9.0/5.0)
       + 1.6 * tau * z / ((gamma + 1.0) * m**2)
+
+{-# SPECIALIZE headDragTransonic
+  :: Mach Float
+  -> HeadLength Float
+  -> HeadMeplatDiam Float
+  -> HeadDrag Float
+  #-}
+
+
+-------------------------------------------------------------------------------
+-- Utilities
+-------------------------------------------------------------------------------
+
+-- | Linear interpolation with clamping.
+lerp
+  :: (Floating a, Ord a)
+  => (a, a)  -- Initial (x,y) value.
+  -> (a, a)  -- Final (x,y) value.
+  -> a       -- Input x value.
+  -> a       -- Output y value.
+lerp (x1, y1) (x2, y2) x
+  | x <= x1           = y1
+  | x > x1 && x < x2  = let q = (x-x1)/(x2-x1) in q * y2 + (1.0-q) * y1
+  | otherwise         = y2
+{-# INLINE lerp #-}
