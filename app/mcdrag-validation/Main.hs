@@ -20,12 +20,13 @@ main = do
           (McDrag.HeadLength 3.03)
           (McDrag.HeadShape 0.5)
           (McDrag.HeadMeplatDiam 0.09)
-    xs = [ (x, f x) | x <- [0.0, 0.001 .. 4.5] ]
-  
+    xs = [ (x, f x) | x <- [0.0, 0.001 .. 5.0] ]
+
   Gnuplot.plotLists
     [ Gnuplot.Key Nothing
     , Gnuplot.XLabel "Mach number"
     , Gnuplot.YLabel "C_d"
+    , Gnuplot.Grid (Just ["xtics", "ytics"])
     , Gnuplot.terminal (SVG.cons "test.svg")
     ]
     [xs]

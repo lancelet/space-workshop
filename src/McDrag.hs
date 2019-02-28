@@ -23,9 +23,11 @@ calculations were performed on this model to evaluate the behavior of
 a full-sized Minuteman re-entry stage, whose size lies outside the
 known valid range.
 -}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module McDrag where
 
+import Debug.Trace
 
 -------------------------------------------------------------------------------
 -- Types
@@ -64,7 +66,7 @@ newtype HeadDrag a = HeadDrag { unHeadDrag :: a }
 --   To compute overall head drag, we blend between the subsonic, transonic
 --   and supersonic regimes.
 headDrag
-  :: (Floating a, Ord a)
+  :: forall a. (RealFloat a, Ord a, Show a)
   => Mach a
   -> HeadLength a
   -> HeadShape a
@@ -78,8 +80,9 @@ headDrag mach headLength headShape headMeplatDiam =
 
     tau = (1.0 - dm) / ln
 
-    -- mcrit is the critical Mach number, below with the transonic regime
-    --  produces zero drag and can be ignored
+    -- mcrit is the critical Mach number from McCoy (1981), below which the
+    --  transonic regime produces zero drag and we thus produce zero drag
+    --  overall
     mcrit = (1.0 + 0.552 * tau**(4.0/5.0))**(-0.5)
     ss = unHeadDrag
        $ headDragSupersonic mach headLength headShape headMeplatDiam
@@ -89,14 +92,14 @@ headDrag mach headLength headShape headMeplatDiam =
     -- critw is a linear blending width from subsonic to transonic;
     --  it's expressed as a fraction of the width from the critical Mach
     --  number to Mach 1
-    critw = (1.0 / 5.0) * (1.0 - mcrit)
+    critw = 0.2 * (1.0 - mcrit)
     -- tsw is a linear blending width from transonic to supersonic;
     --  it's an absolute Mach number value
-    tsw = 0.2
+    tsw = 0.15
  
     hd
-      | m < (mcrit + critw) = lerp (mcrit, 0) (mcrit + critw, ts) m
-      | otherwise           = lerp (1.0, ts) (1.0 + tsw, ss) m
+      | m < (mcrit + critw) = smoothmix (mcrit, mcrit + critw)  0 ts m
+      | otherwise           = smoothmix (1.001,     1.0 + tsw) ts ss m
   in
     HeadDrag hd
 
@@ -126,9 +129,9 @@ headDragSupersonic mach headLength headShape headMeplatDiam =
     HeadShape rr = headShape
     HeadMeplatDiam dm = headMeplatDiam
 
-    z = m**2 - 1.0
+    z = m * m - 1.0
     tau = (1.0 - dm) / ln
-    c1 = 0.7156 - 0.5313 * rr + 0.5950 * rr**2
+    c1 = 0.7156 - 0.5313 * rr + 0.5950 * rr * rr
     c2 = 0.0796 + 0.0779 * rr
     c3 = 1.587 + 0.049 * rr
     c4 = 0.1122 + 0.1658 * rr
@@ -136,7 +139,7 @@ headDragSupersonic mach headLength headShape headMeplatDiam =
   in
     HeadDrag
     $ ((c1 - c2*tau**2)/z) * (tau * sqrt z)**(c3 + c4 * tau)
-      + (pi / 4.0) * k * dm**2
+      + (pi / 4.0) * k * dm * dm
 
 {-# SPECIALIZE headDragSupersonic
   :: Mach Float
@@ -158,35 +161,71 @@ headDragTransonic
   -> HeadDrag a
 headDragTransonic (Mach m) (HeadLength ln) (HeadMeplatDiam dm) =
   let
-    z = m**2 - 1.0
+    z = m * m - 1.0
     tau = (1.0 - dm) / ln
     gamma = 1.4
   in
     HeadDrag
     $ 0.368 * tau**(9.0/5.0)
-      + 1.6 * tau * z / ((gamma + 1.0) * m**2)
+      + (1.6 * tau * z) / ((gamma + 1.0) * m * m)
 
 {-# SPECIALIZE headDragTransonic
   :: Mach Float
   -> HeadLength Float
   -> HeadMeplatDiam Float
-  -> HeadDrag Float
-  #-}
+  -> HeadDrag Float #-}
+
+
+-------------------------------------------------------------------------------
+-- BoatTail Drag
+-------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
 
--- | Linear interpolation with clamping.
-lerp
-  :: (Floating a, Ord a)
-  => (a, a)  -- Initial (x,y) value.
-  -> (a, a)  -- Final (x,y) value.
-  -> a       -- Input x value.
-  -> a       -- Output y value.
-lerp (x1, y1) (x2, y2) x
-  | x <= x1           = y1
-  | x > x1 && x < x2  = let q = (x-x1)/(x2-x1) in q * y2 + (1.0-q) * y1
-  | otherwise         = y2
-{-# INLINE lerp #-}
+-- | Smooth polynomial mix of functions with clamping.
+smoothmix
+  :: ( Fractional a, Ord a )
+  => (a, a)  -- ^ Blending region.
+  -> a       -- ^ Value before blend region.
+  -> a       -- ^ Value after blend region.
+  -> a       -- ^ Point at which to evaluate.
+  -> a       -- ^ Mixed value.
+smoothmix (x0, x1) f g x
+  -- must case-split because f and g may not be defined over the whole
+  -- domain
+  | x <= x0 = f
+  | x <= x1 =
+      let
+        c = (x - x0) / (x1 - x0)
+        cg = smootherstep c
+        cf = 1.0 - cg
+      in
+        (cf * f) + (cg * g)
+  | otherwise = g
+
+{-# INLINE smoothmix #-}
+{-# SPECIALIZE smoothmix
+  :: (Float, Float)
+  -> Float
+  -> Float
+  -> Float
+  -> Float #-}
+
+
+-- | Ken Perlin's smootherstep function.
+--
+--   Ref: https://en.wikipedia.org/wiki/Smoothstep
+smootherstep
+  :: (Fractional a, Ord a)
+  => a  -- ^ Input value.
+  -> a  -- ^ Output value.
+smootherstep x
+  | x <= 0.0  = 0.0
+  | x <= 1.0  = x * x * x * (x * (x * 6.0 - 15.0) + 10.0)
+  | otherwise = 1.0
+
+{-# INLINE smootherstep #-}
+{-# SPECIALIZE smootherstep :: Float -> Float #-}

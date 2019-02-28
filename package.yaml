@@ -27,7 +27,7 @@ library:
   source-dirs: src
 
 _ghc-options: &ghc-options
-  - -O2
+  - -O0
   - -threaded
   - -rtsopts
   - -with-rtsopts=-N
