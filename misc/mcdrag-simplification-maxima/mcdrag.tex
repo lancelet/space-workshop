@@ -1,0 +1,23 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage{shellesc}
+\usepackage{amsmath}
+\usepackage[amsmath]{maxiplot}
+
+\newcommand{\imx}[1]{\imaxima{tex(#1)}}
+
+\begin{document}
+
+\begin{maximacmd}
+  load("mcdrag-base.mac");
+\end{maximacmd}
+
+\begin{align}
+  C_1 &= \imx{C_1} \\
+  C_2 &= \imx{C_2} \\
+  C_3 &= \imx{C_3} \\
+  C_4 &= \imx{C_4}
+\end{align}
+
+
+\end{document}

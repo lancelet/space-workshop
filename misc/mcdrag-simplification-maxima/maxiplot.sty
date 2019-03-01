@@ -1,0 +1,236 @@
+%% maxiplot 0.28
+
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2003/12/01 or later.
+%% Modification of original maxima.sty by J.M. Planas made by J. M. Mira mira@um.es
+%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{maxiplot}[2013/21/09]
+
+\DeclareOption{amsmath}{\maxima@amsmathtrue}
+
+\newcommand{\macfile}{\jobname.mac}
+\newcommand{\mxpfile}{\jobname.mxp}
+\newcommand{\gnpfile}{\jobname.gnp}
+
+\newcounter{maxima@count}
+\def\maxima@out{-1}
+\newcommand{\maximacount}{\value{maxima@count}}
+\def\mxp@def{mxp\romannumeral\maximacount}
+
+\newif\ifmaximaloaded
+\newif\ifmaxima@autoinsertblock
+\newif\ifmaxima@texout
+\newif\ifmaxima@amsmath
+\maxima@amsmathfalse
+
+\ProcessOptions\relax
+
+\newcommand{\maximacurrent}{\csname \maxima@current\endcsname}
+
+\newcommand{\mxp@macro}[1]{%  
+  \gdef\maxima@current{#1}%
+  \@ifundefined{#1}{\expandafter\gdef\csname #1\endcsname{}}{}%
+  }
+
+\AtBeginDocument{%
+  \InputIfFileExists{\mxpfile}%
+  {\maximaloadedtrue}%
+  {\maximaloadedfalse}%
+}
+
+\AtEndDocument{%
+  \ifnum\maximacount>0
+    \immediate\closeout\maxima@out
+    \immediate\write18{echo Processing Maxima...}
+    \immediate\write18{maxima -b \macfile >\macfile.log}
+    \immediate\write18{echo Maxima processed. See \macfile.log for details}
+    \fi%
+  \ifnotused@gnuplot\else \immediate\closeout\@mainplot
+    \write18{@echo Processing gnuplot...}
+    \write18{gnuplot \gnpfile}
+  \fi
+}
+
+\newcommand{\IfMaximaLoaded}[1]{\ifmaximaloaded#1\fi}
+
+\def\maxima@init{%
+  \ifnum\maxima@out=-1
+    \newwrite\maxima@out
+    \immediate\openout\maxima@out\macfile
+    \immediate\write\maxima@out{
+	nolabels:true$^^J
+	display2d:false$^^J
+	/* load("mactex.lisp")$ */^^J
+	set_plot_option([run_viewer, false])$^^J
+	set_tex_environment_default("","")$^^J
+	lbrace:"{"$^^J
+	rbrace:"}"$^^J
+	file_output_append:false$^^J
+	with_stdout("\mxpfile")$^^J
+	file_output_append:true$
+}
+    \ifmaxima@amsmath
+      \immediate\write\maxima@out{load("mactex-utilities.lisp")$}%
+      \fi
+    \fi%
+}
+
+\def\@@imaxima#1{%
+  \immediate\write\maxima@out{#1}
+  \ifmaxima@texout
+    \immediate\write\maxima@out{,print(rbrace))$}
+    \fi%
+  \endgroup
+  \ifmaxima@autoinsertblock \maximacurrent \fi
+}
+
+\long\def\@@maxima#1\end{%
+  \immediate\write\maxima@out{#1}
+  \ifmaxima@texout
+    \immediate\write\maxima@out{,print(rbrace))$}
+    \fi%
+  \endgroup
+  \ifmaxima@autoinsertblock \maximacurrent \fi
+  \end
+}
+
+\def\@maxima@common{%
+\begingroup
+  \obeylines
+  \obeyspaces
+  \def\\{\noexpand\\}
+  \newlinechar=`\^^M  % Piet van Oostrum: newline fix on MacOSX
+  \catcode`\"11\relax
+  \catcode`\&11\relax
+  \catcode`\%11\relax
+  \maxima@init
+  \ifmaxima@texout
+    \stepcounter{maxima@count}
+    \immediate\write\maxima@out{^^Jwith_stdout("\mxpfile", print("\\gdef\\\maxima@current",lbrace),}%
+    \fi
+}
+
+\newenvironment{maxima}[1][\mxp@def]{%
+  \mxp@macro{#1}
+  \maxima@autoinsertblocktrue
+  \maxima@texouttrue
+  \@maxima@common\@@maxima}{}
+  
+\newenvironment{maxima*}[1][\mxp@def]{%
+  \mxp@macro{#1}
+  \maxima@autoinsertblockfalse
+  \maxima@texouttrue
+  \@maxima@common\@@maxima}{}
+
+\newenvironment{maximacmd}{\maxima@autoinsertblockfalse\maxima@texoutfalse\@maxima@common\@@maxima}{}
+\newcommand{\imaximacmd}{\maxima@autoinsertblockfalse\maxima@texoutfalse\@maxima@common\@@imaxima}%
+
+\newcommand{\imaxima}[1][\mxp@def]{%
+  \mxp@macro{#1}
+  \@ifstar{\maxima@autoinsertblockfalse\maxima@texouttrue\@maxima@common\@@imaxima}%
+          {\maxima@autoinsertblocktrue\maxima@texouttrue\@maxima@common\@@imaxima}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{verbatim}
+
+\newenvironment{@vmaximawrite}%
+ {\@bsphack
+  \let\do\@makeother\dospecials\catcode`\^^M\active
+  \def\verbatim@processline{%
+    \immediate\write\maxima@out{\the\verbatim@line}}%
+  \verbatim@start}%
+ {\@esphack}
+
+\newenvironment{@vmaxima}%
+ {\maxima@init
+  \ifmaxima@texout
+    \stepcounter{maxima@count}
+    \immediate\write\maxima@out{^^Jwith_stdout("\mxpfile", print("\noexpand\\def\noexpand\\\maxima@current",lbrace),}%
+    \fi
+  \@vmaximawrite}
+ {\end@vmaximawrite
+  \ifmaxima@texout
+    \immediate\write\maxima@out{,print(rbrace))$}
+    \fi}
+
+\newenvironment{vmaxima}[1][\mxp@def]{%
+  \mxp@macro{#1}%
+  \maxima@texouttrue\@vmaxima}
+ {\end@vmaxima\maximacurrent}
+
+\newenvironment{vmaxima*}[1][\mxp@def]{%
+  \global\def\maxima@current{#1}
+  \maxima@texouttrue\@vmaxima}
+ {\end@vmaxima}
+
+\newenvironment{vmaximacmd}%
+ {\maxima@texoutfalse\@vmaxima}
+ {\end@vmaxima}
+
+%%%%%%%%%%%%%
+%% gnuplot %%
+%%%%%%%%%%%%%
+  
+\newif\gnuplot@autoinsertblock
+\newif\ifnotused@gnuplot
+\notused@gnuplottrue
+
+\newenvironment{@vgnuplotwrite}%
+ {\@bsphack
+  \let\do\@makeother\dospecials\catcode`\^^M\active
+  \def\verbatim@processline{%
+    \immediate\write\@mainplot{\the\verbatim@line}}%
+  \verbatim@start}%
+ {\@esphack}
+
+\def\gnuplot@init{
+  \ifnotused@gnuplot
+    \newwrite\@mainplot
+    \immediate\openout\@mainplot\gnpfile
+    \global\notused@gnuplotfalse
+  \fi
+}
+
+\def\ignuplot{%\immediate\openout\@mainplot\jobname.gnuplot
+\gnuplot@init
+\bgroup\todocaracter\auxplot}
+\def\auxplot#1{\immediate\write\@mainplot{#1}\egroup%
+%\immediate\closeout\@mainplot%
+%\immediate\write18{gnuplot \jobname.gnuplot}
+}
+\def\makeother#1{\catcode`#1=12\relax}
+\def\todocaracter{\makeother\ \makeother\\\makeother\$\makeother\&%
+\makeother\#\makeother\_\makeother\%\makeother\~\makeother\|%
+\catcode`\^^M\active\newlinechar=`\^^M}
+
+\long\def\@@gnuplot#1\end{%
+  \immediate\write\@mainplot{#1}
+  \endgroup
+  \end
+}
+
+\newenvironment{gnuplot}{%
+\begingroup
+  \obeylines
+  \def\\{\noexpand\\}
+  \newlinechar=`\^^M
+  \catcode`\"11\relax
+  \catcode`\&11\relax
+  \catcode`\%11\relax
+  \gnuplot@init
+  \@@gnuplot
+}{}
+
+\newenvironment{vgnuplot}%
+ {\gnuplot@init\@vgnuplotwrite}
+ {\end@vgnuplotwrite}
+ 
+\newcommand{\mxpIncludegraphics}[2][]{\IfFileExists{#2}{\includegraphics[#1]{#2}}{\relax}}
