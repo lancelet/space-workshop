@@ -1,0 +1,9 @@
+$lualatex = 'lualatex --shell-escape';
+
+# @default_files = ("*.tex", "*.tex_mac");
+# push @generated_exts, "tex_mac";
+
+add_cus_dep('tex_mac', 'tex_mxp', 1, 'runMaxima');
+sub runMaxima {
+  return system("maxima -b \"$_[0].tex_mac\" > \"$_[0].tex_mac.log\"");
+}

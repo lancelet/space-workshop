@@ -6,6 +6,6 @@ space-workshop.cabal
 *.fdb_latexmk
 *.fls
 *.log
-*.mac.log
-*.mxp
+*.tex_mac
+*.tex_mxp
 *.pdf

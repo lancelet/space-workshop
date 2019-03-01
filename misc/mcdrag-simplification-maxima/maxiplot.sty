@@ -15,9 +15,9 @@
 
 \DeclareOption{amsmath}{\maxima@amsmathtrue}
 
-\newcommand{\macfile}{\jobname.mac}
-\newcommand{\mxpfile}{\jobname.mxp}
-\newcommand{\gnpfile}{\jobname.gnp}
+\newcommand{\macfile}{\jobname.tex_mac}
+\newcommand{\mxpfile}{\jobname.tex_mxp}
+\newcommand{\gnpfile}{\jobname.tex_gnp}
 
 \newcounter{maxima@count}
 \def\maxima@out{-1}
@@ -40,18 +40,24 @@
   }
 
 \AtBeginDocument{%
-  \InputIfFileExists{\mxpfile}%
-  {\maximaloadedtrue}%
-  {\maximaloadedfalse}%
+  \IfFileExists{\macfile}{}%
+               {\immediate\newwrite\maxima@out
+                \immediate\openout\maxima@out\macfile
+                \immediate\write\maxima@out{
+                  nolabels:true$^^J
+                  with_stdout("\mxpfile")$^^J
+                  tex(X)$^^J
+               }}
+  \input{\mxpfile}
 }
 
 \AtEndDocument{%
   \ifnum\maximacount>0
-    \immediate\closeout\maxima@out
-    \immediate\write18{echo Processing Maxima...}
-    \immediate\write18{maxima -b \macfile >\macfile.log}
-    \immediate\write18{echo Maxima processed. See \macfile.log for details}
-    \fi%
+    %\immediate\closeout\maxima@out
+    %\immediate\write18{echo Processing Maxima...}
+    %\immediate\write18{maxima -b \macfile >\macfile.log}
+    %\immediate\write18{echo Maxima processed. See \macfile.log for details}
+  \fi%
   \ifnotused@gnuplot\else \immediate\closeout\@mainplot
     \write18{@echo Processing gnuplot...}
     \write18{gnuplot \gnpfile}
