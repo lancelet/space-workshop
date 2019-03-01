@@ -27,7 +27,6 @@ known valid range.
 
 module McDrag where
 
-import Debug.Trace
 
 -------------------------------------------------------------------------------
 -- Types
@@ -180,6 +179,103 @@ headDragTransonic (Mach m) (HeadLength ln) (HeadMeplatDiam dm) =
 -- BoatTail Drag
 -------------------------------------------------------------------------------
 
+-- | BoatTail angle (degrees).
+newtype BoatTailAngle a = BoatTailAngle a
+
+-- | BoatTail length (calibers).
+newtype BoatTailLength a = BoatTailLength a
+
+-- | Length of the cylindrical body (calibers).
+newtype BodyCylinderLength a = BodyCylinderLength a
+
+-- | Drag on the boattail region.
+newtype BoatTailDrag a = BoatTailDrag { unBoatTailDrag :: a }
+
+
+boatTailDrag
+  :: (Floating a, Ord a)
+  => Mach a
+  -> HeadLength a
+  -> HeadShape a
+  -> HeadMeplatDiam a
+  -> BodyCylinderLength a
+  -> BoatTailAngle a
+  -> BoatTailLength a
+  -> BoatTailDrag a
+boatTailDrag mach
+             headLength
+             headShape
+             headMeplatDiam
+             bodyCylinderLength
+             boatTailAngle
+             boatTailLength =
+  let
+    Mach m = mach
+    
+    ss = unBoatTailDrag
+       $ boatTailDragSupersonic mach
+                                headLength
+                                headShape
+                                headMeplatDiam
+                                bodyCylinderLength
+                                boatTailAngle
+                                boatTailLength
+
+    btd = if ss < 0
+          then 0
+          else ss
+  
+  in
+    BoatTailDrag btd
+      
+
+boatTailDragSupersonic
+  :: (Floating a)
+  => Mach a
+  -> HeadLength a
+  -> HeadShape a
+  -> HeadMeplatDiam a
+  -> BodyCylinderLength a
+  -> BoatTailAngle a
+  -> BoatTailLength a
+  -> BoatTailDrag a
+boatTailDragSupersonic mach
+                       headLength
+                       headShape
+                       headMeplatDiam
+                       bodyCylinderLength
+                       boatTailAngle
+                       boatTailLength =
+  let
+    Mach m = mach
+    HeadLength ln = headLength
+    HeadShape rr = headShape
+    HeadMeplatDiam dm = headMeplatDiam
+    BodyCylinderLength lcyl = bodyCylinderLength
+    BoatTailAngle beta = boatTailAngle
+    BoatTailLength lbt = boatTailLength
+
+    gamma = 1.4
+    tau = (1.0 - dm) / ln
+    z = m * m - 1.0
+    k = 0.85 / (sqrt z)
+    a1 = (1 - 3*rr/(5*m))*
+         (5*tau/(6*(sqrt z))*(tau/2)**2 - 0.7435/(m**2)*(tau*m)**1.6)
+    a = a1*exp((-1) * sqrt(2/(gamma*m**2)) * lcyl)
+        + 2*(tan beta)/(sqrt z)
+        - (((gamma + 1)*m**4 - 4*(m**2 - 1)) * (tan beta)**2) / (2*z**2)
+
+    el = exp ((-1)*k*lbt)
+
+    simil = (4*a*(tan beta)/k) *
+            (1 - el +
+             2*(tan beta)*
+             (el * (lbt + (1/k)) - (1/k)))
+  
+  in
+    BoatTailDrag (0.9 * simil)
+
+
 
 -------------------------------------------------------------------------------
 -- Utilities
@@ -189,8 +285,8 @@ headDragTransonic (Mach m) (HeadLength ln) (HeadMeplatDiam dm) =
 smoothmix
   :: ( Fractional a, Ord a )
   => (a, a)  -- ^ Blending region.
-  -> a       -- ^ Value before blend region.
-  -> a       -- ^ Value after blend region.
+  -> a       -- ^ Value from function before blend region.
+  -> a       -- ^ Value from function after blend region.
   -> a       -- ^ Point at which to evaluate.
   -> a       -- ^ Mixed value.
 smoothmix (x0, x1) f g x

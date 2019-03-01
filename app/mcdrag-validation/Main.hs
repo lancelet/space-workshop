@@ -26,12 +26,24 @@ main = do
           (McDrag.HeadLength 3.03)
           (McDrag.HeadShape 0.5)
           (McDrag.HeadMeplatDiam 0.09)
-    xs = [ (x, f x) | x <- [0.0, 0.001 .. 5.0] ]
+
+    g :: Float -> Float
+    g x = McDrag.unBoatTailDrag $
+          McDrag.boatTailDrag
+          (McDrag.Mach x)
+          (McDrag.HeadLength 3.03)
+          (McDrag.HeadShape 0.5)
+          (McDrag.HeadMeplatDiam 0.09)
+          (McDrag.BodyCylinderLength 2.3)
+          (McDrag.BoatTailAngle (7.5 * pi / 180.0))
+          (McDrag.BoatTailLength 0.579)
+    
+    xs = [ (x, g x) | x <- [0.0, 0.001 .. 5.0] ]
 
 
   let
     plot :: Plot2D.T Float Float
-    plot = fmap (Graph2D.lineSpec (LineSpec.title "C_{dh}" $ LineSpec.deflt)) $ Plot2D.list Graph2D.lines xs
+    plot = fmap (Graph2D.lineSpec (LineSpec.title "C_{dbt}" $ LineSpec.deflt)) $ Plot2D.list Graph2D.lines xs
   _ <- GP.plot (SVG.cons "test.svg") $ Frame.cons
     ( Opts.title "Components of drag vs Mach number"
       $ Opts.xLabel "M"
