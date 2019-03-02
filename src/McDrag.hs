@@ -58,8 +58,8 @@ data McParams a
     } deriving (Show)
 
 
-data McOut a
-  = McOut
+data McBasicOut a
+  = McBasicOut
     { c_DHS  :: !a  -- ^ Head drag coeff (supersonic).
     , c_DHT  :: !a  -- ^ Head drag coeff (transonic).
     , c_MC   :: !a  -- ^ Critical Mach no. for c_DHT lower transonic limit.
@@ -76,7 +76,7 @@ mcDragBasic
   -> Mach a
   -> KinVisc a
   -> FreeStreamVel a
-  -> McOut a
+  -> McBasicOut a
 mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
   let
     -- Additional geometric parameters
@@ -179,4 +179,4 @@ mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
     c_DB = c31*(1 - pbi)
   
 
-  in McOut{..}
+  in McBasicOut{..}
