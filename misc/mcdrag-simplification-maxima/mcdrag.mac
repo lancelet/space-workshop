@@ -1,6 +1,8 @@
 /*****************************************************************************\
 *
-*  MC Drag Equations
+*  *-------------------*
+*  | MC Drag Equations |
+*  *-------------------*
 *
 *  This is a Maxima file: http://maxima.sourceforge.net/
 *
@@ -11,10 +13,12 @@
 *     US Army Armament Research and Development Command, Ballistic Research
 *     Laboratory, Aberdeen Proving Ground, Maryland.
 *
+*   URL: https://apps.dtic.mil/docs/citations/ADA098110
+*
 *  The purpose of reproducing the equations here are as follows:
 *
-*   1. To export the equations in LaTeX form to check them. It is much easier
-*      to check long equations visually in rendered LaTeX output than in raw
+*   1. To export the equations as LaTeX to check them. It is much easier to
+*      check long equations visually in rendered LaTeX output than in raw
 *      Haskell.
 *
 *   2. To extract smaller terms from the equations that can be more
@@ -23,9 +27,12 @@
 *      for errors is exacerbated by the length and complexity of the
 *      equations.
 *
+*  Contact: Jonathan Merritt <j.s.merritt@gmail.com>
+*
 \****************************************************************************/
 
 simp : false;
+
 
 /*************
  * HEAD DRAG *
@@ -59,6 +66,7 @@ texput(M_C, "M_C");
 C_DHT : 0.368*'tau^(9/5) + (1.6*'tau*('M^2 - 1))/(('gamma + 1)*'M^2);
 M_C : sqrt(1 + 0.552*'tau^(4/5));
 
+
 /*****************
  * BOATTAIL DRAG *
  *****************/
@@ -67,17 +75,68 @@ texput(A_1, "A_1");
 texput(L_CYL, "L_{CYL}");
 texput(beta, "\\beta");
 texput(L_BT, "L_{BT}");
-k : 0.85 / (sqrt('M^2 - 1));
 
+/* Constants in support of Eq. 9 */
+k : 0.85 / (sqrt('M^2 - 1));
 A_1 : (1 - 3*('R_T/'R)/(5*'M))
       *(5*'tau/(6*sqrt('M^2 - 1))*('tau/2)^2 - 0.7435/('M^2)*('tau*'M)^1.6);
 A : 'A_1*e^(-sqrt(2/('gamma*'M^2))*'L_CYL) + 2*tan('beta)/(sqrt('M^2-1))
     - (('gamma + 1)*'M^4 - 4*('M^2 - 1))*(tan('beta))^2/(2*('M^2 - 1)^2);
+
+/* Supersonic boattail drag similarity parameter. Eq. 9 */
 C_DBT : 4*'A*tan('beta)/'k*((1-e^(-'k*'L_BT))
         + 2*tan('beta)*(e^(-'k*'L_BT)*('L_BT + (1/'k)) - (1/'k)));
+
+/* Transonic boattail drag similarity parameter. Eq. 10 */
 C_DBTT : 4*(tan('beta))^2*(1 + (1/2)*tan('beta))*(1 - e^(-2*'L_BT)
          + 2*tan('beta)*(e^(-2*'L_BT)*('L_BT + (1/2)) - (1/2)));
 
-/*************************
- * BASE DRAG COEFFICIENT *
- *************************/
+
+/**********************************
+ * SKIN FRICTION DRAG COEFFICIENT *
+ **********************************/
+
+texput(C_DSF, "C_{DSF}");
+texput(C_F, "C_F");
+texput(S_W, "S_W");
+texput(Re_L, "Re_L");
+texput(U, "U_{\\infty}");
+texput(L_T, "L_T");
+texput(nu, "\\nu");
+texput(S_WCYL, "S_{W(CYL)}");
+texput(S_WNOSE, "S_{W(NOSE)}");
+texput(C_FT, "C_{FT}");
+texput(C_FL, "C_{FL}");
+
+/* Reynold's Number */
+Re_L : 'U * 'L_T / 'nu;
+
+/* Laminary boundary layer skin friction coefficient. Eq. 12 */
+C_FL : 1.328/(sqrt('Re_L))*(1 + 0.12*'M^2)^(-0.12);
+
+/* Turbulent boundary layer skin friction coefficient. Eq. 13 */
+C_FT : 0.455/(log10('Re_L))^2.58*(1 + 0.21*'M^2)^(-0.32);
+
+/* Wetted area of the projectile nose. Eq. 14 */
+S_WNOSE : pi/2*'L_N*(1+1/(8*'L_N^2))*(1+(1/3 + 1/(50*'L_N^2))*('R_T/'R));
+
+/* Wetted area of the projectile afterbody. Eq. 15 */
+S_WCYL : pi * ('L_T - 'L_N);
+
+/* Overall skin firction drag. Eq. 11 */
+C_DSF : 4/pi*'C_F*'S_W;
+
+
+/****************************************************
+ * BASE DRAG COEFFICIENT (BLUNT BASE OF PROJECTILE) *
+ ****************************************************/
+
+texput(P_BI, "P_{B\\infty}");
+texput(d_B, "d_B");
+texput(C_DB, "C_{DB}");
+
+/* Pressure ratio. Eq. 18 */
+P_BI : (1 + 0.09*'M^2*(1-e^(-'L_CYL)))*(1 + (1/4)*'M^2*(1-'d_B));
+
+/* Base drag coefficient. Eq. 19 */
+C_DB : 2*'d_B^2/('gamma*'M^2)*(1 - 'P_BI);
