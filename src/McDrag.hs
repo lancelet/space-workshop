@@ -24,304 +24,159 @@ a full-sized Minuteman re-entry stage, whose size lies outside the
 known valid range.
 -}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module McDrag where
 
-
--------------------------------------------------------------------------------
--- Types
--------------------------------------------------------------------------------
-
--- | Free stream Mach number.
+-- | Mach number.
 newtype Mach a = Mach a
 
+-- | Kinematic viscosity.
+newtype KinVisc a = KinVisc a
 
--- | Length of the conical head of the projectile (calibers).
-newtype HeadLength a = HeadLength a
-
-
--- | Headshape parameter.
---
---   This is the ratio of the tangent radius to the actual ogive radius. Thus
---   (HeadShape 1.0) isa cone, and (HeadShape 0.0) is a pure ogive nose, and
---   values between describe the family of ogive nosecones.
-newtype HeadShape a = HeadShape a
+-- | Free stream velocity.
+newtype FreeStreamVel a = FreeStreamVel a
 
 
--- | Head meplat diameter (calibers).
-newtype HeadMeplatDiam a = HeadMeplatDiam a
+data BoundaryLayer
+  = FullyTurbulent  -- ^ Fully-turbulent boundary layer everywhere.
+  | LaminarOnNose   -- ^ Laminar boundary layer only on the nose.
+  deriving (Show)
 
 
--- | Drag term due to the conical head of the projectile.
-newtype HeadDrag a = HeadDrag { unHeadDrag :: a }
+data McParams a
+  = McParams
+    { d_REF :: !a  -- ^ Reference diameter (m)
+    , l_T   :: !a  -- ^ Projectile total length (calibers)
+    , l_N   :: !a  -- ^ Nose length (calibers)
+    , hsp   :: !a  -- ^ Headshape parameter, R_T/R
+    , l_BT  :: !a  -- ^ Boattail length (calibers)
+    , d_B   :: !a  -- ^ Base diameter (calibers)
+    , d_M   :: !a  -- ^ Meplat diameter (calibers)
+    , d_RB  :: !a  -- ^ Rotating band diameter (calibers)
+    , bl    :: !BoundaryLayer
+    } deriving (Show)
 
 
--------------------------------------------------------------------------------
--- Head Drag
--------------------------------------------------------------------------------
+data McOut a
+  = McOut
+    { c_DHS  :: !a  -- ^ Head drag coeff (supersonic).
+    , c_DHT  :: !a  -- ^ Head drag coeff (transonic).
+    , c_MC   :: !a  -- ^ Critical Mach no. for c_DHT lower transonic limit.
+    , c_DBTS :: !a  -- ^ Boattail drag coeff (supersonic).
+    , c_DBTT :: !a  -- ^ Boattail drag coeff (transonic).
+    , c_DSF  :: !a  -- ^ Skin friction drag ceff.
+    , c_DB   :: !a  -- ^ Base drag coeff.
+    } deriving (Show)
 
--- | Head drag.
---
---   To compute overall head drag, we blend between the subsonic, transonic
---   and supersonic regimes.
-headDrag
-  :: forall a. (RealFloat a, Ord a, Show a)
-  => Mach a
-  -> HeadLength a
-  -> HeadShape a
-  -> HeadMeplatDiam a
-  -> HeadDrag a
-headDrag mach headLength headShape headMeplatDiam =
+
+mcDragBasic
+  :: forall a. Floating a
+  => McParams a
+  -> Mach a
+  -> KinVisc a
+  -> FreeStreamVel a
+  -> McOut a
+mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
   let
-    Mach m = mach
-    HeadLength ln = headLength
-    HeadMeplatDiam dm = headMeplatDiam
-
-    tau = (1.0 - dm) / ln
-
-    -- mcrit is the critical Mach number from McCoy (1981), below which the
-    --  transonic regime produces zero drag and we thus produce zero drag
-    --  overall
-    mcrit = (1.0 + 0.552 * tau**(4.0/5.0))**(-0.5)
-    ss = unHeadDrag
-       $ headDragSupersonic mach headLength headShape headMeplatDiam
-    ts = unHeadDrag
-       $ headDragTransonic mach headLength headMeplatDiam
-
-    -- critw is a linear blending width from subsonic to transonic;
-    --  it's expressed as a fraction of the width from the critical Mach
-    --  number to Mach 1
-    critw = 0.2 * (1.0 - mcrit)
-    -- tsw is a linear blending width from transonic to supersonic;
-    --  it's an absolute Mach number value
-    tsw = 0.15
- 
-    hd
-      | m < (mcrit + critw) = smoothmix (mcrit, mcrit + critw)  0 ts m
-      | otherwise           = smoothmix (1.001,     1.0 + tsw) ts ss m
-  in
-    HeadDrag hd
-
-{-# SPECIALIZE headDrag
-  :: Mach Float
-  -> HeadLength Float
-  -> HeadShape Float
-  -> HeadMeplatDiam Float
-  -> HeadDrag Float
-  #-}
-
-
--- | Drag on the head of a projectile at supersonic speeds.
---
---   Equation (4) from McCoy (1981).
-headDragSupersonic
-  :: (Floating a)
-  => Mach a
-  -> HeadLength a
-  -> HeadShape a
-  -> HeadMeplatDiam a
-  -> HeadDrag a
-headDragSupersonic mach headLength headShape headMeplatDiam =
-  let
-    Mach m = mach
-    HeadLength ln = headLength
-    HeadShape rr = headShape
-    HeadMeplatDiam dm = headMeplatDiam
-
-    z = m * m - 1.0
-    tau = (1.0 - dm) / ln
-    c1 = 0.7156 - 0.5313 * rr + 0.5950 * rr * rr
-    c2 = 0.0796 + 0.0779 * rr
-    c3 = 1.587 + 0.049 * rr
-    c4 = 0.1122 + 0.1658 * rr
-    k = 0.75
-  in
-    HeadDrag
-    $ ((c1 - c2*tau**2)/z) * (tau * sqrt z)**(c3 + c4 * tau)
-      + (pi / 4.0) * k * dm * dm
-
-{-# SPECIALIZE headDragSupersonic
-  :: Mach Float
-  -> HeadLength Float
-  -> HeadShape Float
-  -> HeadMeplatDiam Float
-  -> HeadDrag Float
-  #-}
-
-
--- | Drag on the head of a projectile at transonic speeds.
---
---   Equation (8) from McCoy (1981).
-headDragTransonic
-  :: (Floating a)
-  => Mach a
-  -> HeadLength a
-  -> HeadMeplatDiam a
-  -> HeadDrag a
-headDragTransonic (Mach m) (HeadLength ln) (HeadMeplatDiam dm) =
-  let
-    z = m * m - 1.0
-    tau = (1.0 - dm) / ln
-    gamma = 1.4
-  in
-    HeadDrag
-    $ 0.368 * tau**(9.0/5.0)
-      + (1.6 * tau * z) / ((gamma + 1.0) * m * m)
-
-{-# SPECIALIZE headDragTransonic
-  :: Mach Float
-  -> HeadLength Float
-  -> HeadMeplatDiam Float
-  -> HeadDrag Float #-}
-
-
--------------------------------------------------------------------------------
--- BoatTail Drag
--------------------------------------------------------------------------------
-
--- | BoatTail angle (degrees).
-newtype BoatTailAngle a = BoatTailAngle a
-
--- | BoatTail length (calibers).
-newtype BoatTailLength a = BoatTailLength a
-
--- | Length of the cylindrical body (calibers).
-newtype BodyCylinderLength a = BodyCylinderLength a
-
--- | Drag on the boattail region.
-newtype BoatTailDrag a = BoatTailDrag { unBoatTailDrag :: a }
-
-
-boatTailDrag
-  :: (Floating a, Ord a)
-  => Mach a
-  -> HeadLength a
-  -> HeadShape a
-  -> HeadMeplatDiam a
-  -> BodyCylinderLength a
-  -> BoatTailAngle a
-  -> BoatTailLength a
-  -> BoatTailDrag a
-boatTailDrag mach
-             headLength
-             headShape
-             headMeplatDiam
-             bodyCylinderLength
-             boatTailAngle
-             boatTailLength =
-  let
-    Mach m = mach
+    -- Additional geometric parameters
+    beta = undefined
+    l_CYL = undefined
     
-    ss = unBoatTailDrag
-       $ boatTailDragSupersonic mach
-                                headLength
-                                headShape
-                                headMeplatDiam
-                                bodyCylinderLength
-                                boatTailAngle
-                                boatTailLength
-
-    btd = if ss < 0
-          then 0
-          else ss
-  
-  in
-    BoatTailDrag btd
-      
-
-boatTailDragSupersonic
-  :: (Floating a)
-  => Mach a
-  -> HeadLength a
-  -> HeadShape a
-  -> HeadMeplatDiam a
-  -> BodyCylinderLength a
-  -> BoatTailAngle a
-  -> BoatTailLength a
-  -> BoatTailDrag a
-boatTailDragSupersonic mach
-                       headLength
-                       headShape
-                       headMeplatDiam
-                       bodyCylinderLength
-                       boatTailAngle
-                       boatTailLength =
-  let
-    Mach m = mach
-    HeadLength ln = headLength
-    HeadShape rr = headShape
-    HeadMeplatDiam dm = headMeplatDiam
-    BodyCylinderLength lcyl = bodyCylinderLength
-    BoatTailAngle beta = boatTailAngle
-    BoatTailLength lbt = boatTailLength
-
+    -- Ratio of specific heats (C_pressure / C_volume)
+    --   Approximately 1.4 for air:
+    --   http://hyperphysics.phy-astr.gsu.edu/hbase/Kinetic/shegas.html
     gamma = 1.4
-    tau = (1.0 - dm) / ln
-    z = m * m - 1.0
-    k = 0.85 / (sqrt z)
-    a1 = (1 - 3*rr/(5*m))*
-         (5*tau/(6*(sqrt z))*(tau/2)**2 - 0.7435/(m**2)*(tau*m)**1.6)
-    a = a1*exp((-1) * sqrt(2/(gamma*m**2)) * lcyl)
-        + 2*(tan beta)/(sqrt z)
-        - (((gamma + 1)*m**4 - 4*(m**2 - 1)) * (tan beta)**2) / (2*z**2)
+    
 
-    el = exp ((-1)*k*lbt)
-
-    simil = (4*a*(tan beta)/k) *
-            (1 - el +
-             2*(tan beta)*
-             (el * (lbt + (1/k)) - (1/k)))
+    ---- HEAD DRAG
   
-  in
-    BoatTailDrag (0.9 * simil)
+    -- Head drag fitting constants
+    c1 = 0.7156 - 0.5313*hsp + 0.595*hsp*hsp
+    c2 = 0.0796 + 0.0779*hsp
+    c3 = 1.587 + 0.049*hsp
+    c4 = 0.1122 + 0.1658*hsp
+
+    -- thickness ratio
+    tau = (1 - d_M) / l_N
+
+    -- terms for head drag
+    c01 = m*m - 1
+    c02 = sqrt c01
+    c03 = c1 - c2*tau*tau
+    c04 = c3 + c4*tau
+    c05 = pi/4*k*d_M*d_M
+    c06 = 0.368*tau**(9.0/5.0)
+    c07 = gamma + 1
+    c08 = 1.6*tau*c01/c07/m/m
+    k = 0.85/c02
+
+    -- head drag
+    c_DHS = c03/c01*(tau*c02)**c04 + c05
+    c_DHT = c06 + c08
+    c_MC = sqrt (1 + 0.552*tau**(4.0/5.0))
 
 
+    ---- BOATTAIL DRAG
 
--------------------------------------------------------------------------------
--- Utilities
--------------------------------------------------------------------------------
+    -- terms for boattail drag
+    c09 = 1 - 3*hsp/5/m
+    c10 = 5*tau/6/c02*(tau/2)**2
+    c11 = 0.7435/m/m*(tau*m)**1.6
+    c12 = sqrt (2/gamma/m/m)
+    c13 = tan beta
+    c14 = 4*c01 - c07*m**4
+    c15 = exp(-c12*l_CYL)
+    c16 = c14*c13*c13/2/c01/c01
+    c17 = exp(-k*l_BT)
+    c18 = exp(-2*l_BT)
+    c19 = c17*(l_BT + 1/k) - 1/k
+    c20 = c18*(l_BT + 1/2) - 1/2
+    c21 = 4*a*c13/k
+    c22 = 1 + 1/2*c13
+    a1 = c09*(c10 - c11)
+    a = a1*c15 + 2*c13/c02 + c16
 
--- | Smooth polynomial mix of functions with clamping.
-smoothmix
-  :: ( Fractional a, Ord a )
-  => (a, a)  -- ^ Blending region.
-  -> a       -- ^ Value from function before blend region.
-  -> a       -- ^ Value from function after blend region.
-  -> a       -- ^ Point at which to evaluate.
-  -> a       -- ^ Mixed value.
-smoothmix (x0, x1) f g x
-  -- must case-split because f and g may not be defined over the whole
-  -- domain
-  | x <= x0 = f
-  | x <= x1 =
-      let
-        c = (x - x0) / (x1 - x0)
-        cg = smootherstep c
-        cf = 1.0 - cg
-      in
-        (cf * f) + (cg * g)
-  | otherwise = g
-
-{-# INLINE smoothmix #-}
-{-# SPECIALIZE smoothmix
-  :: (Float, Float)
-  -> Float
-  -> Float
-  -> Float
-  -> Float #-}
+    -- boattail drag
+    c_DBTS = c21*(1 - c17 + 2*c13*c19)
+    c_DBTT = 4*c13*c13*c22*(1 - c18 + 2*c13*c20)
 
 
--- | Ken Perlin's smootherstep function.
---
---   Ref: https://en.wikipedia.org/wiki/Smoothstep
-smootherstep
-  :: (Fractional a, Ord a)
-  => a  -- ^ Input value.
-  -> a  -- ^ Output value.
-smootherstep x
-  | x <= 0.0  = 0.0
-  | x <= 1.0  = x * x * x * (x * (x * 6.0 - 15.0) + 10.0)
-  | otherwise = 1.0
+    ---- SKIN FRICTION DRAG
 
-{-# INLINE smootherstep #-}
-{-# SPECIALIZE smootherstep :: Float -> Float #-}
+    -- terms for skin friction drag
+    re = u*l_T/nu
+    c23 = 1.328/(sqrt re)
+    c24 = (1 + 0.12*m*m)**(-0.12)
+    c25 = 0.455 / (logBase 10 re)**2.58
+    c26 = (1 + 0.21*m*m)**(-0.32)
+    c27 = 1 + 1/8/l_N/l_N
+    c28 = 1/3 + 1/50/l_N/l_N
+    c_FL = c23*c24
+    c_FT = c25*c26
+    sw_cyl = pi * (l_T - l_N)
+    sw_nose = pi/2*l_N*c27*(1 + c28*hsp)
+    sw = sw_cyl + sw_nose
+    c_F = case bl of
+            FullyTurbulent -> c_FT
+            LaminarOnNose ->
+              let f = l_N / l_T
+              in f*c_FL + (f - 1)*c_FT
+
+    -- skin friction drag
+    c_DSF = 4/pi*c_F*sw
+
+
+    ---- BASE DRAG (BLUNT BASE)
+
+    -- terms for base drag
+    c29 = 1 + 1/4*m*m*(1-d_B)
+    c30 = 1 - exp (-l_CYL)
+    c31 = 2*d_B*d_B/gamma/m/m
+    pbi = (1 + 0.09*m*m*c30)*c29
+
+    -- base drag
+    c_DB = c31*(1 - pbi)
+  
+
+  in McOut{..}
