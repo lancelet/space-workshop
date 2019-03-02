@@ -140,3 +140,102 @@ P_BI : (1 + 0.09*'M^2*(1-e^(-'L_CYL)))*(1 + (1/4)*'M^2*(1-'d_B));
 
 /* Base drag coefficient. Eq. 19 */
 C_DB : 2*'d_B^2/('gamma*'M^2)*(1 - 'P_BI);
+
+
+/***********************************
+ * SIMPLIFICATION AND SUBSTITUTION *
+ ***********************************/
+
+/* Sub-expressions. */
+
+texput(c01, "c_{01}");
+texput(c02, "c_{02}");
+texput(c03, "c_{03}");
+texput(c04, "c_{04}");
+texput(c05, "c_{05}");
+texput(c06, "c_{06}");
+texput(c07, "c_{07}");
+texput(c08, "c_{08}");
+texput(c09, "c_{09}");
+texput(c10, "c_{10}");
+texput(c11, "c_{11}");
+texput(c12, "c_{12}");
+texput(c13, "c_{13}");
+texput(c14, "c_{14}");
+texput(c15, "c_{15}");
+texput(c16, "c_{16}");
+texput(c17, "c_{17}");
+texput(c18, "c_{18}");
+texput(c19, "c_{19}");
+texput(c20, "c_{20}");
+texput(c21, "c_{21}");
+texput(c22, "c_{22}");
+
+c01 : 'M^2 - 1;
+c02 : sqrt('c01);
+c03 : 'C_1 - 'C_2*'tau^2;
+c04 : 'C_3 + 'C_4*'tau;
+c05 : pi/4*'K*'d_M^2*'C_PS;
+c06 : 0.368*'tau^(9/5);
+c07 : 'gamma + 1;
+c08 : 1.6*'tau*'c01/('c07*'M^2);
+c09 : 1 - 3*('R_T/'R)/(5*'M);
+c10 : 5*'tau/(6*'c02)*('tau/2)^2;
+c11 : 0.7435/('M^2)*('tau*'M)^1.6;
+c12 : sqrt(2/('gamma*'M^2));
+c13 : tan('beta);
+c14 : -('c07*'M^4 - 4*'c01);
+c15 : e^(-'c12*'L_CYL);
+c16 : 'c14 * 'c13^2 / (2 * 'c01^2);
+c17 : e^(-'k*'L_BT);
+c18 : e^(-2*'L_BT);
+c19 : 'c17*('L_BT + 1/'k) - 1/'k;
+c20 : 'c18*('L_BT + 1/2) - 1/2;
+c21 : 4*'A*'c13/'k;
+c22 : 1 + (1/2) * 'c13;
+
+substitutions :
+    [ c01 = 'c01
+    , c02 = 'c02
+    , c03 = 'c03
+    , c04 = 'c04
+    , c05 = 'c05
+    , c06 = 'c06
+    , c07 = 'c07
+    , c08 = 'c08
+    , c09 = 'c09
+    , c10 = 'c10
+    , c11 = 'c11
+    , c12 = 'c12
+    , c13 = 'c13
+    , c14 = 'c14
+    , c15 = 'c15
+    , c16 = 'c16
+    , c17 = 'c17
+    , c18 = 'c18
+    , c19 = 'c19
+    , c20 = 'c20
+    , c21 = 'c21
+    , c22 = 'c22
+    ];
+
+/* Supersonic head drag coefficient. */
+
+C_DH_S : subst(substitutions, C_DH);
+
+/* Transonic head drag coefficient. */
+
+C_DHT_S : subst(substitutions, C_DHT);
+
+/* Boattail pressure recovery factor. */
+
+k_S : subst(substitutions, k);
+
+/* Factors for Prandtl-Meyer expansion. */
+
+A_1_S : subst(substitutions, A_1);
+A_S : subst(substitutions, A);
+
+/* Similarity parameters for boattail drag. */
+C_DBT_S : subst(substitutions, C_DBT);
+C_DBTT_S : subst(substitutions, C_DBTT);
