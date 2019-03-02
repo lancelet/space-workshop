@@ -1,5 +1,5 @@
 mcdrag-formulas.pdf : mcdrag-formulas.tex mcdrag.mac
-	latexmk -f -interaction=nonstopmode -r ./latexmkrc -lualatex mcdrag-formulas.tex < /dev/null
+	latexmk -f -interaction=nonstopmode -r ./latexmkrc -lualatex mcdrag-formulas.tex
 
 clean:
 	latexmk -C -silent

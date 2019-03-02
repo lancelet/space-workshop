@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{fontspec}
 \usepackage{shellesc}
+\usepackage{parskip}
 \usepackage[amsmath]{maxiplot}
 
 \setmainfont{Tex Gyre Pagella}
@@ -10,12 +11,23 @@
 
 \newcommand{\imx}[1]{\imaxima{tex(#1)}}
 
+\title{Adaptation of MC DRAG Equations for Rocket Drag}
+\author{Transcribed by Jonathan Merritt}
+\date{1 March 2019}
 \begin{document}
+\maketitle
 
 \begin{maximacmd}
   load("mcdrag.mac");
 \end{maximacmd}
 
+\section{Original Equations}
+
+Original equations from the paper are reproduced below for the purpose of manual checking. They are extracted from \texttt{mcdrag.mac} and inserted into this file using a modified version of \texttt{maxiplot}, also included with the source.
+
+\subsection{Head Drag}
+
+Fitting constants:
 \begin{align}
   C_1 &= \imx{C_1} \\
   C_2 &= \imx{C_2} \\
@@ -23,5 +35,39 @@
   C_4 &= \imx{C_4}
 \end{align}
 
+Thickness ratio, $\tau$:
+\begin{align}
+  \tau &= \imx{tau}
+\end{align}
+
+Head drag coefficients for supersonic ($C_{DH}$) and transonic ($C_{DHT}$) flow:
+\begin{align}
+  C_{DH}  &= \imx{C_DH}  \\
+  C_{DHT} &= \imx{C_DHT} 
+\end{align}
+
+Critical Mach number for transonic flow ($M_C$), below which head drag is zero:
+\begin{align}
+  M_C &= \imx{M_C}
+\end{align}
+
+\subsection{Boattail Drag}
+
+Boattail pressure recovery factor:
+\begin{align}
+  k &= \imx{k}
+\end{align}
+
+Factors for Prandtl-Meyer expansion:
+\begin{align}
+  A_1 &= \imx{A_1} \\
+  A   &= \imx{A}
+\end{align}
+
+Similarity parameter for supersonic boattail drag ($C_{DBT}$) and transonic boattail drag ($C_{DBTT}$):
+\begin{align}
+  C_{DBT}  &= \imx{C_DBT}  \\
+  C_{DBTT} &= \imx{C_DBTT}
+\end{align}
 
 \end{document}
