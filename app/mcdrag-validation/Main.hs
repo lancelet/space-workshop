@@ -26,7 +26,8 @@ main = do
   let
     params :: McDrag.McParams Float
     params = McDrag.McParams
-      { McDrag.l_T = 5.48 -- calibers
+      { McDrag.d_REF = 5.7 / 1000.0 -- m
+      , McDrag.l_T = 5.48 -- calibers
       , McDrag.l_N = 3.0 -- calibers
       , McDrag.hsp = 0.5 -- head shape parameter
       , McDrag.l_BT = 1.0 -- calibers
@@ -41,8 +42,12 @@ main = do
     f :: Float -> McDrag.McBasicOut Float
     f m = McDrag.mcDragBasic params cs nu (McDrag.Mach m)
 
+    ms :: [Float]
+    ms = [ 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.925, 0.95, 0.975, 1
+         , 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.2, 2.5, 3, 3.5, 4 ]
+
     xs :: [(Float, McDrag.McBasicOut Float)]
-    xs = [ (m, f m) | m <- [0.0, 0.025 .. 5.0] ]
+    xs = [ (m, f m) | m <- [0.0, 0.01 .. 5.0] ]
 
   let
     ec :: (McDrag.McBasicOut Float -> b)
@@ -55,16 +60,12 @@ main = do
 
     c_DHS = ec McDrag.c_DHS xs
     c_DHT = aboveZero $ ec McDrag.c_DHT xs
-    c_DBTS = aboveZero $ ec McDrag.c_DBTS xs
-    c_DBTT = aboveZero $ ec McDrag.c_DBTT xs
+    c_DBT = aboveZero $ ec McDrag.c_DBT xs
     c_DSF = ec McDrag.c_DSF xs
     c_DB = fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_DB xs
     -- c_PBI = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBI xs
     -- c_PBIA = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBIA xs
   
-    ms :: [Float]
-    ms = [ 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.925, 0.95, 0.975, 1
-         , 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.2, 2.5, 3, 3.5, 4 ]
          
     oplt :: [(Float, McDrag.McBasicOut Float)]
     oplt = [ (m, f m) | m <- ms ]
@@ -82,22 +83,23 @@ main = do
       )
     (   (setTitle "Head (supersonic)"     $ Plot2D.list Graph2D.lines c_DHS)
      <> (setTitle "Head (transonic)"      $ Plot2D.list Graph2D.lines c_DHT)
-     <> (setTitle "Boattail (supersonic)" $ Plot2D.list Graph2D.lines c_DBTS)
-     <> (setTitle "Boattail (transonic)"  $ Plot2D.list Graph2D.lines c_DBTT)
+     <> (setTitle "Boattail"              $ Plot2D.list Graph2D.lines c_DBT)
      <> (setTitle "Skin friction"         $ Plot2D.list Graph2D.lines c_DSF)
      <> (setTitle "Blunt base"            $ Plot2D.list Graph2D.lines c_DB)
      -- <> (setTitle "Pressure ratio"        $ Plot2D.list Graph2D.lines c_PBI)
      -- <> (setTitle "Pressure ratio (alt)"  $ Plot2D.list Graph2D.lines c_PBIA)
     ))
 
-  --        -----   -----   -----
-  putStrLn "    M     CDB   PB/PI"
+  --        -----   -----   -----   -----   -----
+  putStrLn "    M    CDSF    CDBT     CDB   PB/PI"
   let
     fmt :: Float -> String
     fmt f = printf "%.3f" (if isNaN f then 0.0 else f)
   forM_ oplt $ \(m, r) ->
     putStrLn
       $  fmt m <> "   "
+      <> fmt (McDrag.c_DSF r) <> "   "
+      <> fmt (max 0 (McDrag.c_DBT r)) <> "   "
       <> fmt (McDrag.c_DB r) <> "   "
       <> fmt (McDrag.c_PBI r)
   

@@ -46,7 +46,8 @@ data BoundaryLayer
 
 data McParams a
   = McParams
-    { l_T   :: !a  -- ^ Projectile total length (calibers)
+    { d_REF :: !a  -- ^ Reference diameter (m)
+    , l_T   :: !a  -- ^ Projectile total length (calibers)
     , l_N   :: !a  -- ^ Nose length (calibers)
     , hsp   :: !a  -- ^ Headshape parameter, R_T/R (dimensionless)
     , l_BT  :: !a  -- ^ Boattail length (calibers)
@@ -62,8 +63,7 @@ data McBasicOut a
     { c_DHS  :: !a  -- ^ Head drag coeff (supersonic).
     , c_DHT  :: !a  -- ^ Head drag coeff (transonic).
     , c_MC   :: !a  -- ^ Critical Mach no. for c_DHT lower transonic limit.
-    , c_DBTS :: !a  -- ^ Boattail drag coeff (supersonic).
-    , c_DBTT :: !a  -- ^ Boattail drag coeff (transonic).
+    , c_DBT  :: !a  -- ^ Boattail drag coeff.
     , c_DSF  :: !a  -- ^ Skin friction drag ceff.
     , c_DB   :: !a  -- ^ Base drag coeff.
     , c_PBI  :: !a  -- ^ Pressure ratio.
@@ -98,6 +98,10 @@ mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
     --   http://hyperphysics.phy-astr.gsu.edu/hbase/Kinetic/shegas.html
     gamma = 1.4
     
+    m2 = m*m
+    chi = (m2 - 1)/(2.4*m2)
+    be2 = m2 - 1
+    be = sqrt be2
 
     ---- HEAD DRAG
   
@@ -127,67 +131,58 @@ mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
     c_MC = sqrt (1 + 0.552*tau**(4.0/5.0))
 
 
-    ---- BOATTAIL DRAG
+    ---- BOATTAIL DRAG (validated against paper)
 
-    -- terms for boattail drag
-    c09 = 1 - 3*hsp/5/m
-    c10 = 5*tau/6/c02*(tau/2)**2
-    c11 = 0.7435/m/m*(tau*m)**1.6
-    c12 = sqrt (2/gamma/m/m)
-    c13 = tan beta
-    c14 = 4*c01 - c07*m**4
-    c15 = exp(-c12*l_CYL)
-    c16 = c14*c13*c13/2/c01/c01
-    c17 = exp(-k*l_BT)
-    c18 = exp(-2*l_BT)
-    c19 = c17*(l_BT + 1/k) - 1/k
-    c20 = c18*(l_BT + 1/2) - 1/2
-    c21 = 4*a*c13/k
-    c22 = 1 + 1/2*c13
-    a1 = c09*(c10 - c11)
-    a = a1*c15 + 2*c13/c02 + c16
+    bp = 0.85/be  -- k in the paper
+    tb = (1 - d_B)/(2*l_BT)
+    tb23 = 2*tb*tb + tb**3
+    fbt = exp(-2*l_BT)
+    bbt = 1 - fbt + 2*tb*((fbt*(l_BT + 0.5)) - 0.5)
 
-    -- boattail drag
-    c_DBTS = c21*(1 - c17 + 2*c13*c19)
-    c_DBTT = 4*c13*c13*c22*(1 - c18 + 2*c13*c20)
+    aa2 = (5*tau)/(6*be) + (0.5*tau)**2 - (0.7435/m2*(tau*m)**1.6)
+    aa1 = (1 - ((0.6*hsp)/m))*aa2
+    exl = exp((-1.1952/m)*(l_T - l_N - l_BT))
+    xxm = ((2.4*m2*m2 - 4*be2)*(tb*tb))/(2*be2*be2)
+    aa = aa1*exl - xxm + (2*tb/be)
+    bb = 1/bp  -- 1 / k
+    exbt = exp (-bp*l_BT)
+    aab = 1 - exbt + (2*tb*(exbt*(l_BT + bb)- bb)) -- part of eq 9
+
+    c_DBT
+      | m <= 0.85 = 0
+      | m <= 1.00 = 2*tb23*bbt*(1/(0.564 + 1260*chi*chi))
+      | m <= 1.10 = 2*tb23*bbt*(1.774 - 9.3*chi)
+      | otherwise = 4*aa*tb*aab*bb
 
 
-    ---- SKIN FRICTION DRAG
-
-    -- terms for skin friction drag
-    re = m*cs*l_T/nu
-    c23 = 1.328/(sqrt re)
-    c24 = (1 + 0.12*m*m)**(-0.12)
-    c25 = 0.455 / (logBase 10 re)**2.58
-    c26 = (1 + 0.21*m*m)**(-0.32)
-    c27 = 1 + 1/8/l_N/l_N
-    c28 = 1/3 + 1/50/l_N/l_N
-    c_FL = c23*c24
-    c_FT = c25*c26
-    sw_cyl = pi * (l_T - l_N)
-    sw_nose = pi/2*l_N*c27*(1 + c28*hsp)
-    sw = sw_cyl + sw_nose
-    c_F = case bl of
-            FullyTurbulent -> c_FT
-            LaminarOnNose ->
-              let f = l_N / l_T
-              in f*c_FL + (1 - f)*c_FT
-
-    -- skin friction drag
-    c_DSF = 4/pi*c_F*sw
+    ---- SKIN FRICTION DRAG (validated against paper)
+  
+    re = 23296.3*m*l_T*(d_REF*1000)
+    ret = logBase 10 re
+    cft = (0.455/(ret**2.58))*((1 + 0.21*m2)**(-0.32))
+    cfl = case bl of
+            FullyTurbulent -> cft
+            LaminarOnNose -> (1.328/(sqrt re))*((1 + 0.12*m2)**(-0.12))
+    swcyl = pi*(l_T - l_N)
+    dum = 1 + ((1/3 + (0.02/l_N/l_N))*hsp)
+    swn = (pi/2)*l_N*dum*(1 + 1/(8*l_N*l_N))
+    sw = swn + swcyl
+    cdsfl = (4/pi)*sw*cfl
+    cdsft = (4/pi)*sw*cft
+    c_DSF = (cdsfl*swn + cdsft*swcyl)/sw
 
 
     ---- BASE DRAG (BLUNT BASE) (validated against paper)
 
     -- from the FORTRAN
     pb2 = if m < 1
-          then 1/(1 + 0.1875*m*m + 0.0531*m*m*m*m)
-          else 1/(1 + 0.2477*m*m + 0.0345*m*m*m*m)
-    pb4 = (1 + 0.09*m*m*(1 - exp (-l_CYL)))*(1 + 1/4*m*m*(1 - d_B))
+          then 1/(1 + 0.1875*m2 + 0.0531*m2*m2)
+          else 1/(1 + 0.2477*m2 + 0.0345*m2*m2)
+    pb4 = (1 + 0.09*m2*(1 - exp (-l_CYL)))*(1 + 1/4*m2*(1 - d_B))
 
     -- pressure ratio and base drag
     c_PBI = pb2 * pb4
-    c_DB = 2*d_B*d_B/gamma/m/m*(1 - c_PBI)
+    c_DB = 2*d_B*d_B/gamma/m2*(1 - c_PBI)
 
   
 
