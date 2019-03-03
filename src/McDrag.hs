@@ -73,12 +73,7 @@ data McBasicOut a
 -- | Basic MC DRAG equations.
 --
 --   This is incomplete because
---
---   - It does not describe blending between:
---     - c_DHS and c_DHT in the transonic region and before c_MC
---     - c_DBTS and c_DBTT in the transonic region and in M < 1
 --   - There is no rotating band drag yet.
---   - Boattail drag similarity parameters need to be multiplied.
 mcDragBasic
   :: forall a. (Floating a, Ord a)
   => McParams a
