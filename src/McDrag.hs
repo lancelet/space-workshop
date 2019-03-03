@@ -60,11 +60,10 @@ data McParams a
 
 data McBasicOut a
   = McBasicOut
-    { c_DHS  :: !a  -- ^ Head drag coeff (supersonic).
-    , c_DHT  :: !a  -- ^ Head drag coeff (transonic).
-    , c_MC   :: !a  -- ^ Critical Mach no. for c_DHT lower transonic limit.
-    , c_DBT  :: !a  -- ^ Boattail drag coeff.
+    { c_D    :: !a  -- ^ Total drag coeff.
+    , c_DH   :: !a  -- ^ Head drag coeff.
     , c_DSF  :: !a  -- ^ Skin friction drag ceff.
+    , c_DBT  :: !a  -- ^ Boattail drag coeff.
     , c_DB   :: !a  -- ^ Base drag coeff.
     , c_PBI  :: !a  -- ^ Pressure ratio.
     -- , c_PBIA :: !a  -- ^ Alternate pressure ratio (debugging).
@@ -83,14 +82,11 @@ data McBasicOut a
 mcDragBasic
   :: forall a. (Floating a, Ord a)
   => McParams a
-  -> SpeedOfSound a
-  -> KinVisc a
   -> Mach a
   -> McBasicOut a
-mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
+mcDragBasic McParams{..} (Mach m) =
   let
     -- Additional geometric parameters
-    beta = atan ((1 - d_B)/2/l_BT)
     l_CYL = l_T - l_N
     
     -- Ratio of specific heats (C_pressure / C_volume)
@@ -103,7 +99,7 @@ mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
     be2 = m2 - 1
     be = sqrt be2
 
-    ---- HEAD DRAG
+    ---- HEAD DRAG (validated against paper)
   
     -- Head drag fitting constants
     c1 = 0.7156 - 0.5313*hsp + 0.595*hsp*hsp
@@ -114,21 +110,29 @@ mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
     -- thickness ratio
     tau = (1 - d_M) / l_N
 
-    -- terms for head drag
-    c01 = m*m - 1
-    c02 = sqrt c01
-    c03 = c1 - c2*tau*tau
-    c04 = c3 + c4*tau
-    c05 = pi/4*k*d_M*d_M
-    c06 = 0.368*tau**(9.0/5.0)
-    c07 = gamma + 1
-    c08 = 1.6*tau*c01/c07/m/m
-    k = 0.85/c02
+    ptp
+      | m <= 1    = (1 + 0.2*m2)**3.5
+      | otherwise = ((1.2*m2)**3.5)*((6/(7*m2 - 1))**2.5) -- this last 2.5 may be 3.5
+    cmep = (1.122*(ptp - 1)*(d_M*d_M))/m2
+    cdhm
+      | m <= 0.91 = 0
+      | m < 1.41  = (0.254 + 2.88*chi)*cmep
+      | otherwise = 0.85*cmep
+    
+    -- critical lower cutoff for subsonic head drag
+    xmc = (1 + 0.552*(tau**0.8))**(-0.5)
+  
+    ssmc = 1 + 0.368*(tau**1.85)
+    ze
+      | m < ssmc  = sqrt(ssmc*ssmc - 1)
+      | otherwise = sqrt(m2 - 1)
+    rz2 = 1/(ze*ze)
+    cdht
+      | m <= xmc          = 0
+      | m > xmc && m <= 1 = 0.368*(tau**1.8) + 1.6*tau*chi
+      | otherwise         = (c1 - c2*tau*tau)*rz2*((tau*ze)**(c3 + c4*tau))
 
-    -- head drag
-    c_DHS = c03/c01*(tau*c02)**c04 + c05
-    c_DHT = c06 + c08
-    c_MC = sqrt (1 + 0.552*tau**(4.0/5.0))
+    c_DH = cdht + cdhm
 
 
     ---- BOATTAIL DRAG (validated against paper)
@@ -184,6 +188,8 @@ mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
     c_PBI = pb2 * pb4
     c_DB = 2*d_B*d_B/gamma/m2*(1 - c_PBI)
 
+    ---- TOTAL DRAG
+    c_D = c_DH + c_DSF {- + C_DBND -} + c_DBT + c_DB
   
 
   in McBasicOut{..}

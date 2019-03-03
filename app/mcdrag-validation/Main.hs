@@ -36,11 +36,11 @@ main = do
       , McDrag.d_RB = 1.0 -- no rotating band
       , McDrag.bl = McDrag.LaminarOnNose
       }
-    cs = McDrag.SpeedOfSound 343.0
-    nu = McDrag.KinVisc 1.46e-5
+    -- cs = McDrag.SpeedOfSound 343.0
+    -- nu = McDrag.KinVisc 1.46e-5
 
     f :: Float -> McDrag.McBasicOut Float
-    f m = McDrag.mcDragBasic params cs nu (McDrag.Mach m)
+    f m = McDrag.mcDragBasic params (McDrag.Mach m)
 
     ms :: [Float]
     ms = [ 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.925, 0.95, 0.975, 1
@@ -55,14 +55,11 @@ main = do
        -> [(Float, b)]
     ec fn = fmap (\(m, r) -> (m, fn r))
 
-    aboveZero :: [(Float, Float)] -> [(Float, Float)]
-    aboveZero = fmap (\(m, r) -> (m, max 0 r))
-
-    c_DHS = ec McDrag.c_DHS xs
-    c_DHT = aboveZero $ ec McDrag.c_DHT xs
-    c_DBT = aboveZero $ ec McDrag.c_DBT xs
+    c_D = ec McDrag.c_D xs
+    c_DH = ec McDrag.c_DH xs
+    c_DBT = ec McDrag.c_DBT xs
     c_DSF = ec McDrag.c_DSF xs
-    c_DB = fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_DB xs
+    c_DB = ec McDrag.c_DB xs
     -- c_PBI = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBI xs
     -- c_PBIA = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBIA xs
   
@@ -81,23 +78,23 @@ main = do
       $ Opts.gridYTicks True
       $ Opts.deflt
       )
-    (   (setTitle "Head (supersonic)"     $ Plot2D.list Graph2D.lines c_DHS)
-     <> (setTitle "Head (transonic)"      $ Plot2D.list Graph2D.lines c_DHT)
+    (   (setTitle "Total"                 $ Plot2D.list Graph2D.lines c_D)
+     <> (setTitle "Head"                  $ Plot2D.list Graph2D.lines c_DH)
      <> (setTitle "Boattail"              $ Plot2D.list Graph2D.lines c_DBT)
      <> (setTitle "Skin friction"         $ Plot2D.list Graph2D.lines c_DSF)
      <> (setTitle "Blunt base"            $ Plot2D.list Graph2D.lines c_DB)
-     -- <> (setTitle "Pressure ratio"        $ Plot2D.list Graph2D.lines c_PBI)
-     -- <> (setTitle "Pressure ratio (alt)"  $ Plot2D.list Graph2D.lines c_PBIA)
     ))
 
-  --        -----   -----   -----   -----   -----
-  putStrLn "    M    CDSF    CDBT     CDB   PB/PI"
+  --        -----   -----   -----   -----   -----   -----   -----
+  putStrLn "    M     CD0     CDH    CDSF    CDBT     CDB   PB/PI"
   let
     fmt :: Float -> String
-    fmt f = printf "%.3f" (if isNaN f then 0.0 else f)
+    fmt = printf "%.3f"
   forM_ oplt $ \(m, r) ->
     putStrLn
       $  fmt m <> "   "
+      <> fmt (McDrag.c_D r) <> "   "
+      <> fmt (McDrag.c_DH r) <> "   "
       <> fmt (McDrag.c_DSF r) <> "   "
       <> fmt (max 0 (McDrag.c_DBT r)) <> "   "
       <> fmt (McDrag.c_DB r) <> "   "
@@ -108,44 +105,3 @@ main = do
 
 setTitle :: Functor f => String -> f (Graph2D.T x y) -> f (Graph2D.T x y)
 setTitle title = fmap (Graph2D.lineSpec (LineSpec.title title $ LineSpec.deflt))
-
-
-  {-
-  let
-    f :: Float -> Float
-    f x = McDrag.unHeadDrag $
-          McDrag.headDrag
-          (McDrag.Mach x)
-          (McDrag.HeadLength 3.03)
-          (McDrag.HeadShape 0.5)
-          (McDrag.HeadMeplatDiam 0.09)
-
-    g :: Float -> Float
-    g x = McDrag.unBoatTailDrag $
-          McDrag.boatTailDrag
-          (McDrag.Mach x)
-          (McDrag.HeadLength 3.03)
-          (McDrag.HeadShape 0.5)
-          (McDrag.HeadMeplatDiam 0.09)
-          (McDrag.BodyCylinderLength 2.3)
-          (McDrag.BoatTailAngle (7.5 * pi / 180.0))
-          (McDrag.BoatTailLength 0.579)
-    
-    xs = [ (x, g x) | x <- [0.0, 0.001 .. 5.0] ]
-
-
-  let
-    plot :: Plot2D.T Float Float
-    plot = fmap (Graph2D.lineSpec (LineSpec.title "C_{dbt}" $ LineSpec.deflt)) $ Plot2D.list Graph2D.lines xs
-  _ <- GP.plot (SVG.cons "test.svg") $ Frame.cons
-    ( Opts.title "Components of drag vs Mach number"
-      $ Opts.xLabel "M"
-      $ Opts.yLabel "C_d"
-      $ Opts.gridXTicks True
-      $ Opts.gridYTicks True
-      $ Opts.deflt
-    ) plot
-
-
-  putStrLn "Hello World"
-  -}
