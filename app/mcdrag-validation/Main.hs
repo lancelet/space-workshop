@@ -13,6 +13,7 @@ import qualified Graphics.Gnuplot.Graph.TwoDimensional as Graph2D
 import qualified Graphics.Gnuplot.LineSpecification    as LineSpec
 import qualified Graphics.Gnuplot.Plot.TwoDimensional  as Plot2D
 import qualified Graphics.Gnuplot.Terminal.SVG         as SVG
+import qualified Graphics.Gnuplot.Terminal.PostScript  as PS
 import Text.Printf (printf)
 
 import qualified McDrag
@@ -22,9 +23,9 @@ main = do
 
   putStrLn "McDrag Validation"
 
-  -- Using 5.56mm, BRL-1 projectile
   let
     params :: McDrag.McParams Float
+    -- 5.56mm, BRL-1 projectile
     params = McDrag.McParams
       { McDrag.d_REF = 5.7 / 1000.0 -- m
       , McDrag.l_T = 5.48 -- calibers
@@ -36,6 +37,20 @@ main = do
       , McDrag.d_RB = 1.0 -- no rotating band
       , McDrag.bl = McDrag.LaminarOnNose
       }
+    -- minuteman
+    {- 
+    params = McDrag.McParams
+      { McDrag.d_REF = 55.6 / 1000.0 -- m
+      , McDrag.l_T = 3.250 -- calibers
+      , McDrag.l_N = 0.967 -- calibers
+      , McDrag.hsp = 0 -- head shape parameter
+      , McDrag.l_BT = 1.180 -- calibers
+      , McDrag.d_B = 1.630 -- calibers
+      , McDrag.d_M = 0.200 -- no meplat
+      , McDrag.d_RB = 1.00 -- no rotating band
+      , McDrag.bl = McDrag.FullyTurbulent
+      }
+    -}
     -- cs = McDrag.SpeedOfSound 343.0
     -- nu = McDrag.KinVisc 1.46e-5
 
@@ -47,7 +62,7 @@ main = do
          , 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2, 2.2, 2.5, 3, 3.5, 4 ]
 
     xs :: [(Float, McDrag.McBasicOut Float)]
-    xs = [ (m, f m) | m <- [0.0, 0.01 .. 5.0] ]
+    xs = [ (m, f m) | m <- [0.0, 0.01 .. 9.0] ]
 
   let
     ec :: (McDrag.McBasicOut Float -> b)
@@ -71,7 +86,7 @@ main = do
   _ <- GP.plot
     (SVG.cons "test.svg")
     (Frame.cons
-      ( Opts.title "Components of drag"
+      ( Opts.title "MC DRAG : Components of drag vs Mach number"
       $ Opts.xLabel "M"
       $ Opts.yLabel "C_d"
       $ Opts.gridXTicks True
