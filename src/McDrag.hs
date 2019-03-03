@@ -34,9 +34,9 @@ newtype Mach a = Mach a
 -- | Kinematic viscosity.
 newtype KinVisc a = KinVisc a
 
--- | Free stream velocity.
-newtype FreeStreamVel a = FreeStreamVel a
-
+-- | Speed of sound.
+newtype SpeedOfSound a = SpeedOfSound a
+  
 
 data BoundaryLayer
   = FullyTurbulent  -- ^ Fully-turbulent boundary layer everywhere.
@@ -46,10 +46,9 @@ data BoundaryLayer
 
 data McParams a
   = McParams
-    { d_REF :: !a  -- ^ Reference diameter (m)
-    , l_T   :: !a  -- ^ Projectile total length (calibers)
+    { l_T   :: !a  -- ^ Projectile total length (calibers)
     , l_N   :: !a  -- ^ Nose length (calibers)
-    , hsp   :: !a  -- ^ Headshape parameter, R_T/R
+    , hsp   :: !a  -- ^ Headshape parameter, R_T/R (dimensionless)
     , l_BT  :: !a  -- ^ Boattail length (calibers)
     , d_B   :: !a  -- ^ Base diameter (calibers)
     , d_M   :: !a  -- ^ Meplat diameter (calibers)
@@ -67,21 +66,32 @@ data McBasicOut a
     , c_DBTT :: !a  -- ^ Boattail drag coeff (transonic).
     , c_DSF  :: !a  -- ^ Skin friction drag ceff.
     , c_DB   :: !a  -- ^ Base drag coeff.
+    , c_PBI  :: !a  -- ^ Pressure ratio.
+    -- , c_PBIA :: !a  -- ^ Alternate pressure ratio (debugging).
     } deriving (Show)
 
 
+-- | Basic MC DRAG equations.
+--
+--   This is incomplete because
+--
+--   - It does not describe blending between:
+--     - c_DHS and c_DHT in the transonic region and before c_MC
+--     - c_DBTS and c_DBTT in the transonic region and in M < 1
+--   - There is no rotating band drag yet.
+--   - Boattail drag similarity parameters need to be multiplied.
 mcDragBasic
-  :: forall a. Floating a
+  :: forall a. (Floating a, Ord a)
   => McParams a
-  -> Mach a
+  -> SpeedOfSound a
   -> KinVisc a
-  -> FreeStreamVel a
+  -> Mach a
   -> McBasicOut a
-mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
+mcDragBasic McParams{..} (SpeedOfSound cs) (KinVisc nu) (Mach m) =
   let
     -- Additional geometric parameters
-    beta = undefined
-    l_CYL = undefined
+    beta = atan ((1 - d_B)/2/l_BT)
+    l_CYL = l_T - l_N
     
     -- Ratio of specific heats (C_pressure / C_volume)
     --   Approximately 1.4 for air:
@@ -145,7 +155,7 @@ mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
     ---- SKIN FRICTION DRAG
 
     -- terms for skin friction drag
-    re = u*l_T/nu
+    re = m*cs*l_T/nu
     c23 = 1.328/(sqrt re)
     c24 = (1 + 0.12*m*m)**(-0.12)
     c25 = 0.455 / (logBase 10 re)**2.58
@@ -161,22 +171,24 @@ mcDragBasic McParams{..} (Mach m) (KinVisc nu) (FreeStreamVel u) =
             FullyTurbulent -> c_FT
             LaminarOnNose ->
               let f = l_N / l_T
-              in f*c_FL + (f - 1)*c_FT
+              in f*c_FL + (1 - f)*c_FT
 
     -- skin friction drag
     c_DSF = 4/pi*c_F*sw
 
 
-    ---- BASE DRAG (BLUNT BASE)
+    ---- BASE DRAG (BLUNT BASE) (validated against paper)
 
-    -- terms for base drag
-    c29 = 1 + 1/4*m*m*(1-d_B)
-    c30 = 1 - exp (-l_CYL)
-    c31 = 2*d_B*d_B/gamma/m/m
-    pbi = (1 + 0.09*m*m*c30)*c29
+    -- from the FORTRAN
+    pb2 = if m < 1
+          then 1/(1 + 0.1875*m*m + 0.0531*m*m*m*m)
+          else 1/(1 + 0.2477*m*m + 0.0345*m*m*m*m)
+    pb4 = (1 + 0.09*m*m*(1 - exp (-l_CYL)))*(1 + 1/4*m*m*(1 - d_B))
 
-    -- base drag
-    c_DB = c31*(1 - pbi)
+    -- pressure ratio and base drag
+    c_PBI = pb2 * pb4
+    c_DB = 2*d_B*d_B/gamma/m/m*(1 - c_PBI)
+
   
 
   in McBasicOut{..}
