@@ -26,6 +26,7 @@ main = do
   let
     params :: McDrag.McParams Float
     -- 5.56mm, BRL-1 projectile
+    {-
     params = McDrag.McParams
       { McDrag.d_REF = 5.7 / 1000.0 -- m
       , McDrag.l_T = 5.48 -- calibers
@@ -37,8 +38,9 @@ main = do
       , McDrag.d_RB = 1.0 -- no rotating band
       , McDrag.bl = McDrag.LaminarOnNose
       }
+    -}
     -- minuteman
-    {- 
+    {-
     params = McDrag.McParams
       { McDrag.d_REF = 55.6 / 1000.0 -- m
       , McDrag.l_T = 3.250 -- calibers
@@ -51,8 +53,33 @@ main = do
       , McDrag.bl = McDrag.FullyTurbulent
       }
     -}
-    -- cs = McDrag.SpeedOfSound 343.0
-    -- nu = McDrag.KinVisc 1.46e-5
+    -- 155mm M549 projectile
+    {-
+    params = McDrag.McParams
+      { McDrag.d_REF = 155.0 / 1000.0 -- m
+      , McDrag.l_T = 5.650  -- calibers
+      , McDrag.l_N = 3.010  -- calibers
+      , McDrag.hsp = 0.5  -- head shape param
+      , McDrag.l_BT = 0.580 -- boattail
+      , McDrag.d_B = 0.848 -- base
+      , McDrag.d_M = 0.090 -- meplat
+      , McDrag.d_RB = 1.020 -- rotating band
+      , McDrag.bl = McDrag.FullyTurbulent
+      }
+    -}
+    -- saturn V (approx)
+    params = McDrag.McParams
+      { McDrag.d_REF = 10.1 -- m
+      , McDrag.l_T = 10.95  -- calibers
+      , McDrag.l_N = 0.4  -- calibers
+      , McDrag.hsp = 0.5  -- head shape param
+      , McDrag.l_BT = 0.1 -- boattail
+      , McDrag.d_B = 1.05 -- base
+      , McDrag.d_M = 0 -- meplat
+      , McDrag.d_RB = 1.02 -- rotating band
+      , McDrag.bl = McDrag.FullyTurbulent
+      }
+    
 
     f :: Float -> McDrag.McBasicOut Float
     f m = McDrag.mcDragBasic params (McDrag.Mach m)
@@ -75,6 +102,7 @@ main = do
     c_DBT = ec McDrag.c_DBT xs
     c_DSF = ec McDrag.c_DSF xs
     c_DB = ec McDrag.c_DB xs
+    c_DBND = ec McDrag.c_DBND xs
     -- c_PBI = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBI xs
     -- c_PBIA = aboveZero $ fmap (\(m,r) -> (m, min 1 r)) $ ec McDrag.c_PBIA xs
   
@@ -98,10 +126,11 @@ main = do
      <> (setTitle "Boattail"              $ Plot2D.list Graph2D.lines c_DBT)
      <> (setTitle "Skin friction"         $ Plot2D.list Graph2D.lines c_DSF)
      <> (setTitle "Blunt base"            $ Plot2D.list Graph2D.lines c_DB)
+     <> (setTitle "Rotating band"         $ Plot2D.list Graph2D.lines c_DBND)
     ))
 
-  --        -----   -----   -----   -----   -----   -----   -----
-  putStrLn "    M     CD0     CDH    CDSF    CDBT     CDB   PB/PI"
+  --        -----   -----   -----   -----   -----   -----   -----   -----
+  putStrLn "    M     CD0     CDH    CDSF   CDBND    CDBT     CDB   PB/PI"
   let
     fmt :: Float -> String
     fmt = printf "%.3f"
@@ -111,7 +140,8 @@ main = do
       <> fmt (McDrag.c_D r) <> "   "
       <> fmt (McDrag.c_DH r) <> "   "
       <> fmt (McDrag.c_DSF r) <> "   "
-      <> fmt (max 0 (McDrag.c_DBT r)) <> "   "
+      <> fmt (McDrag.c_DBND r) <> "   "
+      <> fmt (McDrag.c_DBT r) <> "   "
       <> fmt (McDrag.c_DB r) <> "   "
       <> fmt (McDrag.c_PBI r)
   

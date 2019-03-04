@@ -63,6 +63,7 @@ data McBasicOut a
     { c_D    :: !a  -- ^ Total drag coeff.
     , c_DH   :: !a  -- ^ Head drag coeff.
     , c_DSF  :: !a  -- ^ Skin friction drag ceff.
+    , c_DBND :: !a  -- ^ Rotating band drag coeff.
     , c_DBT  :: !a  -- ^ Boattail drag coeff.
     , c_DB   :: !a  -- ^ Base drag coeff.
     , c_PBI  :: !a  -- ^ Pressure ratio.
@@ -107,7 +108,7 @@ mcDragBasic McParams{..} (Mach m) =
 
     ptp
       | m <= 1    = (1 + 0.2*m2)**3.5
-      | otherwise = ((1.2*m2)**3.5)*((6/(7*m2 - 1))**2.5) -- this last 2.5 may be 3.5
+      | otherwise = ((1.2*m2)**3.5)*((6/(7*m2 - 1))**2.5)
     cmep = (1.122*(ptp - 1)*(d_M*d_M))/m2
     cdhm
       | m <= 0.91 = 0
@@ -135,23 +136,24 @@ mcDragBasic McParams{..} (Mach m) =
     bp = 0.85/be  -- k in the paper
     tb = (1 - d_B)/(2*l_BT)
     tb23 = 2*tb*tb + tb**3
-    fbt = exp(-2*l_BT)
-    bbt = 1 - fbt + 2*tb*((fbt*(l_BT + 0.5)) - 0.5)
+    ebt = exp(-2*l_BT)
+    bbt = 1 - ebt + 2*tb*((ebt*(l_BT + 0.5)) - 0.5)
 
     aa2 = (5*tau)/(6*be) + (0.5*tau)**2 - (0.7435/m2*(tau*m)**1.6)
     aa1 = (1 - ((0.6*hsp)/m))*aa2
-    exl = exp((-1.1952/m)*(l_T - l_N - l_BT))
-    xxm = ((2.4*m2*m2 - 4*be2)*(tb*tb))/(2*be2*be2)
+    --          error: .  m should be m2, according to paper's equations
+    exl = exp((-1.1952/m)*(l_T - l_N - l_BT)) -- -1.1952 = -sqrt(2 / gamma)
+    xxm = ((2.4*m2*m2 - 4*be2)*(tb*tb))/(2*be2*be2) -- 2.4 = gamma + 1
     aa = aa1*exl - xxm + (2*tb/be)
     bb = 1/bp  -- 1 / k
     exbt = exp (-bp*l_BT)
-    aab = 1 - exbt + (2*tb*(exbt*(l_BT + bb)- bb)) -- part of eq 9
+    aab = 1 - exbt + (2*tb*(exbt*(l_BT + bb) - bb)) -- part of eq 9
 
     c_DBT
       | m <= 0.85 = 0
       | m <= 1.00 = 2*tb23*bbt*(1/(0.564 + 1260*chi*chi))
       | m <= 1.10 = 2*tb23*bbt*(1.774 - 9.3*chi)
-      | otherwise = 4*aa*tb*aab*bb
+      | otherwise = 4*aa*tb*aab*bb 
 
 
     ---- SKIN FRICTION DRAG (validated against paper)
@@ -171,6 +173,13 @@ mcDragBasic McParams{..} (Mach m) =
     c_DSF = (cdsfl*swn + cdsft*swcyl)/sw
 
 
+    ---- ROTATING BAND DRAG
+
+    c_DBND
+      | m < 0.95  = (m**12.5)*(d_RB - 1)
+      | otherwise = (0.21 + 0.28/m2)*(d_RB - 1)
+
+
     ---- BASE DRAG (BLUNT BASE) (validated against paper)
 
     -- from the FORTRAN
@@ -184,7 +193,7 @@ mcDragBasic McParams{..} (Mach m) =
     c_DB = 2*d_B*d_B/gamma/m2*(1 - c_PBI)
 
     ---- TOTAL DRAG
-    c_D = c_DH + c_DSF {- + C_DBND -} + c_DBT + c_DB
+    c_D = c_DH + c_DSF + c_DBND + c_DBT + c_DB
   
 
   in McBasicOut{..}
