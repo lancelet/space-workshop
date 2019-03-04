@@ -1,20 +1,30 @@
+{-|
+Module      : Tridiagonal
+Description : Define and solve tridiagonal linear systems.
+-}
+
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeOperators       #-}
+
 module Tridiagonal
-  ( TriDiagMatrix(..), as, bs, cs
+  ( -- * Types
+    TriDiagMatrix(..)
+    -- * Optics
+  , as, bs, cs
+    -- * Functions
   , triDiagSolve
   ) where
 
-import           Control.Lens                      ((^.))
-import           Control.Lens.TH                   (makeLenses)
-import           Control.Monad.Except              (runExceptT, throwError, ExceptT, when)
+import           Control.Lens                      ((^.), Lens', lens)
+import           Control.Monad.Except              (runExceptT, throwError,
+                                                    ExceptT, when)
 import           Control.Monad.ST                  (ST)
 import qualified Control.Monad.ST                  as ST
 import           Control.Monad.Trans.Class         (lift)
-import           GHC.TypeNats                      (type (-), KnownNat, Nat, natVal)
+import           GHC.TypeNats                      (type (-), KnownNat, Nat,
+                                                    natVal)
 import           Data.Proxy                        (Proxy(Proxy))
 import qualified Data.STRef                        as STRef
 import qualified Data.Vector.Generic               as DVG
@@ -35,23 +45,34 @@ data TriDiagMatrix v (n :: Nat) a
       -- | @cs@ are the elements 1 above the diagonal.
     , _cs :: DVGS.Vector v (n-1) a
     }
-makeLenses ''TriDiagMatrix
+
+-- | Lens for the @as@ field (1 below the diagonal) of a 'Tridiagonal' matrix.
+as :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
+as = lens _as (\m _as' -> m {_as = _as'})
+
+-- | Lens for the @bs@ field (diagonal) of a 'Tridiagonal' matrix.
+bs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v n a)
+bs = lens _bs (\m _bs' -> m {_bs = _bs'})
+
+-- | Lens for the @cs@ field (1 above the diagonal) of a 'Tridiagonal' matrix.
+cs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
+cs = lens _cs (\m _cs' -> m {_cs = _cs'})
   
 
 -- | Solve a 'TriDiagMatrix' linear system in O(N).
 --
---   Solve @M*U=R@ for @U@ given @M@ and @R@.
+--   Solves @M * U = R@ for @U@ given @M@ and @R@.
 --
 --   The only type of failure possible in the solver is a zero (or near-zero)
 --   pivot element.
 --
 --   The algorithm used here is the O(N) solver described in (but heavily
---   modified for the ST monad):
+--   modified for the 'ST' monad):
 --
---     Press et al. (2007) Numerical Recipes. The Art of Scientific Computing.
---       Cambridge University Press.
---     (Solution of Linear Systems -> Tridiagonal and Band-Diagonal Systems
---      of Equations)
+--     * Press et al. (2007) Numerical Recipes. The Art of Scientific Computing.
+--         Cambridge University Press.
+--         (Solution of Linear Systems -> Tridiagonal and Band-Diagonal Systems
+--          of Equations)
 --
 triDiagSolve
   :: forall v n a.
