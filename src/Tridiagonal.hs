@@ -1,8 +1,10 @@
 {-|
 Module      : Tridiagonal
 Description : Define and solve tridiagonal linear systems.
--}
 
+Fast solving of tridiagonal linear systems using a solver that executes in
+the 'ST' monad.
+-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -35,7 +37,7 @@ import qualified Data.Vector.Unboxed.Sized         as DVUS
 import           Linear.Epsilon                    (Epsilon, nearZero)
 
 
--- | Tridiagonal (square) matrix of size @n@.
+-- | Tridiagonal (square) matrix of size @n x n@ elements.
 data TriDiagMatrix v (n :: Nat) a
   = TriDiagMatrix
     { -- | @as@ are the elements 1 below the diagonal.
@@ -66,14 +68,16 @@ cs = lens _cs (\m _cs' -> m {_cs = _cs'})
 --   The only type of failure possible in the solver is a zero (or near-zero)
 --   pivot element.
 --
---   The algorithm used here is the O(N) solver described in (but heavily
---   modified for the 'ST' monad):
+--   The algorithm used here is the O(N) solver described in:
 --
 --     * Press et al. (2007) Numerical Recipes. The Art of Scientific Computing.
 --         Cambridge University Press.
 --         (Solution of Linear Systems -> Tridiagonal and Band-Diagonal Systems
 --          of Equations)
 --
+--   The solver itself executes in the 'ST' monad. It allocates a single
+--   mutable vector that becomes the result @U@, and an accumulator of type
+--   @a@.
 triDiagSolve
   :: forall v n a.
      ( DVG.Vector v a
