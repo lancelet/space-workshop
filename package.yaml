@@ -21,7 +21,15 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- finite-typelits
 - gnuplot
+- lens
+- linear
+- mtl
+- primitive
+- transformers
+- vector
+- vector-sized
 
 library:
   source-dirs: src
@@ -36,7 +44,7 @@ _ghc-options: &ghc-options
   - -Wincomplete-record-updates
   - -Wmissing-import-lists
 
-executables:
+# executables:
 
   # mcdrag-validation:
   #   main:                Main.hs
