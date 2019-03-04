@@ -48,15 +48,15 @@ data TriDiagMatrix v (n :: Nat) a
     , _cs :: DVGS.Vector v (n-1) a
     }
 
--- | Lens for the @as@ field (1 below the diagonal) of a 'Tridiagonal' matrix.
+-- | Lens for the @as@ field (1 below the diagonal) of a 'TriDiagMatrix'.
 as :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
 as = lens _as (\m _as' -> m {_as = _as'})
 
--- | Lens for the @bs@ field (diagonal) of a 'Tridiagonal' matrix.
+-- | Lens for the @bs@ field (diagonal) of a 'TriDiagMatrix'.
 bs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v n a)
 bs = lens _bs (\m _bs' -> m {_bs = _bs'})
 
--- | Lens for the @cs@ field (1 above the diagonal) of a 'Tridiagonal' matrix.
+-- | Lens for the @cs@ field (1 above the diagonal) of a 'TriDiagMatrix'.
 cs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
 cs = lens _cs (\m _cs' -> m {_cs = _cs'})
   
