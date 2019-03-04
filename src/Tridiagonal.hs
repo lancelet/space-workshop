@@ -38,6 +38,17 @@ import           Linear.Epsilon                    (Epsilon, nearZero)
 
 
 -- | Tridiagonal (square) matrix of size @n x n@ elements.
+--
+--   The layout of elements looks like this, using a @5 x 5@ matrix as an
+--   example:
+-- 
+-- @
+-- [ b0 c0        0 ]
+-- [ a0 b1 c1       ]
+-- [    a1 b2 c2    ]
+-- [       a2 b3 c3 ]
+-- [  0       a3 b4 ] @
+--
 data TriDiagMatrix v (n :: Nat) a
   = TriDiagMatrix
     { -- | @as@ are the elements 1 below the diagonal.
