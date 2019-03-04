@@ -38,12 +38,12 @@ _ghc-options: &ghc-options
 
 executables:
 
-  mcdrag-validation:
-    main:                Main.hs
-    source-dirs:         app/mcdrag-validation
-    ghc-options:         *ghc-options
-    dependencies:
-    - space-workshop
+  # mcdrag-validation:
+  #   main:                Main.hs
+  #   source-dirs:         app/mcdrag-validation
+  #   ghc-options:         *ghc-options
+  #   dependencies:
+  #   - space-workshop
 
 tests:
   space-workshop-test:
