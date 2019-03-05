@@ -5,6 +5,7 @@ Description : Define and solve tridiagonal linear systems.
 Fast solving of tridiagonal linear systems using a solver that executes in
 the 'ST' monad.
 -}
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
