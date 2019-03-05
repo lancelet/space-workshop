@@ -25,15 +25,12 @@ import           Control.Monad.Except              (runExceptT, throwError,
 import           Control.Monad.ST                  (ST)
 import qualified Control.Monad.ST                  as ST
 import           Control.Monad.Trans.Class         (lift)
-import           GHC.TypeNats                      (type (-), KnownNat, Nat,
-                                                    natVal)
-import           Data.Proxy                        (Proxy(Proxy))
+import           GHC.TypeNats                      (type (-), KnownNat, Nat)
 import qualified Data.STRef                        as STRef
 import qualified Data.Vector.Generic               as DVG
-import qualified Data.Vector.Generic.Mutable.Sized as DVGMS
+import qualified Data.Vector.Generic.Mutable       as DVGM
 import qualified Data.Vector.Generic.Sized         as DVGS
 import qualified Data.Vector.Unboxed               as DVU
-import qualified Data.Vector.Unboxed.Sized         as DVUS
 import           Linear.Epsilon                    (Epsilon, nearZero)
 
 
@@ -76,19 +73,27 @@ cs = lens _cs (\m _cs' -> m {_cs = _cs'})
 --
 --   Solves @M * U = R@ for @U@ given @M@ and @R@.
 --
---   The only type of failure possible in the solver is a zero (or near-zero)
---   pivot element.
+--   The solver can fail if any pivot element is near zero (according to the
+--   test made available by the 'Epsilon' instance). In these cases, the
+--   function returns @Nothing@. Such a failure will definitely occur when the
+--   'TriDiagMatrix' is singular, but can also occur in some cases where the
+--   matrix is non-singular. It is only guaranteed to succeed when the matrix
+--   is diagonally dominant or symmetric positive definite.
 --
---   The algorithm used here is the O(N) solver described in:
+--   The algorithm used here is the O(N) solver (Tridiagonal matrix algorithm /
+--   Thomas algorithm) described in:
 --
 --     * Press et al. (2007) Numerical Recipes. The Art of Scientific Computing.
 --         Cambridge University Press.
 --         (Solution of Linear Systems -> Tridiagonal and Band-Diagonal Systems
 --          of Equations)
 --
---   The solver itself executes in the 'ST' monad. It allocates a single
---   mutable vector that becomes the result @U@, and an accumulator of type
---   @a@.
+--     * Tridiagonal matrix algorithm, Wikipedia:
+--         https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+--
+--   The solver itself executes in the 'ST' monad. It allocates two mutable
+--   vectors of the same length as the diagonal (one of which becomes the
+--   result vector @U@), and an accumulator of type @a@.
 triDiagSolve
   :: forall v n a.
      ( DVG.Vector v a
@@ -99,70 +104,111 @@ triDiagSolve
   -> Maybe (DVGS.Vector v n a)  -- ^ Solution @U@.
 triDiagSolve matrix r =
   let
+    -- internally, we dispatch to a version working on unsized vectors
+    av = DVGS.fromSized (matrix^.as)
+    bv = DVGS.fromSized (matrix^.bs)
+    cv = DVGS.fromSized (matrix^.cs)
+    rv = DVGS.fromSized r
+    maybeUV = triDiagSolve' av bv cv rv
+  in
+    case maybeUV of
+      Nothing -> Nothing
+      Just uv ->
+        -- we make 100% sure it's the correct size at the end
+        case (DVGS.toSized uv) of
+          Just uvSized -> Just (uvSized)
+          Nothing -> error $ "triDiagSolve' returned an invalid vector size! "
+                           ++ "This is an internal algorithm error."
 
-    -- Alias for unsafe index.
-    (!) :: forall m. DVGS.Vector v m a -> Int -> a
-    vec ! i = DVGS.unsafeIndex vec i
-    infix 7 !
 
-    -- Aliases for reading and writing mutable values.
-    vWrite vec index value = lift (DVGMS.unsafeWrite vec index value)
-    vRead vec index = lift (DVGMS.unsafeRead vec index)
-    sRead ref = lift (STRef.readSTRef ref)
-    sWrite ref value = lift (STRef.writeSTRef ref value)
+-- | Un-sized tridiagonal solver.
+triDiagSolve'
+  :: forall v a.
+     ( DVG.Vector v a
+     , Fractional a, Epsilon a )
+  => v a          -- ^ a
+  -> v a          -- ^ b
+  -> v a          -- ^ c
+  -> v a          -- ^ r
+  -> Maybe (v a)  -- ^ u
+triDiagSolve' av bv cv rv =
+  let
+    -- shortcut for indexing
+    (!) :: DVG.Vector v a => v a -> Int -> a
+    (!) = (DVG.!)
 
-    -- action runs in ST for mutation, using ExceptT to provide shortcut
-    --  termination in the error case of a zero pivot element
-    action :: forall s. ExceptT () (ST s) (DVGS.Vector v n a)
+    -- length of the diagonal
+    n :: Int
+    n = DVG.length bv
+
+    -- solver in the ST monad
+    action :: forall s. ExceptT () (ST s) (v a)
     action = do
-      let nn = fromIntegral (natVal (Proxy :: Proxy n)) :: Int
-      bet <- lift $ STRef.newSTRef (matrix^.bs ! 0)
-      uv  <- lift $ DVGMS.new
-      gam <- lift $ DVGMS.clone uv
 
-      when (nearZero (matrix^.bs ! 0)) (throwError ())
-      vWrite uv 0 ((r ! 0) / (matrix^.bs ! 0))
-  
-      -- Decomposition and forward substitution
-      cfor 1 (< nn) (+ 1) $ \j -> do
-        bet_j <- sRead bet
-        u_jn1 <- vRead uv (j - 1)
+      -- check that we don't encounter a zero pivot at the start;
+      --  this occurs if bv!0 is zero
+      when (nearZero (bv!0)) (throwError ())
+
+      -- result vector
+      uv :: DVG.Mutable v s a <- lift . DVGM.new $ n
+      -- gamma vector
+      gamma :: DVG.Mutable v s a <- lift . DVGM.new $ n
+
+      -- initialize accumulator beta and u vector
+      beta <- lift $ STRef.newSTRef $ bv!0
+      lift $ DVGM.unsafeWrite uv 0 $ (rv!0) / (bv!0)
+
+      -- decomposition and forward substitution
+      cfor 1 (< n) (+ 1) $ \j -> do
+
+        beta_j    <- lift $ STRef.readSTRef beta
+        u_jminus1 <- lift $ DVGM.unsafeRead uv (j - 1)
+
         let
-          gam_j  = (matrix^.cs ! (j - 1)) / bet_j
-          bet_j' = ((matrix^.bs ! j) - (matrix^.as ! (j - 1))) * gam_j
-        when (nearZero bet_j') (throwError ())
-        let u_j = (r ! j - (matrix^.as ! (j - 1)) * u_jn1) / bet_j'
-        vWrite gam j gam_j
-        sWrite bet bet_j'
-        vWrite uv j u_j
-  
-      -- Backsubstitution
-      cfor (nn - 2) (>= 0) (\x -> x - 1) $ \j -> do
-        u_j     <- vRead uv j
-        u_jp1   <- vRead uv (j + 1)
-        gam_jp1 <- vRead gam (j + 1)
-        let u_j' = u_j - gam_jp1 * u_jp1
-        vWrite uv j u_j'
- 
-      lift $ DVGS.freeze uv
+          gamma_j = (cv!(j-1)) / beta_j
+          beta_j' = (bv!j - av!(j-1)) * gamma_j
 
-    -- Convert an Either to a Maybe.
+        -- check for a zero pivot
+        when (nearZero beta_j') (throwError ())
+
+        let u_j = (rv!j - (av!(j-1)) * u_jminus1) / beta_j'
+
+        lift $ DVGM.unsafeWrite gamma j gamma_j
+        lift $ DVGM.unsafeWrite uv j u_j
+        lift $ STRef.writeSTRef beta beta_j'
+
+      -- backsubstitution
+      cfor (n-2) (>= 0) (\x -> x - 1) $ \j -> do
+
+        u_j          <- lift $ DVGM.unsafeRead uv j
+        u_jplus1     <- lift $ DVGM.unsafeRead uv (j+1)
+        gamma_jplus1 <- lift $ DVGM.unsafeRead gamma (j+1)
+
+        let u_j' = u_j - gamma_jplus1*u_jplus1
+
+        lift $ DVGM.unsafeWrite uv j u_j'
+        
+      -- freeze and return the vector
+      lift . DVG.unsafeFreeze $ uv
+
     either2Maybe :: Either () b -> Maybe b
     either2Maybe (Left ()) = Nothing
     either2Maybe (Right x) = Just x
-    
+  
   in either2Maybe $ ST.runST $ runExceptT $ action
 
-{-# SPECIALIZE triDiagSolve
-    :: ( KnownNat n )
-    => TriDiagMatrix DVU.Vector n Double
-    -> DVUS.Vector n Double
-    -> Maybe (DVUS.Vector n Double) #-}
-{-# SPECIALIZE triDiagSolve
-    :: ( KnownNat n )
-    => TriDiagMatrix DVU.Vector n Float
-    -> DVUS.Vector n Float
-    -> Maybe (DVUS.Vector n Float) #-}
+{-# SPECIALIZE triDiagSolve'
+    :: DVU.Vector Double
+    -> DVU.Vector Double
+    -> DVU.Vector Double
+    -> DVU.Vector Double
+    -> Maybe (DVU.Vector Double) #-}
+{-# SPECIALIZE triDiagSolve'
+    :: DVU.Vector Float
+    -> DVU.Vector Float
+    -> DVU.Vector Float
+    -> DVU.Vector Float
+    -> Maybe (DVU.Vector Float) #-}
 
 
 -- | C-style for loop.
