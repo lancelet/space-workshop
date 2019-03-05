@@ -109,7 +109,7 @@ triDiagSolve matrix r =
     bv = DVGS.fromSized (matrix^.bs)
     cv = DVGS.fromSized (matrix^.cs)
     rv = DVGS.fromSized r
-    maybeUV = triDiagSolve' av bv cv rv
+    maybeUV = triDiagSolve' av bv cv rv  -- unsized core algorithm
   in
     case maybeUV of
       Nothing -> Nothing
@@ -122,6 +122,9 @@ triDiagSolve matrix r =
 
 
 -- | Un-sized tridiagonal solver.
+--
+--   Internally, we just trust that this algorithm gets its indexing correct;
+--   hence all the unsafe indexing. C, but in Haskell. :-)
 triDiagSolve'
   :: forall v a.
      ( DVG.Vector v a
@@ -133,9 +136,9 @@ triDiagSolve'
   -> Maybe (v a)  -- ^ u (solution)
 triDiagSolve' av bv cv rv =
   let
-    -- shortcut for indexing
+    -- shortcut for unsafe indexing
     (!) :: DVG.Vector v a => v a -> Int -> a
-    (!) = (DVG.!)
+    (!) = DVG.unsafeIndex
 
     -- length of the diagonal
     n :: Int
@@ -223,7 +226,6 @@ cfor
 cfor initVal cont step body = go initVal
   where
     go :: a -> m ()
-    go x
-      | cont x    = body x >> go (step x)
-      | otherwise = pure()
+    go !x | cont x    = body x >> go (step x)
+          | otherwise = pure ()
 {-# INLINE cfor #-}
