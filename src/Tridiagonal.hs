@@ -126,11 +126,11 @@ triDiagSolve'
   :: forall v a.
      ( DVG.Vector v a
      , Fractional a, Epsilon a )
-  => v a          -- ^ a
-  -> v a          -- ^ b
-  -> v a          -- ^ c
-  -> v a          -- ^ r
-  -> Maybe (v a)  -- ^ u
+  => v a          -- ^ a (one below the diagonal)
+  -> v a          -- ^ b (the diagonal)
+  -> v a          -- ^ c (one above the diagonal)
+  -> v a          -- ^ r (known right-hand-side)
+  -> Maybe (v a)  -- ^ u (solution)
 triDiagSolve' av bv cv rv =
   let
     -- shortcut for indexing
