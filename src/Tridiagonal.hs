@@ -26,7 +26,7 @@ import           Control.Monad.Except              (runExceptT, throwError,
 import           Control.Monad.ST                  (ST)
 import qualified Control.Monad.ST                  as ST
 import           Control.Monad.Trans.Class         (lift)
-import           GHC.TypeNats                      (type (-), KnownNat, Nat)
+import           GHC.TypeLits                      (type (-), KnownNat, Nat)
 import qualified Data.STRef                        as STRef
 import qualified Data.Vector.Generic               as DVG
 import qualified Data.Vector.Generic.Mutable       as DVGM
@@ -55,7 +55,7 @@ data TriDiagMatrix v (n :: Nat) a
     , _bs :: DVGS.Vector v    n  a
       -- | @cs@ are the elements 1 above the diagonal.
     , _cs :: DVGS.Vector v (n-1) a
-    }
+    } deriving (Show)
 
 -- | Lens for the @as@ field (1 below the diagonal) of a 'TriDiagMatrix'.
 as :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
