@@ -137,10 +137,13 @@ triDiagSolve matrix r =
   triDiagSolve' (as matrix) (bs matrix) (cs matrix) r
 
 
--- | Un-sized tridiagonal solver.
+-- | Tridiagonal solver.
 --
 --   Internally, we just trust that this algorithm gets its indexing correct;
 --   hence all the unsafe indexing. C, but in Haskell. :-)
+--
+--   There are parallel approaches to solving tridiagonal matrices which might
+--   be beneficial for large enough systems.
 triDiagSolve'
   :: forall v a.
      ( DVG.Vector v a
