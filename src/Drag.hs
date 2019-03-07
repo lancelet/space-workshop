@@ -15,7 +15,7 @@ module Drag
 newtype Mach a = Mach a
 
 -- | Drag coefficient.
-newtype DragCoeff a = DragCoeff a
+newtype DragCoeff a = DragCoeff { unDragCoeff :: a }
 
 -- | Type of rocket based on the original designation of drag curves from
 --   Kephart (1971).
@@ -31,10 +31,10 @@ data KephartType
 
 kephartDrag
   :: (Ord a, Floating a)
-  => Mach a
-  -> KephartType
+  => KephartType
+  -> Mach a
   -> DragCoeff a
-kephartDrag (Mach m) kt =
+kephartDrag kt (Mach m) =
   let
 
     c1 = case kt of
@@ -47,7 +47,7 @@ kephartDrag (Mach m) kt =
            LowDrag -> 4.7
            _       -> 5.3
 
-    a = c1 + 0.0007 * exp c2
+    a = c1 + 0.0007 * (exp (m*c2))
 
     b | m < 6     = 0.0267*m*m - 0.0012*m*m*m - 0.193*m + 0.557
       | otherwise = 0.1
@@ -57,13 +57,13 @@ kephartDrag (Mach m) kt =
           SolidRocket  -> b
           LiquidRocket -> b*(1.357 - 0.039*m)
           HighDrag     -> b*(1.85 - 0.0756*m)
-           
+
     d = case kt of
           LowDrag      -> 0.045
-          SolidRocket  -> 0.11
-          LiquidRocket -> 0.14
-          HighDrag     -> b
-  
+          SolidRocket  -> b
+          LiquidRocket -> 0.11
+          HighDrag     -> 0.14
+
     cd | m <= 1.1  = a
        | m <= 6    = c
        | otherwise = d

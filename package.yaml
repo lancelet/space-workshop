@@ -28,6 +28,7 @@ dependencies:
 - mtl
 - primitive
 - reflection
+- text
 - transformers
 - vector
 - vector-sized
