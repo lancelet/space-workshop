@@ -14,6 +14,7 @@ import qualified Graphics.Gnuplot.Graph.TwoDimensional as Graph2D
 import qualified Graphics.Gnuplot.LineSpecification    as LineSpec
 import qualified Graphics.Gnuplot.Plot.TwoDimensional  as Plot2D
 import qualified Graphics.Gnuplot.Terminal.PostScript  as PS
+import qualified Graphics.Gnuplot.Terminal.SVG         as SVG
 import           System.Exit                           (ExitCode)
 
 import qualified Drag
@@ -21,7 +22,7 @@ import qualified Drag
 
 main :: IO ()
 main = do
-  _ <- plotKephartDragCurves "kephart-drag-curves.ps"
+  _ <- plotKephartDragCurves "kephart-drag-curves.svg"
   pure ()
 
 
@@ -32,19 +33,19 @@ plotKephartDragCurves fileName =
     ms :: [Float]
     ms = [ 0.00, 0.01 .. 9.0 ]
 
-    x1 = [ (m, Drag.unDragCoeff (Drag.kephartDrag Drag.LowDrag (Drag.Mach m)))
+    x1 = [ (m, Drag.unDragCoeff (Drag.kephartDragSplined Drag.LowDrag (Drag.Mach m)))
          | m <- ms ]
-    x2 = [ (m, Drag.unDragCoeff (Drag.kephartDrag Drag.SolidRocket (Drag.Mach m)))
+    x2 = [ (m, Drag.unDragCoeff (Drag.kephartDragSplined Drag.SolidRocket (Drag.Mach m)))
          | m <- ms ]
-    x3 = [ (m, Drag.unDragCoeff (Drag.kephartDrag Drag.LiquidRocket (Drag.Mach m)))
+    x3 = [ (m, Drag.unDragCoeff (Drag.kephartDragSplined Drag.LiquidRocket (Drag.Mach m)))
          | m <- ms ]
-    x4 = [ (m, Drag.unDragCoeff (Drag.kephartDrag Drag.HighDrag (Drag.Mach m)))
+    x4 = [ (m, Drag.unDragCoeff (Drag.kephartDragSplined Drag.HighDrag (Drag.Mach m)))
          | m <- ms ]
   in
     GP.plot
-    (PS.cons (T.unpack fileName))
+    (SVG.cons (T.unpack fileName))
     (Frame.cons
-      ( Opts.title "Drag Curves for Various Rocket Types"
+      ( Opts.title "Drag Curves for Various Rocket Types - Reproduced from Kephert (1971)"
       $ Opts.xLabel "M - Mach Number"
       $ Opts.yLabel "C_d - Drag Coefficient"
       $ Opts.gridXTicks True

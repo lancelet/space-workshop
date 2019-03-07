@@ -14,6 +14,7 @@ original paper, but also a cubic-spline-interpolated model that allows for
 interpolation between the various rocket "types", and slightly smooths-over
 the discontinuous peaks of the original drag curves.
 -}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Drag
   ( -- * Types
     Mach(..)
@@ -21,7 +22,13 @@ module Drag
   , KephartType(..)
     -- * Functions
   , kephartDrag
+  , kephartDragSplined
   ) where
+
+import qualified Data.Vector    as DV
+import           Linear.Epsilon (Epsilon)
+
+import qualified CubicSpline    (interpolate')
 
 
 -- | Mach number.
@@ -43,6 +50,32 @@ data KephartType
   | LiquidRocket  -- X = 3
     -- | "High-drag" configuration.
   | HighDrag      -- X = 4
+
+
+kephartDragSplined
+  :: forall a.
+     (Ord a, Floating a, Epsilon a)
+  => KephartType
+  -> Mach a
+  -> DragCoeff a
+kephartDragSplined kt =
+  let
+    samples :: DV.Vector (a, a)
+    samples =
+      DV.fromList $
+      [ (m, unDragCoeff (kephartDrag kt (Mach m)))
+      -- These exact sampling points require a little finessing because of the
+      -- discontinuities in the drag.
+      | m <-
+        [ 0.00, 0.40, 0.60, 0.80, 1.00, 1.05, 1.07
+        , 1.18, 1.22, 1.25, 1.30, 1.35, 1.40, 1.50
+        , 2.00, 3.00, 4.00, 5.00, 7.00, 9.00] ]
+
+    interpFn :: a -> a
+    interpFn = CubicSpline.interpolate' samples
+
+  in \(Mach m) -> DragCoeff (interpFn m)
+
 
 
 -- | Compute drag coefficient exactly as it appears in Kephart (1971).
@@ -70,7 +103,7 @@ kephartDrag kt (Mach m) =
       | otherwise = 0.1
 
     c = case kt of
-          LowDrag      -> 0.45*b
+          LowDrag      -> 0.46*b
           SolidRocket  -> b
           LiquidRocket -> b*(1.357 - 0.039*m)
           HighDrag     -> b*(1.85 - 0.0756*m)
