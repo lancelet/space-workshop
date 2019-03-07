@@ -2,7 +2,8 @@
 Module      : Drag
 Description : Drag approximation.
 
-This module implements a very generic rocket drag model from:
+
+The drag coefficient model in this module is from:
 
   * Kephart, DC (1971) Boost: On-line computer program for estimating
       powered-rocket performance.
@@ -22,11 +23,14 @@ module Drag
   , kephartDrag
   ) where
 
+
 -- | Mach number.
 newtype Mach a = Mach a
 
+
 -- | Drag coefficient.
 newtype DragCoeff a = DragCoeff { unDragCoeff :: a }
+
 
 -- | Type of rocket based on the original designation of drag curves from
 --   Kephart (1971).
@@ -40,11 +44,13 @@ data KephartType
     -- | "High-drag" configuration.
   | HighDrag      -- X = 4
 
+
+-- | Compute drag coefficient exactly as it appears in Kephart (1971).
 kephartDrag
   :: (Ord a, Floating a)
-  => KephartType
-  -> Mach a
-  -> DragCoeff a
+  => KephartType   -- | Rocket type (Kephart 1971).
+  -> Mach a        -- | Mach number.
+  -> DragCoeff a   -- | Drag coefficient.
 kephartDrag kt (Mach m) =
   let
 
