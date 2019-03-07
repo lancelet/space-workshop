@@ -1,6 +1,17 @@
 {-|
 Module      : Drag
 Description : Drag approximation.
+
+This module implements a very generic rocket drag model from:
+
+  * Kephart, DC (1971) Boost: On-line computer program for estimating
+      powered-rocket performance.
+      United States Air Force Project Rand. R-670-PR.
+
+The module implements a raw model that matches the program listing from the
+original paper, but also a cubic-spline-interpolated model that allows for
+interpolation between the various rocket "types", and slightly smooths-over
+the discontinuous peaks of the original drag curves.
 -}
 module Drag
   ( -- * Types
