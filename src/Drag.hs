@@ -54,7 +54,7 @@ data KephartType
 
 kephartDragSplined
   :: forall a.
-     (Ord a, Floating a, Epsilon a)
+     (Ord a, Enum a, Floating a, Epsilon a)
   => KephartType
   -> Mach a
   -> DragCoeff a
@@ -66,10 +66,8 @@ kephartDragSplined kt =
       [ (m, unDragCoeff (kephartDrag kt (Mach m)))
       -- These exact sampling points require a little finessing because of the
       -- discontinuities in the drag.
-      | m <-
-        [ 0.00, 0.40, 0.60, 0.80, 1.00, 1.05, 1.07
-        , 1.18, 1.22, 1.25, 1.30, 1.35, 1.40, 1.50
-        , 2.00, 3.00, 4.00, 5.00, 7.00, 9.00] ]
+      | m <- [ 0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.925, 0.95, 0.975, 1.0, 1.025
+             , 1.05, 1.075, 1.10, 1.15, 1.2, 1.4, 1.8, 2, 3, 4, 5, 7, 9 ] ]
 
     interpFn :: a -> a
     interpFn = CubicSpline.interpolate' samples
@@ -78,7 +76,7 @@ kephartDragSplined kt =
 
 
 
--- | Compute drag coefficient exactly as it appears in Kephart (1971).
+-- | Compute drag coefficient very similarly to Kephart (1971).
 kephartDrag
   :: (Ord a, Floating a)
   => KephartType   -- | Rocket type (Kephart 1971).
@@ -114,8 +112,22 @@ kephartDrag kt (Mach m) =
           LiquidRocket -> 0.11
           HighDrag     -> 0.14
 
-    cd | m <= 1.1  = a
+    -- This is different from Kephart: here we do a very small amount of
+    -- blending near the apex of the curve.
+    acMix =
+      let f = smootherstep ((m - 0.98) / (1.10 - 0.98))
+      in f*c + (1 - f)*a
+  
+    cd | m <= 0.98 = a
+       | m <= 1.10 = acMix
        | m <= 6    = c
        | otherwise = d
 
   in DragCoeff cd
+
+
+smootherstep :: (Ord a, Num a) => a -> a
+smootherstep x
+  | x <= 0    = 0
+  | x <  1    = x*x*x*(x*(x*6 - 15) + 10)
+  | otherwise = 1
