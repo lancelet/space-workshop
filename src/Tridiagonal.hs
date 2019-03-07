@@ -6,40 +6,34 @@ Fast solving of tridiagonal linear systems using a solver that executes in
 the 'ST' monad.
 -}
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
 
 module Tridiagonal
   ( -- * Types
-    TriDiagMatrix(..)
-    -- * Optics
-  , as, bs, cs
+    TriDiagMatrix(as, bs, cs)
     -- * Functions
+  , triDiagMatrix
+  , triDiagMatrix'
   , triDiagSolve
   ) where
 
-import           Control.Lens                      ((^.), Lens', lens)
-import           Control.Monad.Except              (runExceptT, throwError,
-                                                    ExceptT, when)
-import           Control.Monad.ST                  (ST)
-import qualified Control.Monad.ST                  as ST
-import           Control.Monad.Trans.Class         (lift)
-import           GHC.TypeLits                      (type (-), KnownNat, Nat)
-import qualified Data.STRef                        as STRef
-import qualified Data.Vector.Generic               as DVG
-import qualified Data.Vector.Generic.Mutable       as DVGM
-import qualified Data.Vector.Generic.Sized         as DVGS
-import qualified Data.Vector.Unboxed               as DVU
-import           Linear.Epsilon                    (Epsilon, nearZero)
+import           Control.Monad.Except        (ExceptT, runExceptT, throwError,
+                                              when)
+import           Control.Monad.ST            (ST)
+import qualified Control.Monad.ST            as ST
+import           Control.Monad.Trans.Class   (lift)
+import qualified Data.STRef                  as STRef
+import qualified Data.Vector.Generic         as DVG
+import qualified Data.Vector.Generic.Mutable as DVGM
+import qualified Data.Vector.Unboxed         as DVU
+import           Linear.Epsilon              (Epsilon, nearZero)
 
 
--- | Tridiagonal (square) matrix of size @n x n@ elements.
+-- | Tridiagonal (square) matrix.
 --
 --   The layout of elements looks like this, using a @5 x 5@ matrix as an
 --   example:
--- 
+--
 -- @
 -- [ b0 c0        0 ]
 -- [ a0 b1 c1       ]
@@ -47,28 +41,65 @@ import           Linear.Epsilon                    (Epsilon, nearZero)
 -- [       a2 b3 c3 ]
 -- [  0       a3 b4 ] @
 --
-data TriDiagMatrix v (n :: Nat) a
+data TriDiagMatrix v a
   = TriDiagMatrix
-    { -- | @as@ are the elements 1 below the diagonal.
-      _as :: DVGS.Vector v (n-1) a
+    { -- | @as@ are the elements 1 below the diagonal. This vector has one less
+      --   element than the diagonal.
+      as :: v a
       -- | @bs@ are the diagonal elements.
-    , _bs :: DVGS.Vector v    n  a
-      -- | @cs@ are the elements 1 above the diagonal.
-    , _cs :: DVGS.Vector v (n-1) a
+    , bs :: v a
+      -- | @cs@ are the elements 1 above the diagonal. This vector has one less
+      --   element than the diagonal.
+    , cs :: v a
     } deriving (Show)
 
--- | Lens for the @as@ field (1 below the diagonal) of a 'TriDiagMatrix'.
-as :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
-as = lens _as (\m _as' -> m {_as = _as'})
 
--- | Lens for the @bs@ field (diagonal) of a 'TriDiagMatrix'.
-bs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v n a)
-bs = lens _bs (\m _bs' -> m {_bs = _bs'})
+-- | Create a 'TriDiagMatrix' if all dimensions of the vectors are correct.
+triDiagMatrix
+  :: ( DVG.Vector v a )
+  -- | Vector of @n-1@ elements, below the diagonal.
+  => v a
+  -- | Vector of @n@ elements: the diagonal of the matrix.
+  -> v a
+  -- | Vector of @n-1@ elements, above the diagonal.
+  -> v a
+  -> Maybe (TriDiagMatrix v a)
+triDiagMatrix av bv cv =
+  let
+    al = DVG.length av
+    bl = DVG.length bv
+    cl = DVG.length cv
+  in if (al == cl) && (al == (bl - 1))
+     then Just (TriDiagMatrix av bv cv)
+     else Nothing
 
--- | Lens for the @cs@ field (1 above the diagonal) of a 'TriDiagMatrix'.
-cs :: forall v n a. Lens' (TriDiagMatrix v n a) (DVGS.Vector v (n-1) a)
-cs = lens _cs (\m _cs' -> m {_cs = _cs'})
-  
+
+-- | Create a 'TriDiagMatrix', producing an error at runtime if the dimensions
+--   of the vectors are incorrect.
+triDiagMatrix'
+  :: ( DVG.Vector v a )
+  -- | Vector of @n-1@ elements, below the diagonal.
+  => v a
+  -- | Vector of @n@ elements: the diagonal of the matrix.
+  -> v a
+  -- | Vector of @n-1@ elements, above the diagonal.
+  -> v a
+  -> TriDiagMatrix v a
+triDiagMatrix' av bv cv =
+  case triDiagMatrix av bv cv of
+    Nothing ->
+      let
+        al = DVG.length av
+        bl = DVG.length bv
+        cl = DVG.length cv
+        msg = "(" <>
+              "len(av)=" <> show al <> " " <>
+              "len(bv)=" <> show bl <> " " <>
+              "len(cv)=" <> show cl <>
+              ")"
+      in error $ "triDiagMatrix' vectors have invalid dimensions " <> msg
+    Just m  -> m
+
 
 -- | Solve a 'TriDiagMatrix' linear system in O(N).
 --
@@ -96,30 +127,14 @@ cs = lens _cs (\m _cs' -> m {_cs = _cs'})
 --   vectors of the same length as the diagonal (one of which becomes the
 --   result vector @U@), and an accumulator of type @a@.
 triDiagSolve
-  :: forall v n a.
+  :: forall v a.
      ( DVG.Vector v a
-     , KnownNat n
      , Fractional a, Epsilon a )
-  => TriDiagMatrix v n a        -- ^ Tridiagonal matrix, @M@.
-  -> DVGS.Vector v n a          -- ^ Known right-hand side, @R@.
-  -> Maybe (DVGS.Vector v n a)  -- ^ Solution @U@.
+  => TriDiagMatrix v a  -- ^ Tridiagonal matrix, @M@.
+  -> v a                -- ^ Known right-hand side, @R@.
+  -> Maybe (v a)        -- ^ Solution @U@.
 triDiagSolve matrix r =
-  let
-    -- internally, we dispatch to a version working on unsized vectors
-    av = DVGS.fromSized (matrix^.as)
-    bv = DVGS.fromSized (matrix^.bs)
-    cv = DVGS.fromSized (matrix^.cs)
-    rv = DVGS.fromSized r
-    maybeUV = triDiagSolve' av bv cv rv  -- unsized core algorithm
-  in
-    case maybeUV of
-      Nothing -> Nothing
-      Just uv ->
-        -- we make 100% sure it's the correct size at the end
-        case (DVGS.toSized uv) of
-          Just uvSized -> Just (uvSized)
-          Nothing -> error $ "triDiagSolve' returned an invalid vector size! "
-                           ++ "This is an internal algorithm error."
+  triDiagSolve' (as matrix) (bs matrix) (cs matrix) r
 
 
 -- | Un-sized tridiagonal solver.
@@ -170,7 +185,7 @@ triDiagSolve' av bv cv rv =
 
         let
           gamma_j = (cv!(j-1)) / beta_j
-          beta_j' = (bv!j - av!(j-1)) * gamma_j
+          beta_j' = bv!j - (av!(j-1) * gamma_j)
 
         -- check for a zero pivot
         when (nearZero beta_j') (throwError ())
@@ -191,14 +206,14 @@ triDiagSolve' av bv cv rv =
         let u_j' = u_j - gamma_jplus1*u_jplus1
 
         lift $ DVGM.unsafeWrite uv j u_j'
-        
+
       -- freeze and return the vector
       lift . DVG.unsafeFreeze $ uv
 
     either2Maybe :: Either () b -> Maybe b
     either2Maybe (Left ()) = Nothing
     either2Maybe (Right x) = Just x
-  
+
   in either2Maybe $ ST.runST $ runExceptT $ action
 
 {-# SPECIALIZE triDiagSolve'

@@ -1,138 +1,131 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGuAGE OverloadedStrings   #-}
+{-|
+Module      : TestTridiagonal
+Description : Tests of the Tridiagonal module.
+-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module TestTridiagonal
   ( tests
-  , genDiagDominant
-  , genDiagDominant'
-  , q
   ) where
 
-import           Control.Lens        ((^.))
-import           Data.Finite         (Finite, getFinite)
-import           Data.Proxy          (Proxy (Proxy))
-import           Data.Reflection     (reifyNat, reify)
+import           Data.Ratio          (Ratio, (%))
 import qualified Data.Vector         as DV
-import qualified Data.Vector.Sized   as DVS
-import           GHC.TypeLits        (type (-), type (+), type (<=), KnownNat, natVal, someNatVal)
+import           Hedgehog            ((===))
 import qualified Hedgehog            as H
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
+import           Linear              (Epsilon, nearZero)
 import qualified Test.Tasty          as Tasty
 import           Test.Tasty.Hedgehog (testProperty)
 
-import           Tridiagonal       (TriDiagMatrix (TriDiagMatrix), as, bs, cs)
+import           Tridiagonal         (TriDiagMatrix, as, bs, cs, triDiagMatrix',
+                                      triDiagSolve)
 
 tests :: Tasty.TestTree
 tests = Tasty.testGroup "Tridiagonal"
-  [ testProperty "triDiagSolve solves diagonally dominant matrices"
+  [ testProperty "triDiagSolve solves a range of diagonally dominant matrices"
                  prop_triDiagSolve_diagDominant
+  , testProperty "triDiagSolve solves an example problem"
+                 prop_triDiagSolve_example
+  , testProperty "triDiagSolve refuses to solve a singular matrix"
+                 prop_triDiagSolve_singular
   ]
 
 
+-- | Orphan Annie for 'Ratio' / 'Rational Integer'.
+instance (Integral a) => Epsilon (Ratio a) where
+  nearZero x = (x == 0)
+
+
+-- | Property that 'triDiagSolve' can solve a diagonally-dominant matrix.
 prop_triDiagSolve_diagDominant :: H.Property
 prop_triDiagSolve_diagDominant = H.property $ do
-  n <- H.forAll $ Gen.integral (Range.linear 1 100)
+  n          <- H.forAll $ Gen.integral (Range.linear 1 100)
+  matrix     <- H.forAll $ genDiagDominantRational n
+
+  let genElem =
+        let range = Range.linearFrom 0 (-1000) (1000)
+        in fromIntegral <$> Gen.int16 range
+  u_expected <- H.forAll $ DV.replicateM n genElem
+
+  let r = mulTriDiagV matrix u_expected
+  H.annotate ("r = " <> show r)
+  let u_actual = triDiagSolve matrix r
+
+  u_actual === Just u_expected
+
+
+-- | Test 'triDiagSolve' on a single known example. This is mostly a
+--   sanity-check, as an example where the matrices are not automatically
+--   generated.
+prop_triDiagSolve_example :: H.Property
+prop_triDiagSolve_example = H.withTests 1 $ H.property $
   let
-    genElem = Gen.float (Range.linearFracFrom 0 (-10) 10)
-  
-  reifyNat n $ \(proxy :: Proxy (n-1)) -> do
-    matrix <- H.forAll $ genDiagDominant' proxy 10 genElem
-    H.success
-  {-
-  let sn = case someNatVal (fromIntegral ni) of
-             Just x -> x
-             Nothing -> error "Badly-generated SomeNat"
-  withSomeSing sn $ \_ -> do
-    matrix <- H.forAll $ genDiagDominant 5 undefined
-    ()
-  -}
-  
-  H.success
+    matrix :: TriDiagMatrix DV.Vector Rational
+    matrix = triDiagMatrix' (DV.fromList [4, 2, 5, 9, 4])
+                            (DV.fromList [3, 1, 6, 8, 3, 4])
+                            (DV.fromList [1, 5, 5, 9, 2])
+
+    r = DV.fromList [1, 2, 3, 4, 5, 6]
+
+    u_expected = DV.fromList
+                 [ 64%379, 187%379, 63%379, 77%379, 65%379, 1007%758 ]
+
+  in triDiagSolve matrix r === Just u_expected
+
+
+-- | Test that 'triDiagSolve' returns 'Nothing' when trying to solve a
+--   system with a singular matrix.
+prop_triDiagSolve_singular :: H.Property
+prop_triDiagSolve_singular = H.withTests 1 $ H.property $
+  let
+    matrix :: TriDiagMatrix DV.Vector Rational
+    matrix = triDiagMatrix' (DV.fromList [ 2%3 ])
+                            (DV.fromList [ (-1), (-1) ])
+                            (DV.fromList [ 3%2 ])
+    r = DV.fromList [1, 2]
+
+  in triDiagSolve matrix r === Nothing
 
 
 -- | Multiply a 'TriDiagMatrix' by a vector.
 mulTriDiagV
-  :: forall n a.
-     ( KnownNat n, n ~ ((n-1)+1), (1+(n-1)) ~ n
-     , Num a )
-  => TriDiagMatrix DV.Vector n a
-  -> DVS.Vector n a
-  -> DVS.Vector n a
+  :: forall a.
+     ( Num a )
+  => TriDiagMatrix DV.Vector a
+  -> DV.Vector a
+  -> DV.Vector a
 mulTriDiagV matrix u =
   let
-    adot = DVS.cons 0 (DVS.zipWith (*) (matrix^.as) (DVS.init u))
-    bdot = DVS.zipWith (*) (matrix^.bs) u
-    cdot = DVS.snoc (DVS.zipWith (*) (matrix^.cs) (DVS.tail u)) 0
+    adot = DV.cons 0 (DV.zipWith (*) (as matrix) (DV.init u))
+    bdot = DV.zipWith (*) (bs matrix) u
+    cdot = DV.snoc (DV.zipWith (*) (cs matrix) (DV.tail u)) 0
   in
-    DVS.zipWith3 (\au bu cu -> au + bu + cu) adot bdot cdot
-  
-
-q :: (H.MonadGen m) => m (TriDiagMatrix DV.Vector 11 Float)
-q = genDiagDominant' (Proxy :: Proxy 10) 5 (Gen.float (Range.linearFracFrom 0 (-10) 10))
+    DV.zipWith3 (\au bu cu -> au + bu + cu) adot bdot cdot
 
 
-genDiagDominant'
-  :: forall n m a.
-     ( KnownNat n, n ~ ((n+1)-1), KnownNat (n+1)
-     , H.MonadGen m
-     , Num a, Ord a )
-  => Proxy n
-  -> a
-  -> m a
-  -> m (TriDiagMatrix DV.Vector (n+1) a)
-genDiagDominant' _ = genDiagDominant
+-- | Generate a diagonally-dominant 'TriDiagMatrix' containing 'Rational'
+--   numbers.
+genDiagDominantRational
+  :: forall m. ( H.MonadGen m ) => Int -> m (TriDiagMatrix DV.Vector Rational)
+genDiagDominantRational size = do
 
-
--- | Generate a diagonally-dominant 'TriDiagMatrix'.
-genDiagDominant
-  :: forall n m a.
-     ( KnownNat n, KnownNat (n+1), n ~ ((n+1)-1)
-     , H.MonadGen m
-     , Num a, Ord a )
-  -- | Minimum allowed absolute value in the diagonal.
-  => a
-  -- | Generator for diagonal elements.
-  -> m a
-  -- | Generator for TriDiagMatrix.
-  -> m (TriDiagMatrix DV.Vector (n+1) a)
-genDiagDominant minDiag genElement = do
-
-  -- Generate unsized vectors and then convert them to sized vectors.
-
-  -- First generate the diagonal
   let
-    len = fromIntegral (natVal (Proxy :: Proxy (n+1)))
-    bGen =
-      let bound = abs minDiag
-      in Gen.filter (\el -> (abs el) > bound) genElement
-  bUnsized <- DV.replicateM len bGen
+    -- all diagonal entries are in +/-[diagMin, diagMax]
+    -- all non-diagonal entries are in (approx) (-diagMin/2, diagMin/2)
+    diagMin = 500
+    diagMax = 1000
+    odMax = floor (((fromIntegral diagMin) :: Double) / 2.0) - 1
 
-  -- Generate the a elements (1 below the diagonal), but make sure that their
-  -- absolute values are less than the absolute values in the corresponding
-  -- elements of the diagonal.
-  let
-    aGen i =
-      let bound = abs (bUnsized DV.! (i+1))
-      in Gen.filter (\el -> (abs el) < bound) genElement
-  aUnsized <- DV.generateM (len-1) aGen
+    genSign = Gen.bool >>= \b -> pure (if b then 1 else (-1))
 
-  -- Generate the c elements (1 above the diagonal), but make sure that their
-  -- absolute values are less than the absolute values in the corresponding
-  -- elements of the diagonal.
-  let
-    cGen i =
-      let bound = abs (bUnsized DV.! i)
-      in Gen.filter (\el -> (abs el) < bound) genElement
-  cUnsized <- DV.generateM (len-1) cGen
+    bGen = fromIntegral <$>
+             ((*) <$> Gen.int16 (Range.linear diagMin diagMax)
+                  <*> genSign)
+    acGen = fromIntegral <$>
+            Gen.int16 (Range.linear (-odMax) (odMax))
 
-  -- Convert the unsized vectors to sized ones.
-  let maybeVecs = (,,) <$> DVS.toSized aUnsized
-                       <*> DVS.toSized bUnsized
-                       <*> DVS.toSized cUnsized
-  case maybeVecs of
-    Nothing           -> error "genDiagDominant is invalid"
-    Just (av, bv, cv) -> pure (TriDiagMatrix av bv cv)
+  triDiagMatrix' <$> DV.replicateM (size-1) acGen
+                 <*> DV.replicateM size     bGen
+                 <*> DV.replicateM (size-1) acGen
