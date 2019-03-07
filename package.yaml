@@ -45,14 +45,14 @@ _ghc-options: &ghc-options
   - -Wincomplete-record-updates
   - -Wmissing-import-lists
 
-# executables:
+executables:
 
-  # mcdrag-validation:
-  #   main:                Main.hs
-  #   source-dirs:         app/mcdrag-validation
-  #   ghc-options:         *ghc-options
-  #   dependencies:
-  #   - space-workshop
+  drag-plots:
+    main:                Main.hs
+    source-dirs:         app/drag-plots
+    ghc-options:         *ghc-options
+    dependencies:
+    - space-workshop
 
 tests:
   space-workshop-test:
