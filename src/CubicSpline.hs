@@ -117,12 +117,10 @@ knots
   :: forall v a.
      ( DVG.Vector v (a, a), DVG.Vector v a
      , Fractional a, Epsilon a )
-  -- | Vector of (x, y) coordinates to be interpolated. This vector must be
-  --   sorted according to increasing x values in order for the result to be
-  --   valid.
-  => SortedX v a
-  -- | Resulting knot vector.
-  -> Maybe (v a)
+  => SortedX v a  -- ^ Vector of (x,y) coordinates to be interpolated. This
+                  --   vector must be sorted according to increasing x values
+                  --   in order for the result to be valid.
+  -> Maybe (v a)  -- ^ Resulting knot vector.
 knots (SortedX xys) =
   let
     xs, ys :: v a

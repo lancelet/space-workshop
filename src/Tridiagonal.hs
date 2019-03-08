@@ -57,12 +57,9 @@ data TriDiagMatrix v a
 -- | Create a 'TriDiagMatrix' if all dimensions of the vectors are correct.
 triDiagMatrix
   :: ( DVG.Vector v a )
-  -- | Vector of @n-1@ elements, below the diagonal.
-  => v a
-  -- | Vector of @n@ elements: the diagonal of the matrix.
-  -> v a
-  -- | Vector of @n-1@ elements, above the diagonal.
-  -> v a
+  => v a  -- ^ Vector of @n-1@ elements, below the diagonal.
+  -> v a  -- ^ Vector of @n@ elements: the diagonal of the matrix.
+  -> v a  -- ^ Vector of @n-1@ elements, above the diagonal.
   -> Maybe (TriDiagMatrix v a)
 triDiagMatrix av bv cv =
   let
@@ -78,12 +75,9 @@ triDiagMatrix av bv cv =
 --   of the vectors are incorrect.
 triDiagMatrix'
   :: ( DVG.Vector v a )
-  -- | Vector of @n-1@ elements, below the diagonal.
-  => v a
-  -- | Vector of @n@ elements: the diagonal of the matrix.
-  -> v a
-  -- | Vector of @n-1@ elements, above the diagonal.
-  -> v a
+  => v a  -- ^ Vector of @n-1@ elements, below the diagonal.
+  -> v a  -- ^ Vector of @n@ elements: the diagonal of the matrix.
+  -> v a  -- ^ Vector of @n-1@ elements, above the diagonal.
   -> TriDiagMatrix v a
 triDiagMatrix' av bv cv =
   case triDiagMatrix av bv cv of

@@ -44,7 +44,7 @@ data FallbackSolution a = FallbackSolution a
 --   This function throws a 'SolutionNotDoneError', pointing to a fallback
 --   solution.
 --
---   This is a stupid hack to avoid changing a signature from 'a' to something
+--   This is a stupid hack to avoid changing a signature from @a@ to something
 --   more useful. It would be possible to return a data type instead of this
 --   kludge, and avoid the naughty control passing via exceptions, but that
 --   would make the type signatures of problems for the workshop (even) more
@@ -88,11 +88,9 @@ data UseWhichSolution
 unTodo
   :: forall a.
      ( Typeable a )
-  -- | Indicates whether the fallback should be used.
-  => UseWhichSolution
-  -- | The value that may throw a `SolutionNotDoneError`.
-  -> a
-  -- | Outcome.
+  => UseWhichSolution -- ^ Indicates whether the fallback function should be
+                      --   used.
+  -> a                -- ^ The value that may throw a `SolutionNotDoneError`.
   -> IO (Either String a)
 unTodo whichSolution x = do
   attempt <- tryJust (\(e :: SolutionNotDoneError a) -> Just e) (pure x)
@@ -108,7 +106,7 @@ unTodo whichSolution x = do
 
 -- | Read the environment to check if we should use fallback solutions.
 --
---   If the variable 'SPACE_WORKSHOP_FALLBACKS' is set then the fallback
+--   If the variable @SPACE_WORKSHOP_FALLBACKS@ is set then the fallback
 --   solutions will be used.
 getFallbackEnv :: IO UseWhichSolution
 getFallbackEnv = lookupEnv "SPACE_WORKSHOP_FALLBACKS" >>= \case

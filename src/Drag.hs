@@ -79,9 +79,9 @@ kephartDragSplined kt =
 -- | Compute drag coefficient very similarly to Kephart (1971).
 kephartDrag
   :: (Ord a, Floating a)
-  => KephartType   -- | Rocket type (Kephart 1971).
-  -> Mach a        -- | Mach number.
-  -> DragCoeff a   -- | Drag coefficient.
+  => KephartType   -- ^ Rocket type (Kephart 1971).
+  -> Mach a        -- ^ Mach number.
+  -> DragCoeff a   -- ^ Drag coefficient.
 kephartDrag kt (Mach m) =
   let
 

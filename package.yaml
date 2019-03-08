@@ -27,12 +27,11 @@ dependencies:
 - linear
 - mtl
 - primitive
-# - reflection
 - text
 - transformers
 - vector
 - vector-algorithms
-# - vector-sized
+- vector-space
 
 library:
   source-dirs: src
