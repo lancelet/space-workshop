@@ -21,12 +21,14 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-# - finite-typelits
+- bytestring
 - gnuplot
+- iterm-show
 - lens
 - linear
 - mtl
 - primitive
+- temporary
 - text
 - transformers
 - vector
@@ -62,6 +64,7 @@ tests:
     ghc-options:         *ghc-options
     dependencies:
     - space-workshop
+    - doctest
     - hedgehog
     - tasty
     - tasty-hedgehog

@@ -1,5 +1,6 @@
-resolver: lts-13.9
+resolver: nightly-2019-03-09
 packages:
 - .
 extra-deps:
+- iterm-show-0.1.0.1
 - tasty-hedgehog-0.2.0.0
