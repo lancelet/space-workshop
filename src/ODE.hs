@@ -106,8 +106,7 @@ plotEulerDoubleExpDecay out = do
     f (_, x) = -0.2 * x
     numerical = NonEmpty.toList (integrateEulerDouble f 1.0 (NonEmpty.fromList times))
 
-  Plot.plotLinesGNUPlot
-    out
+  Plot.plotXYChart out $ Plot.XYChart
     (Plot.Title "Exponential Decay - Analytic vs Numerical")
     (Plot.XLabel "Time (t)")
     (Plot.YLabel "Amount (x)")
