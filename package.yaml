@@ -26,6 +26,7 @@ dependencies:
 - Chart-diagrams
 - diagrams-lib
 - diagrams-rasterific
+- dimensional
 - iterm-show
 - JuicyPixels
 - lens

@@ -5,6 +5,11 @@ Description : Plotting of drag curves.
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+main :: IO ()
+main = putStrLn "TODO"
+
+{-
+
 import           Data.Text                             (Text)
 import qualified Data.Text                             as T
 import qualified Graphics.Gnuplot.Advanced             as GP
@@ -67,3 +72,4 @@ setTitle :: Functor f => Text -> f (Graph2D.T x y) -> f (Graph2D.T x y)
 setTitle title = fmap (Graph2D.lineSpec
                        ( LineSpec.title (T.unpack title) $ LineSpec.deflt )
                       )
+-}
