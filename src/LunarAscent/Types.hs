@@ -1,11 +1,30 @@
-{-# LANGUAGE DeriveAnyClass  #-}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TypeOperators   #-}
+{-|
+Module      : LunarAscent.Types
+Description : Types used for the lunar ascent simulation.
+-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE DataKinds          #-}
 module LunarAscent.Types
-  ( -- * Types
-    EngineState(..)
+  ( -- * Units (type aliases)
+    R
+  , V2
+  , DimensionlessV2
+  , Length
+  , Position
+  , Velocity
+  , Acceleration
+  , Mass
+  , Time
+  , MassFlowRate
+  , ThrustAngle(..)
+    -- * Types
+  , AscentTarget(..)
+  , EngineState(..)
   , EngineCutoffCall(..)
   , PositionControl(..)
   , AscentPhase(..)
@@ -14,6 +33,8 @@ module LunarAscent.Types
   , DDynState
   , LunarModuleSim
     -- * Lenses
+  , targetVelocity
+  , targetAltitude
   , engineState
   , engineCutoffCall
   , positionControl
@@ -26,16 +47,21 @@ module LunarAscent.Types
   , massDot
   , flags
   , time
+  , tgo
   , dynState
     -- * Functions
   , mkFlags
   , initialFlags
+  , mkDynState
+  , mkDynStateGradient
+  , mkLunarModuleSim
   ) where
 
-import           Control.Lens           (Lens', lens, makeLenses, (^.))
+import           Control.Lens           (Lens', lens, makeLenses)
 import           Data.AdditiveGroup     (AdditiveGroup, (^+^), (^-^))
 import           Data.AffineSpace       (AffineSpace, Diff, (.+^), (.-.))
-import           Data.Metrology         ((:/) ((:/)), (:@) ((:@)), type (%/))
+import           Data.Metrology         (type (%/), (:/) ((:/)), (:@) ((:@)), Qu)
+import           Data.Metrology.Show    ()
 import           Data.Metrology.SI.Poly (Gram (Gram), Kilo (Kilo),
                                          Meter (Meter), SI, Second (Second))
 import qualified Data.Metrology.SI.Poly as SIPoly
@@ -44,6 +70,26 @@ import           Data.VectorSpace       (VectorSpace)
 import           GHC.Generics           (Generic)
 import qualified Linear
 import           Orphans                ()
+
+type R = Double
+type V2 = Linear.V2 R
+type DimensionlessV2 = Qu '[] SI V2
+type Length = SIPoly.Length SI Double
+type Position = SIPoly.Length SI V2
+type Velocity = SIPoly.Velocity SI V2
+type Acceleration = SIPoly.Acceleration SI V2
+type Mass = SIPoly.Mass SI R
+type Time = SIPoly.Time SI R
+type MassFlowRate = Mass %/ Time
+newtype ThrustAngle = ThrustAngle R
+
+
+data AscentTarget
+  = AscentTarget
+    { _targetVelocity :: Velocity
+    , _targetAltitude :: Length
+    } deriving (Show)
+makeLenses ''AscentTarget
 
 
 data EngineState
@@ -95,14 +141,6 @@ initialFlags
   = mkFlags Ignited EngineContinue PositionControlInactive VerticalRise
 
 
-type R = Double
-type V2 = Linear.V2 R
-type Position = SIPoly.Length SI V2
-type Velocity = SIPoly.Velocity SI V2
-type Acceleration = SIPoly.Acceleration SI V2
-type Mass = SIPoly.Mass SI R
-type Time = SIPoly.Time SI R
-
 -- | Dynamical variables in the lunar module state.
 data DynState
   = DynState
@@ -110,6 +148,14 @@ data DynState
     , _vel  :: V2         -- m/2
     , _mass :: Double     -- kg
     } deriving (Show)
+
+mkDynState :: Position -> Velocity -> Mass -> DynState
+mkDynState p v m
+  = DynState
+    { _pos  = p # Meter
+    , _vel  = v # Meter :/ Second
+    , _mass = m # Kilo :@ Gram
+    }
 
 pos :: Lens' DynState Position
 pos = lens (\ds -> (_pos ds) % Meter)
@@ -132,6 +178,14 @@ data DDynState
     , _dmass :: Double     -- kg (delta) or kg/s (gradient)
     } deriving (Show, Generic, AdditiveGroup, VectorSpace)
 
+mkDynStateGradient :: Velocity -> Acceleration -> MassFlowRate -> DDynState
+mkDynStateGradient v a mdot
+  = DDynState
+    { _dpos = v # Meter :/ Second
+    , _dvel = a # Meter :/ Second :/ Second
+    , _dmass = mdot # Kilo :@ Gram :/ Second
+    }
+
 posDot :: Lens' DDynState Velocity
 posDot = lens (\dds -> (_dpos dds) % Meter :/ Second)
               (\dds posDot' -> dds{_dpos = posDot' # Meter :/ Second})
@@ -142,7 +196,7 @@ velDot
     (\dds -> (_dvel dds) % Meter :/ Second :/ Second)
     (\dds velDot' -> dds{_dvel = velDot' # Meter :/ Second :/ Second})
 
-massDot :: Lens' DDynState (Mass %/ Time)
+massDot :: Lens' DDynState MassFlowRate
 massDot
   = lens
     (\dds -> (_dmass dds) % Kilo :@ Gram :/ Second)
@@ -152,11 +206,11 @@ massDot
 data LunarModuleSim
   = LunarModuleSim
     { _flags    :: Flags
-    , _time     :: Double
+    , _time     :: Time
+    , _tgo      :: Time
     , _dynState :: DynState
     } deriving (Show)
 makeLenses ''LunarModuleSim
-
 
 instance AffineSpace DynState where
   type Diff DynState = DDynState
@@ -170,3 +224,12 @@ instance AffineSpace DynState where
              , _vel = _vel s ^+^ _dvel ds
              , _mass = _mass s ^+^ _dmass ds
              }
+
+mkLunarModuleSim :: Flags -> Time -> Time -> DynState -> LunarModuleSim
+mkLunarModuleSim f t tgo' dstate
+  = LunarModuleSim
+    { _flags = f
+    , _time = t
+    , _tgo = tgo'
+    , _dynState = dstate
+    }
