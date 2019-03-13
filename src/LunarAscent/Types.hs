@@ -17,7 +17,9 @@ module LunarAscent.Types
   , Length
   , Position
   , Velocity
+  , VelMag
   , Acceleration
+  , AccelMag
   , Mass
   , Time
   , MassFlowRate
@@ -46,7 +48,9 @@ module LunarAscent.Types
   , time
   , agcState
   , dynState
+  , dDynState
     -- * Functions
+  , mkAGCState
   , mkDynState
   , mkDynStateGradient
   , mkLunarModuleSim
@@ -61,25 +65,27 @@ import           Data.Metrology.SI.Poly (Gram (Gram), Kilo (Kilo),
                                          Meter (Meter), SI, Second (Second))
 import qualified Data.Metrology.SI.Poly as SIPoly
 import           Data.Metrology.Vector  ((:/) ((:/)), (:@) ((:@)), MkQu_DLN, Qu,
-                                         ( # ), (%))
+                                         ( # ), (%), Number(Number))
 import           Data.VectorSpace       (VectorSpace)
 import           GHC.Generics           (Generic)
 import qualified Linear
 import           Orphans                ()
 
-type R = Double
-type V2 = Linear.V2 R
+type R            = Double
+type V2           = Linear.V2 R
 type DimensionlessV2 = Qu '[] SI V2
-type Length = SIPoly.Length SI Double
-type Position = SIPoly.Length SI V2
-type Velocity = SIPoly.Velocity SI V2
+type Length       = SIPoly.Length       SI Double
+type Position     = SIPoly.Length       SI V2
+type Velocity     = SIPoly.Velocity     SI V2
+type VelMag       = SIPoly.Velocity     SI R
 type Acceleration = SIPoly.Acceleration SI V2
-type Jerk = MkQu_DLN (SIDims.Acceleration :/ SIDims.Time) SI V2
-type Mass = SIPoly.Mass SI R
-type Time = SIPoly.Time SI R
+type AccelMag     = SIPoly.Acceleration SI R
+type Jerk         = MkQu_DLN (SIDims.Acceleration :/ SIDims.Time) SI V2
+type Mass         = SIPoly.Mass SI R
+type Time         = SIPoly.Time SI R
 type MassFlowRate = MkQu_DLN (SIDims.Mass :/ SIDims.Time) SI Double
 newtype ThrustAngle = ThrustAngle R
-
+  
 
 data AscentTarget
   = AscentTarget
@@ -106,12 +112,11 @@ data DynState
     , _mass  :: Double     -- kg
     } deriving (Show)
 
-mkDynState :: Position -> Velocity -> Acceleration -> Mass -> DynState
-mkDynState p v a m
+mkDynState :: Position -> Velocity -> Mass -> DynState
+mkDynState p v m
   = DynState
     { _pos   = p # Meter
     , _vel   = v # Meter :/ Second
-    , _accel = a # Meter :/ Second :/ Second
     , _mass  = m # Kilo :@ Gram
     }
 
@@ -123,10 +128,6 @@ vel :: Lens' DynState Velocity
 vel = lens (\ds -> (_vel ds) % Meter :/ Second)
            (\ds vel' -> ds {_vel = vel' # Meter :/ Second})
 
-accel :: Lens' DynState Acceleration
-accel = lens (\ds -> (_accel ds) % Meter :/ Second :/ Second)
-             (\ds accel' -> ds {_accel = accel' # Meter :/ Second :/ Second})
-
 mass :: Lens' DynState Mass
 mass = lens (\ds -> (_mass ds) % Kilo :@ Gram)
             (\ds mass' -> ds {_mass = mass' # Kilo :@ Gram})
@@ -137,21 +138,18 @@ data DDynState
   = DDynState
     { _dpos   :: V2         -- m (delta) or m/s (gradient)
     , _dvel   :: V2         -- m/s (delta) or m/s^2 (gradient)
-    , _daccel :: V2         -- m/s/s (delta) or m/s^3 (gradient)
     , _dmass  :: Double     -- kg (delta) or kg/s (gradient)
     } deriving (Show, Generic, AdditiveGroup, VectorSpace)
 
 mkDynStateGradient
   :: Velocity
   -> Acceleration
-  -> Jerk
   -> MassFlowRate
   -> DDynState
-mkDynStateGradient v a j mdot
+mkDynStateGradient v a mdot
   = DDynState
     { _dpos = v # Meter :/ Second
     , _dvel = a # Meter :/ Second :/ Second
-    , _daccel = j # Meter :/ Second :/ Second :/ Second
     , _dmass = mdot # Kilo :@ Gram :/ Second
     }
 
@@ -165,13 +163,6 @@ velDot
     (\dds -> (_dvel dds) % Meter :/ Second :/ Second)
     (\dds velDot' -> dds{_dvel = velDot' # Meter :/ Second :/ Second})
 
-accelDot :: Lens' DDynState Jerk
-accelDot
-  = lens
-    (\dds -> (_daccel dds) % Meter :/ Second :/ Second :/ Second)
-    (\dds accelDot' ->
-       dds{_daccel = accelDot' # Meter :/ Second :/ Second :/ Second})
-
 massDot :: Lens' DDynState MassFlowRate
 massDot
   = lens
@@ -179,9 +170,9 @@ massDot
     (\dds massDot' -> dds{_dmass = massDot' # Kilo :@ Gram :/ Second})
 
 
-newtype TGo = TGo Time deriving Show
+newtype TGo = TGo { unTGo :: Time } deriving Show
 
-newtype GravAccel = GravAccel Acceleration deriving Show
+newtype GravAccel = GravAccel { unGravAccel :: Acceleration } deriving Show
 
 data AGCState
   = AGCState
@@ -198,9 +189,10 @@ mkAGCState = AGCState
 -- | Lunar module simulation state.
 data LunarModuleSim
   = LunarModuleSim
-    { _time     :: Time
-    , _agcState :: AGCState
-    , _dynState :: DynState
+    { _time      :: Time
+    , _agcState  :: AGCState
+    , _dynState  :: DynState
+    , _dDynState :: DDynState
     } deriving (Show)
 makeLenses ''LunarModuleSim
 
@@ -209,15 +201,13 @@ instance AffineSpace DynState where
   s1 .-. s2 = DDynState
               { _dpos   = _pos s1 ^-^ _pos s2
               , _dvel   = _vel s1 ^-^ _vel s2
-              , _daccel = _accel s1 ^-^ _accel s2
               , _dmass  = _mass s1 ^-^ _mass s2
               }
   s .+^ ds = DynState
              { _pos   = _pos s ^+^ _dpos ds
              , _vel   = _vel s ^+^ _dvel ds
-             , _accel = _accel s ^+^ _daccel ds
              , _mass  = _mass s ^+^ _dmass ds
              }
 
-mkLunarModuleSim :: Time -> AGCState -> DynState -> LunarModuleSim
+mkLunarModuleSim :: Time -> AGCState -> DynState -> DDynState -> LunarModuleSim
 mkLunarModuleSim = LunarModuleSim
