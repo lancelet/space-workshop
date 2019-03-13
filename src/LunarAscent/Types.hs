@@ -30,6 +30,7 @@ module LunarAscent.Types
   , DynState
   , DDynState
   , TGo(..)
+  , TCutoff(..)
   , GravAccel(..)
   , AGCState
   , LunarModuleSim
@@ -44,6 +45,7 @@ module LunarAscent.Types
   , massDot
   , stage
   , tgo
+  , engineCutoffTime
   , gPrev
   , time
   , agcState
@@ -84,7 +86,7 @@ type Mass         = SIPoly.Mass SI R
 type Time         = SIPoly.Time SI R
 type MassFlowRate = MkQu_DLN (SIDims.Mass :/ SIDims.Time) SI Double
 newtype ThrustAngle = ThrustAngle R
-  
+
 
 data AscentTarget
   = AscentTarget
@@ -105,9 +107,9 @@ data AscentStage
 -- | Dynamical variables in the lunar module state.
 data DynState
   = DynState
-    { _pos   :: V2         -- m
-    , _vel   :: V2         -- m/s
-    , _mass  :: Double     -- kg
+    { _pos  :: V2         -- m
+    , _vel  :: V2         -- m/s
+    , _mass :: Double     -- kg
     } deriving (Show)
 
 mkDynState :: Position -> Velocity -> Mass -> DynState
@@ -134,9 +136,9 @@ mass = lens (\ds -> (_mass ds) % Kilo :@ Gram)
 -- | Delta of the lunar module dynamical state.
 data DDynState
   = DDynState
-    { _dpos   :: V2         -- m (delta) or m/s (gradient)
-    , _dvel   :: V2         -- m/s (delta) or m/s^2 (gradient)
-    , _dmass  :: Double     -- kg (delta) or kg/s (gradient)
+    { _dpos  :: V2         -- m (delta) or m/s (gradient)
+    , _dvel  :: V2         -- m/s (delta) or m/s^2 (gradient)
+    , _dmass :: Double     -- kg (delta) or kg/s (gradient)
     } deriving (Show, Generic, AdditiveGroup, VectorSpace)
 
 mkDynStateGradient
@@ -170,17 +172,20 @@ massDot
 
 newtype TGo = TGo { unTGo :: Time } deriving Show
 
+newtype TCutoff = TCutoff { unTCutoff :: Time } deriving Show
+
 newtype GravAccel = GravAccel { unGravAccel :: Acceleration } deriving Show
 
 data AGCState
   = AGCState
-    { _stage :: AscentStage
-    , _tgo   :: TGo
-    , _gPrev :: GravAccel
+    { _stage            :: AscentStage
+    , _tgo              :: TGo
+    , _engineCutoffTime :: Maybe TCutoff
+    , _gPrev            :: GravAccel
     } deriving (Show)
 makeLenses ''AGCState
 
-mkAGCState :: AscentStage -> TGo -> GravAccel -> AGCState
+mkAGCState :: AscentStage -> TGo -> Maybe TCutoff -> GravAccel -> AGCState
 mkAGCState = AGCState
 
 

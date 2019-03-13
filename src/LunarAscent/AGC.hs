@@ -20,12 +20,13 @@ import qualified Linear
 import           LunarAscent.Types      (AGCState, AccelMag, Acceleration, AscentStage (Coasting, InjectionPositionControl, MainBurn, VerticalRise),
                                          AscentTarget, GravAccel (GravAccel),
                                          Length, LunarModuleSim, Position, R,
+                                         TCutoff (TCutoff), TGo (TGo),
                                          ThrustAngle (ThrustAngle), Time, V2,
                                          VelMag, Velocity, agcState, dDynState,
-                                         dynState, gPrev, mass, massDot, pos,
-                                         stage, targetAltitude, targetVelocity,
-                                         tgo, time, unGravAccel, unTGo, vel,
-                                         velDot)
+                                         dynState, engineCutoffTime, gPrev,
+                                         mass, massDot, pos, stage,
+                                         targetAltitude, targetVelocity, tgo,
+                                         time, unGravAccel, unTGo, vel, velDot)
 import           Orphans                ()
 
 
@@ -148,9 +149,25 @@ controlledAscent target sim =
     angle = if a_TR > a_max
             then 0
             else asin (a_TR |/| a_max)
+
+
+    cutoffTime :: Maybe TCutoff
+    cutoffTime
+      | t_go' >= 4%Second = sim^.agcState^.engineCutoffTime
+      | otherwise =
+          case sim^.agcState^.engineCutoffTime of
+            Just cot -> Just cot
+            Nothing  -> Just . TCutoff $ sim^.time |+| t_go'
+
+    state = sim^.agcState
+          & (stage .~ if t_go' < 10%Second then InjectionPositionControl else MainBurn)
+          & (tgo .~ TGo(t_go'))
+          & (engineCutoffTime .~ cutoffTime)
+          & (gPrev .~ GravAccel(g_N))
+
   in
     ( ThrustAngle (angle # Number)
-    , undefined
+    , state
     )
 
 
