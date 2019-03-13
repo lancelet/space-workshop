@@ -65,7 +65,7 @@ import           Data.Metrology.SI.Poly (Gram (Gram), Kilo (Kilo),
                                          Meter (Meter), SI, Second (Second))
 import qualified Data.Metrology.SI.Poly as SIPoly
 import           Data.Metrology.Vector  ((:/) ((:/)), (:@) ((:@)), MkQu_DLN, Qu,
-                                         ( # ), (%), Number(Number))
+                                         ( # ), (%))
 import           Data.VectorSpace       (VectorSpace)
 import           GHC.Generics           (Generic)
 import qualified Linear
@@ -80,7 +80,6 @@ type Velocity     = SIPoly.Velocity     SI V2
 type VelMag       = SIPoly.Velocity     SI R
 type Acceleration = SIPoly.Acceleration SI V2
 type AccelMag     = SIPoly.Acceleration SI R
-type Jerk         = MkQu_DLN (SIDims.Acceleration :/ SIDims.Time) SI V2
 type Mass         = SIPoly.Mass SI R
 type Time         = SIPoly.Time SI R
 type MassFlowRate = MkQu_DLN (SIDims.Mass :/ SIDims.Time) SI Double
@@ -108,7 +107,6 @@ data DynState
   = DynState
     { _pos   :: V2         -- m
     , _vel   :: V2         -- m/s
-    , _accel :: V2         -- m/s/s
     , _mass  :: Double     -- kg
     } deriving (Show)
 

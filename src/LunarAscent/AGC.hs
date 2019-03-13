@@ -8,25 +8,24 @@ module LunarAscent.AGC where
 
 import           Control.Lens           ((&), (.~), (^.))
 import           Data.Metrology         (type (%*), type (%/), (:*) ((:*)),
-                                         (:/) ((:/)), (:^)((:^)), type (%^))
-import           Data.Metrology.SI.Poly (Meter (Meter), Second (Second), SI)
-import qualified Data.Metrology.SI.Poly as SIPoly
+                                         (:/) ((:/)))
+import           Data.Metrology.SI.Poly (Meter (Meter), SI, Second (Second))
 import           Data.Metrology.Vector  (type (@+), Normalize, Number (Number),
-                                         Qu, qMagnitude, qMagnitudeSq, constant, sMOne, MOne,
-                                         qNormalized, qSq, (%), (*|), (|*^|),
-                                         (|*|), (|+|), (|-|), (|.|), (|/),
-                                         (|/|), (|^), (|^*|), (|^^), (|*), (#), unity, Dimensionless(Dimensionless))
+                                         Qu, qMagnitude, qMagnitudeSq,
+                                         qNormalized, qSq, ( # ), (%), (*|),
+                                         (|*^|), (|*|), (|+|), (|-|), (|.|),
+                                         (|/), (|/|), (|^*|))
 import qualified Linear
 
 import           LunarAscent.Types      (AGCState, AccelMag, Acceleration, AscentStage (Coasting, InjectionPositionControl, MainBurn, VerticalRise),
-                                         AscentTarget, DimensionlessV2,
-                                         GravAccel (GravAccel), Length, VelMag,
-                                         LunarModuleSim, Position, R, TGo (TGo),
+                                         AscentTarget, GravAccel (GravAccel),
+                                         Length, LunarModuleSim, Position, R,
                                          ThrustAngle (ThrustAngle), Time, V2,
-                                         Velocity, agcState, dynState, gPrev,
-                                         pos, stage, targetVelocity, tgo, time,
-                                         unGravAccel, unTGo, vel, dDynState, velDot, mass, massDot,
-                                         targetAltitude)
+                                         VelMag, Velocity, agcState, dDynState,
+                                         dynState, gPrev, mass, massDot, pos,
+                                         stage, targetAltitude, targetVelocity,
+                                         tgo, time, unGravAccel, unTGo, vel,
+                                         velDot)
 import           Orphans                ()
 
 
@@ -48,14 +47,6 @@ p12 target sim
 verticalRise :: LunarModuleSim -> (ThrustAngle, AGCState)
 verticalRise sim =
   let
-    -- radial distance of the vehicle from the moon's center
-    r :: Length
-    r = qMagnitude (sim^.dynState^.pos)
-
-    -- unit vector along the radial direction
-    u_R :: DimensionlessV2
-    u_R = qNormalized (sim^.dynState^.pos)
-
     -- output state of the guidance computer
     state :: AGCState
     state = sim^.agcState
@@ -143,14 +134,14 @@ controlledAscent target sim =
            MainBurn                 -> bB'
            InjectionPositionControl -> 0 % Meter :/ Second :/ Second
            Coasting                 -> error "Should not be coasting"
-  
+
     aA :: VelMag
     aA = -1 *| bB |*| d_12 |-| (v_G' |.| u_R) |/| l
 
     -- acceleration vector
     a_max :: AccelMag
     a_max = v_E_mag |/| tau
-  
+
     a_TR :: AccelMag
     a_TR = (aA |+| (1 % Second) |*| bB) |/| tau |-| g_eff
 
@@ -207,7 +198,7 @@ qCross2DMag v1 v2 =
 data P12Const
   = P12Const
     { -- | Standard gravitational parameter.
-      sgpMoon :: Length %* Length %* Length %/ Time %/ Time
+      sgpMoon         :: Length %* Length %* Length %/ Time %/ Time
       -- | APS exhaust velocity.
     , exhaustVelocity :: VelMag
     }
