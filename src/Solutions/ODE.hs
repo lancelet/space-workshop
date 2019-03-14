@@ -2,14 +2,19 @@
 Module      : Solutions.ODE
 Description : Solutions for the ODE module.
 -}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 module Solutions.ODE where
 
 import           Data.AffineSpace   (AffineSpace, Diff, (.+^))
+import           Data.Basis         (Basis, HasBasis)
+import           Data.LinearMap     ((:-*), lapply)
 import           Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NonEmpty
-import           Data.VectorSpace   (Scalar, VectorSpace, (*^), (^/))
+import           Data.MemoTrie      (HasTrie)
+import           Data.VectorSpace   (Scalar, VectorSpace, (*^), (^+^), (^/))
 
 
 -- | Integrate an ODE.
@@ -72,6 +77,18 @@ eulerStep
   -> (s, as)          -- ^ Time and state before the step @(t, x)@
   -> (s, as)          -- ^ Time and state after the step @(t, x)@
 eulerStep dt f q@(t, x) = (t + dt, x .+^ dt *^ (f q))
+
+
+eulerStep'
+  :: ( AffineSpace state
+     , diffState ~ Diff state, VectorSpace diffState
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar diffState, s ~ Scalar time )
+  => time
+  -> ((time, state) -> time :-* diffState)
+  -> (time, state)
+  -> (time, state)
+eulerStep' dt f q@(t, x) = (t ^+^ dt, x .+^ lapply (f q) dt)
 
 
 -- | Single step of Euler integration (specialized to 'Double').
