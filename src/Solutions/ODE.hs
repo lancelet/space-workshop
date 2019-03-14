@@ -46,49 +46,41 @@ type Stepper s as vs
 
 -- | Single step of 4th-order Runge-Kutta integration.
 rk4Step
-  :: ( AffineSpace as
-     , vs ~ Diff as, VectorSpace vs
-     , s ~ Scalar vs, Fractional s )
-  => s                -- ^ Step size @dt@
-  -> ((s, as) -> vs)  -- ^ Gradient function @f (x, t)@
-  -> (s, as)          -- ^ Time and state before the step @(t, x)@
-  -> (s, as)          -- ^ Time and state after the step @(t, x)@
+  :: ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  => time                              -- ^ Step size @dt@
+  -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
+  -> (time, state)                     -- ^ Before the step @(t, x)@
+  -> (time, state)                     -- ^ After the step @(t, x)@
 rk4Step dt f (t, x) =
   let
     o6 = 1/6
     o3 = 1/3
-    midt = t + dt/2
+    tf = t ^+^ dt
+    midt = tf ^/ 2
 
-    k1 = dt *^ f (t, x)
-    k2 = dt *^ f (midt, x .+^ k1^/2)
-    k3 = dt *^ f (midt, x .+^ k2^/2)
-    k4 = dt *^ f (t + dt, x .+^ k3)
+    k1 = lapply (f (t,    x          )) dt
+    k2 = lapply (f (midt, x .+^ k1^/2)) dt
+    k3 = lapply (f (midt, x .+^ k2^/2)) dt
+    k4 = lapply (f (tf,   x .+^ k3   )) dt
+    xf = x .+^ o6*^k1 .+^ o3*^k2 .+^ o3*^k3 .+^ o6*^k4
   in
-    (t + dt, x .+^ o6*^k1 .+^ o3*^k2 .+^ o3*^k3 .+^ o6*^k4)
+    (tf, xf)
 
 
 -- | Single step of Euler integration.
 eulerStep
-  :: ( AffineSpace as
-     , vs ~ Diff as, VectorSpace vs
-     , s ~ Scalar vs, Num s )
-  => s                -- ^ Step size @dt@
-  -> ((s, as) -> vs)  -- ^ Gradient function @f (x, t)@
-  -> (s, as)          -- ^ Time and state before the step @(t, x)@
-  -> (s, as)          -- ^ Time and state after the step @(t, x)@
-eulerStep dt f q@(t, x) = (t + dt, x .+^ dt *^ (f q))
-
-
-eulerStep'
   :: ( AffineSpace state
-     , diffState ~ Diff state, VectorSpace diffState
+     , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diffState, s ~ Scalar time )
-  => time
-  -> ((time, state) -> time :-* diffState)
-  -> (time, state)
-  -> (time, state)
-eulerStep' dt f q@(t, x) = (t ^+^ dt, x .+^ lapply (f q) dt)
+     , s ~ Scalar diff, s ~ Scalar time )
+  => time                              -- ^ Step size @dt@
+  -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
+  -> (time, state)                     -- ^ Before the step @(t, x)@
+  -> (time, state)                     -- ^ After the step @(t, x)@
+eulerStep dt f q@(t, x) = (t ^+^ dt, x .+^ lapply (f q) dt)
 
 
 -- | Single step of Euler integration (specialized to 'Double').
