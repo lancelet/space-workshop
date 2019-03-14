@@ -411,7 +411,9 @@ The equations for a single step of RK4 are as follows:
   k3 = dt * f (t + 0.5*dt, x + 0.5*k2)
   k4 = dt * f (t + dt, x + k3)
 
-  xNext = (1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4
+  dx = (1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4
+
+  xNext = x + dx
   tNext = t + dt
 
 Implement these in a stepper function for RK4:

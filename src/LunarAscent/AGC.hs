@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE QuasiQuotes         #-}
 module LunarAscent.AGC where
 
 import           Control.Lens           ((&), (.~), (^.))
@@ -15,6 +16,7 @@ import           Data.Metrology.Vector  (type (@+), Normalize, Number (Number),
                                          qNormalized, qSq, ( # ), (%), (*|),
                                          (|*^|), (|*|), (|+|), (|-|), (|.|),
                                          (|/), (|/|), (|^*|))
+import           Data.Units.SI.Parser   (si)
 import qualified Linear
 
 import           LunarAscent.Types      (AGCState, AccelMag, Acceleration, AscentStage (Coasting, InjectionPositionControl, MainBurn, VerticalRise),
@@ -25,7 +27,7 @@ import           LunarAscent.Types      (AGCState, AccelMag, Acceleration, Ascen
                                          VelMag, Velocity, agcState, dDynState,
                                          dynState, engineCutoffTime, gPrev,
                                          mass, massDot, pos, stage,
-                                         targetAltitude, targetVelocity, tgo,
+                                         targetAltitude, targetRadialVel, targetDownRangeVel, tgo,
                                          time, unGravAccel, unTGo, vel, velDot)
 import           Orphans                ()
 
@@ -78,25 +80,34 @@ controlledAscent target sim =
     mDot = sim^.dDynState^.massDot    -- mass flow rate
     g_prev = sim^.agcState^.gPrev     -- previous average g value
     t_go = unTGo (sim^.agcState^.tgo) -- previous time-to-go estimate
-    v_D = target^.targetVelocity      -- target velocity
+    v_RD = target^.targetRadialVel    -- target radial velocity
+    v_ZD = target^.targetDownRangeVel -- target down-range velocity
     r_D = target^.targetAltitude      -- target altitude
 
     r_mag = qMagnitude r
     u_R = qNormalized r
+    u_Z = u_R |.| (Linear.V2 0 1 % [si| |]) |*^| (Linear.V2 1 0 % [si| |]) |+|
+          u_R |.| (Linear.V2 1 0 % [si| |]) |*^| (Linear.V2 0 -1 % [si| |])
 
     v_E_mag :: VelMag
-    v_E_mag = undefined
+    v_E_mag = exhaustVelocity p12Const
 
     -- Mass to mass-flow-rate ratio
     tau :: Time
-    tau = m |/| mDot
+    tau = -1 *| m |/| mDot
 
     -- calculate Average-G and g_eff
     g_N = unGravAccel $ averageG g_prev r v a (2%Second)
     g_eff = qSq (r `qCross2DMag` v) |/| (r_mag |*| r_mag |*| r_mag) |-| qMagnitude g_N  -- TODO: why (r_mag |^ 3) does not work?
 
+    -- transform velocity to target coordinate system
+    rDot, zDot :: VelMag
+    rDot = v |.| u_R
+    zDot = v |.| u_Z
+
     -- compute velocity-to-be-gained and compensate for g_eff
-    v_G' = v |-| v_D
+    v_G' :: Velocity
+    v_G' = (v_RD |-| rDot) |*^| u_R |+| (v_ZD |-| zDot) |*^| u_Z
     v_G = v_G' |-| (t_go |*| g_eff |/ 2) |*^| u_R
     v_G_mag = qMagnitude v_G
 
@@ -148,7 +159,7 @@ controlledAscent target sim =
 
     angle = if a_TR > a_max
             then 0
-            else asin (a_TR |/| a_max)
+            else (pi/2) - asin (a_TR |/| a_max)
 
 
     cutoffTime :: Maybe TCutoff
@@ -186,10 +197,27 @@ averageG
 averageG (GravAccel gp) r v a dt =
   let
     r' = r |+| dt |*^| (v |+| (gp |+| a) |^*| dt |/ 2)
+  in
+    gravAccel r'
+  {-
+  let
+    r' = r |+| dt |*^| (v |+| (gp |+| a) |^*| dt |/ 2)
     u_R' = qNormalized r'
     r2' = qMagnitudeSq r'
   in
     GravAccel (-1 *| sgpMoon p12Const |/| r2' |*^| u_R')
+  -}
+
+
+-- | Instantaneous acceleration due to gravity.
+gravAccel :: Position -> GravAccel
+gravAccel r =
+  let
+    u_R = qNormalized r
+    r2 = qMagnitudeSq r
+  in
+    GravAccel (-1 *| sgpMoon p12Const |/| r2 |*^| u_R)
+
 
 
 -- | Magnitude of cross-product between 2D vectors as though they were 3D.

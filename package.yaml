@@ -24,6 +24,7 @@ dependencies:
 - bytestring
 - Chart
 - Chart-diagrams
+- colour
 - diagrams-lib
 - diagrams-rasterific
 - iterm-show

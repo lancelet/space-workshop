@@ -35,7 +35,8 @@ module LunarAscent.Types
   , AGCState
   , LunarModuleSim
     -- * Lenses
-  , targetVelocity
+  , targetRadialVel
+  , targetDownRangeVel
   , targetAltitude
   , pos
   , vel
@@ -90,8 +91,9 @@ newtype ThrustAngle = ThrustAngle R
 
 data AscentTarget
   = AscentTarget
-    { _targetVelocity :: Velocity
-    , _targetAltitude :: Length
+    { _targetRadialVel    :: VelMag
+    , _targetDownRangeVel :: VelMag
+    , _targetAltitude     :: Length
     } deriving (Show)
 makeLenses ''AscentTarget
 
