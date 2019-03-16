@@ -1,5 +1,9 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DuplicateRecordFields      #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 module Plot where
 
 
@@ -8,11 +12,14 @@ import           Control.Lens                              ((.=))
 import           Control.Monad                             (forM_)
 import qualified Data.ByteString.Lazy                      as LBS
 import           Data.Colour                               (Colour)
+import qualified Data.Metrology.Vector                     as DMV
+import           Data.String                               (IsString)
 import           Data.Text                                 (Text)
 import qualified Data.Text                                 as Text
+import           Data.VectorSpace                          (Scalar, VectorSpace)
 import qualified Diagrams.Backend.Rasterific               as BR
+import           Diagrams.Prelude                          (( # ))
 import qualified Diagrams.Prelude                          as D
-import Diagrams.Prelude ((#))
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as Chart
 import qualified Graphics.Rendering.Chart.Easy             as Chart
 import qualified ITermShow
@@ -25,30 +32,70 @@ data Output
   | SVG FilePath
 
 
-newtype Title  = Title { unTitle :: Text }
-newtype XLabel = XLabel { unXLabel :: Text }
-newtype YLabel = YLabel { unYLabel :: Text }
-data Item
-  = Line Text [(Double, Double)]
-  | Points Text [(Double, Double)]
 data XYChart
   = XYChart
-    { title      :: Title
-    , xLabel     :: XLabel
-    , yLabel     :: YLabel
-    , chartItems :: [Item]
+    { title      :: !Title
+    , xLabel     :: !XLabel
+    , yLabel     :: !YLabel
+    , chartItems :: [Item Double Double]
     }
+newtype Title = Title { unTitle :: Text } deriving (IsString)
+newtype XLabel = XLabel { unXLabel :: Text } deriving (IsString)
+newtype YLabel = YLabel { unYLabel :: Text } deriving (IsString)
+data Item x y
+  = Line Text [(x, y)]
+  | Points Text [(x, y)]
 
 
-plotXYChart :: Output -> XYChart -> IO ()
-plotXYChart out chart =
-  case out of
-    Screen -> do
-      png <- plotXYChartPNGBS chart
-      LBS.hPutStr stdout (ITermShow.displayImage png)
-      putStrLn ""
-    PNG _ -> error "Not yet implemented" -- plotXYChartPNGFile filePath chart
-    SVG _ -> error "Not yet implemented"
+plotXYChartUnits
+  :: forall dimx dimy unitx unity l.
+     ( DMV.ValidDLU dimx l unitx
+     , DMV.ValidDLU dimy l unity )
+  => Output
+  -> Title
+  -> XLabel
+  -> YLabel
+  -> (unitx, unity)
+  -> [Item (DMV.Qu dimx l Double) (DMV.Qu dimy l Double)]
+  -> IO ()
+plotXYChartUnits out t x y (ux, uy) items
+  = plotXYChart out t x y (itemInUnits (ux, uy) <$> items)
+
+
+itemInUnits
+  :: forall dimx dimy unitx unity l n.
+     ( DMV.ValidDLU dimx l unitx
+     , DMV.ValidDLU dimy l unity
+     , VectorSpace n, Fractional (Scalar n) )
+  => (unitx, unity)
+  -> Item (DMV.Qu dimx l n) (DMV.Qu dimy l n)
+  -> Item n n
+itemInUnits (ux, uy) item =
+  let
+    inu (x, y) = (x DMV.# ux, y DMV.# uy)
+  in
+    case item of
+      Line t xys   -> Line t (inu <$> xys)
+      Points t xys -> Points t (inu <$> xys)
+
+
+plotXYChart
+  :: Output
+  -> Title
+  -> XLabel
+  -> YLabel
+  -> [Item Double Double]
+  -> IO ()
+plotXYChart out t x y items =
+  let
+    chart = XYChart t x y items
+  in case out of
+       Screen -> do
+         png <- plotXYChartPNGBS chart
+         LBS.hPutStr stdout (ITermShow.displayImage png)
+         putStrLn ""
+       PNG _ -> error "Not yet implemented"
+       SVG _ -> error "Not yet implemented"
 
 
 plotXYChartPNGBS :: XYChart -> IO LBS.ByteString
@@ -78,6 +125,7 @@ data OrbitSystemItem
   = Planet { radius :: Double, color :: Colour Double }
   | Trajectory { points :: [(Double, Double)], color :: Colour Double }
 
+
 plotOrbitSystem :: Output -> OrbitSystem -> IO ()
 plotOrbitSystem output system =
   case output of
@@ -88,6 +136,7 @@ plotOrbitSystem output system =
     PNG _ -> error "Not yet implemented"
     SVG _ -> error "Not yet implemented"
 
+
 plotOrbitSystemPNGBS :: OrbitSystem -> LBS.ByteString
 plotOrbitSystemPNGBS system =
   let
@@ -95,7 +144,7 @@ plotOrbitSystemPNGBS system =
     img = BR.rasterRgb8 (D.dims2D 1600 1200) dia
   in
     Png.encodePng img
-  
+
 
 plotSystemItem :: OrbitSystemItem -> D.Diagram BR.B
 plotSystemItem (Planet r c)

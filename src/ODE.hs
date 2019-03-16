@@ -13,22 +13,32 @@ Solutions for the problems in this module are contained in the
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}  -- re-enable after completing solutions
-module ODE where
+module ODE
+  ( -- * Types
+    Stepper
+    -- * Functions
+    -- ** Useful utilities
+  , linspace
+    -- ** vector-space versions
+  , integrate
+  , rk4Step
+  , eulerStep
+    -- ** Euler's method for Double only
+  , integrateEulerDouble
+  , eulerStepDouble
+  ) where
 
-import           Control.Lens       (makeLenses, view, (^.), _1, _2)
-import           Data.AdditiveGroup (AdditiveGroup)
-import           Data.AffineSpace   (AffineSpace, Diff, (.+^), (.-.))
+import           Data.AffineSpace   (AffineSpace, Diff, (.+^))
 import           Data.Basis         (Basis, HasBasis)
 import           Data.LinearMap     ((:-*), lapply)
 import           Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.MemoTrie      (HasTrie)
-import           Data.VectorSpace   (Scalar, VectorSpace, (*^))
-import           GHC.Generics       (Generic)
+import           Data.VectorSpace   (Scalar, VectorSpace, (*^), (^+^), (^-^),
+                                     (^/))
 
-import qualified Plot
 import qualified Solutions.ODE
 import           Todo               (FallbackSolution (FallbackSolution), todo)
 
@@ -113,22 +123,21 @@ integrateEulerDouble -- f x0 (t0 :| ts)
 --
 -- Example:
 --
--- >>> linspace 6 0.0 10.0
+-- >>> linspace 5 0.0 10.0 :: [Double]
 -- [0.0,2.0,4.0,6.0,8.0,10.0]
 linspace
-  :: Fractional a
-  => Int   -- ^ Number of samples.
-  -> a     -- ^ Start of the sample range (== first sample).
-  -> a     -- ^ End of the sample range (== last sample for n > 2).
-  -> [a]   -- ^ Samples.
+  :: ( VectorSpace a, s ~ Scalar a, Fractional s )
+  => Int   -- ^ Number of divisions (1 less than the number of samples)
+  -> a     -- ^ Start of the sample range (== first sample)
+  -> a     -- ^ End of the sample range (== last sample for n > 2)
+  -> [a]   -- ^ Samples
 linspace n xStart xEnd =
   let
-    m = n - 1
-    m' = fromIntegral m
-    range = xEnd - xStart
-    f i = fromIntegral i * range / m' + xStart
+    n' = fromIntegral n
+    range = xEnd ^-^ xStart
+    f i = fromIntegral i *^ range ^/ n' ^+^ xStart
   in
-    [ f i | i <- [0 .. m] ]
+    [ f i | i <- [0 .. n] ]
 
 
 {------------------------------------------------------------------------------
@@ -139,6 +148,10 @@ c) Generalize the Euler step to the vector-space classes.
 -- | Single step of Euler integration.
 --
 -- Example:
+--
+-- >>> f (_, x) = linear $ \dt -> -0.2 * x * dt
+-- >>> eulerStep 1 f (2, 5)
+-- (3.0,4.0)
 eulerStep
   :: ( AffineSpace state
      , diff ~ Diff state, VectorSpace diff
@@ -158,12 +171,6 @@ type Stepper time state
   -> ((time, state) -> time :-* (Diff state))
   -> (time, state)
   -> (time, state)
-{-
-   = s                -- ^ Step size @dt@.
-  -> ((s, as) -> vs)  -- ^ Gradient function @f (x, t)@.
-  -> (s, as)          -- ^ Time and state before the step @(t, x)@
-  -> (s, as)          -- ^ Time and state after the step @(t, x)@
--}
 
 
 {------------------------------------------------------------------------------
@@ -174,31 +181,24 @@ d) Generalize the integration driver to the vector-space classes.
 -- | Integrate an ODE.
 --
 -- Example:
+--
+-- >>> f (_, x) = linear $ \dt -> -0.2 * x * dt
+-- >>> times = NonEmpty.fromList [1, 2, 3]
+-- >>> x0 = 50.0
+-- >>> integrate eulerStep x0 times f 
+-- (1.0,50.0) :| [(2.0,40.0),(3.0,32.0)]
 integrate
   :: ( AffineSpace state
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diff, s ~ Scalar time )
-  => Stepper time state
-  -> state
-  -> NonEmpty time
-  -> ((time, state) -> time :-* diff)
-  -> NonEmpty (time, state)
-integrate = undefined
-{-
-integrate
-  :: forall as vs s.
-     ( AffineSpace as
-     , vs ~ Diff as, VectorSpace vs
-     , s ~ Scalar vs, Fractional s )
-  => Stepper s as vs    -- ^ Stepper function
-  -> as                 -- ^ Initial state @x0@
-  -> NonEmpty s         -- ^ NonEmpty of @t@ values
-  -> ((s, as) -> vs)    -- ^ Gradient function @f (t, x)@
-  -> NonEmpty (s, as)   -- ^ NonEmpty of @(t, x)@ values
-integrate -- stepper x0 ts f
-  v todo (FallbackSolution Solutions.ODE.integrate)
--}
+     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  => Stepper time state                 -- ^ Stepper function
+  -> state                              -- ^ Initial state
+  -> NonEmpty time                      -- ^ Evaluation times
+  -> ((time, state) -> time :-* diff)   -- ^ Gradient function
+  -> NonEmpty (time, state)             -- ^ Computed states
+integrate -- stepper x0 (t0 :| ts) f
+  = todo (FallbackSolution Solutions.ODE.integrate)
 
 
 {------------------------------------------------------------------------------
@@ -230,3 +230,15 @@ rk4Step
   -> (time, state)                     -- ^ After the step @(t, x)@
 rk4Step -- dt f q@(t, x)
   = todo (FallbackSolution Solutions.ODE.rk4Step)
+
+
+{- $setup
+
+>>> :set -XFlexibleContexts -XNegativeLiterals -XTypeFamilies
+>>> import Data.LinearMap (linear)
+
+-- >>> :set -XQuasiQuotes -XFlexibleContexts -XTypeFamilies
+-- >>> import Data.Metrology.Vector ((%), (|*|))
+-- >>> import Data.Units.SI.Parser (si)
+
+-}

@@ -27,6 +27,7 @@ import qualified ODE
 import qualified Plot
 
 
+{-
 plotLunarAscent :: Plot.Output -> IO ()
 plotLunarAscent output = do
   let
@@ -124,3 +125,4 @@ burnStep target sim =
     case sim^.agcState^.engineCutoffTime of
       Just (TCutoff tc) | tc <= sim^.time -> Nothing
       _                                   -> Just sim'
+-}

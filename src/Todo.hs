@@ -1,6 +1,14 @@
 {-|
 Module      : Todo
 Description : Handle problem Todos.
+
+This is a hacky solution to allow the workshop code to run,
+unmodified, for the purpose of running tests (or to skip straight to
+results), yet still allow participants to write code themselves.
+
+If the environment variable @IDDQD@ is set then the 'todo' function
+will use its "fallback solution". The lookup is done using an
+'unsafePerformIO'.
 -}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -47,9 +55,9 @@ data UseWhichSolution
 
 -- | Read the environment to check if we should use fallback solutions.
 --
---   If the variable @SPACE_WORKSHOP_FALLBACKS@ is set then the fallback
---   solutions will be used.
+-- If the variable @IDDQD@ is set then the fallback solutions will be
+-- used.
 getFallbackEnv :: IO UseWhichSolution
-getFallbackEnv = lookupEnv "SPACE_WORKSHOP_FALLBACKS" >>= \case
+getFallbackEnv = lookupEnv "IDDQD" >>= \case
   Just _ -> pure UseFallbackSolution
   _      -> pure FailNow
