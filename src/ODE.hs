@@ -5,13 +5,9 @@ Description : Integration of Ordinary Differential Equations.
 Solutions for the problems in this module are contained in the
 'Solutions.ODE' module.
 -}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NegativeLiterals    #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}  -- re-enable after completing solutions
@@ -168,7 +164,7 @@ eulerStep -- dt f (t, x)
 -- | Stepper function used in ODE integration.
 type Stepper time state
    = time
-  -> ((time, state) -> time :-* (Diff state))
+  -> ((time, state) -> time :-* Diff state)
   -> (time, state)
   -> (time, state)
 
@@ -185,7 +181,7 @@ d) Generalize the integration driver to the vector-space classes.
 -- >>> f (_, x) = linear $ \dt -> -0.2 * x * dt
 -- >>> times = NonEmpty.fromList [1, 2, 3]
 -- >>> x0 = 50.0
--- >>> integrate eulerStep x0 times f 
+-- >>> integrate eulerStep x0 times f
 -- (1.0,50.0) :| [(2.0,40.0),(3.0,32.0)]
 integrate
   :: ( AffineSpace state

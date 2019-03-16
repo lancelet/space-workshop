@@ -54,7 +54,7 @@ integrate stepper x0 (t0 :| ts) f =
 -- | Stepper function used in ODE integration.
 type Stepper time state
    = time
-  -> ((time, state) -> time :-* (Diff state))
+  -> ((time, state) -> time :-* Diff state)
   -> (time, state)
   -> (time, state)
 

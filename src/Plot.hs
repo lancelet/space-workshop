@@ -47,7 +47,7 @@ data Item x y
   | Points Text [(x, y)]
 
 
-plotXYChartUnits
+xyChartUnits
   :: forall dimx dimy unitx unity l.
      ( DMV.ValidDLU dimx l unitx
      , DMV.ValidDLU dimy l unity )
@@ -58,8 +58,8 @@ plotXYChartUnits
   -> (unitx, unity)
   -> [Item (DMV.Qu dimx l Double) (DMV.Qu dimy l Double)]
   -> IO ()
-plotXYChartUnits out t x y (ux, uy) items
-  = plotXYChart out t x y (itemInUnits (ux, uy) <$> items)
+xyChartUnits out t x y (ux, uy) items
+  = xyChart out t x y (itemInUnits (ux, uy) <$> items)
 
 
 itemInUnits
@@ -79,14 +79,14 @@ itemInUnits (ux, uy) item =
       Points t xys -> Points t (inu <$> xys)
 
 
-plotXYChart
+xyChart
   :: Output
   -> Title
   -> XLabel
   -> YLabel
   -> [Item Double Double]
   -> IO ()
-plotXYChart out t x y items =
+xyChart out t x y items =
   let
     chart = XYChart t x y items
   in case out of

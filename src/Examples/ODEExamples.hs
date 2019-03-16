@@ -1,3 +1,10 @@
+{-|
+Module      : Examples.ODEExamples
+Description : Plots of ODE integration.
+
+The examples in this module accompany the problems outlined in the
+'ODE' module.
+-}
 {-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
@@ -10,22 +17,29 @@
 {-# LANGUAGE TypeOperators       #-}
 module Examples.ODEExamples where
 
-import           Control.Lens          (makeLenses, (<&>), (^.), _1, _2)
+import           Control.Lens          (makeLenses, (^.))
 import           Data.AdditiveGroup    (AdditiveGroup)
 import           Data.AffineSpace      (AffineSpace, Diff, (.+^), (.-.))
 import           Data.LinearMap        ((:-*), linear)
 import qualified Data.List.NonEmpty    as NonEmpty
-import           Data.Metrology.Vector (qNegate, qSqrt, ( # ), (%), (*|), (|*|),
-                                        (|+|), (|-|), (|/|))
+import           Data.Metrology.Vector (qNegate, qSqrt, (%), (|*|), (|+|),
+                                        (|-|), (|/|))
 import           Data.Units.SI.Parser  (si)
 import           Data.VectorSpace      (VectorSpace)
 import           GHC.Generics          (Generic)
-import Orphans ()
+import           Orphans               ()
 
 import qualified ODE
 import qualified Plot
 import qualified Units                 as U
 
+
+-------------------------------------------------------------------------------
+-- Exponential Decay Example
+-------------------------------------------------------------------------------
+
+
+-- | Plot Euler integration of an exponential decay ODE.
 plotEulerDoubleExpDecay :: Plot.Output -> IO ()
 plotEulerDoubleExpDecay out = do
   let
@@ -45,22 +59,26 @@ plotEulerDoubleExpDecay out = do
         ODE.integrateEulerDouble f 1.0 (NonEmpty.fromList times)
 
   -- plot everything
-  Plot.plotXYChart
+  Plot.xyChart
     out
     "Exponential Decay - Analytic vs Euler"
     "Time (t) - no units assigned"
     "Amount (x) - no units assigned"
-    [ (Plot.Line "Analytic Solution" (analytic (ODE.linspace 50 0.0 10.0)))
-    , (Plot.Points "Euler (dt=2.0)" (numerical (ODE.linspace 6 0.0 10.0)))
-    , (Plot.Points "Euler (dt=1.0)" (numerical (ODE.linspace 11 0.0 10.0)))
-    , (Plot.Points "Euler (dt=0.2)" (numerical (ODE.linspace 51 0.0 10.0)))
-    ]
+    [ Plot.Line "Analytic Solution" (analytic (ODE.linspace 50 0.0 10.0))
+    , Plot.Points "Euler (dt=2.0)" (numerical (ODE.linspace 6 0.0 10.0))
+    , Plot.Points "Euler (dt=1.0)" (numerical (ODE.linspace 11 0.0 10.0))
+    , Plot.Points "Euler (dt=0.2)" (numerical (ODE.linspace 51 0.0 10.0)) ]
+
+
+-------------------------------------------------------------------------------
+-- Simple Harmonic Oscillator Example
+-------------------------------------------------------------------------------
 
 
 -- | State of a 1D simple harmonic oscillator.
 --
 -- The state uses lenses and has SI units for both position and
--- velocity.
+-- velocity. @a@ is the underlying numeric type.
 data State a
   = State
     { _pos :: U.Length a    -- ^ Position.
@@ -72,7 +90,8 @@ makeLenses ''State
 -- | Delta in the state of a 1D simple harmonic oscillator.
 --
 -- The delta uses lenses and has SI units for both the difference in
--- position and difference in velocity.
+-- position and difference in velocity. @a@ is the underlying numeric
+-- type.
 data DState a
   = DState
     { _dpos :: U.Length a    -- ^ Delta in position.
@@ -94,17 +113,26 @@ instance (AdditiveGroup a, Num a) => AffineSpace (State a) where
              }
 
 
+-- | Plot Euler integration of the Simple Harmonic Motion example.
+--
+-- This example uses units and involves free conversion between them.
 plotEulerSHM :: Plot.Output -> IO ()
 plotEulerSHM out = do
   let
     -- parameters
-    ti =    0.0 % [si| ms |]     -- initial simulation time
-    tf = 1500.0 % [si| ms |]     -- final simulation time
-    x0 =   10.0 % [si| mm |]     -- initial position
-    v0 =    0.0 % [si| m/s |]    -- initial velocity
-    k  =   10.0 % [si| mN/mm |]  -- spring stiffness
-    m  =  500.0 % [si| g |]      -- mass
-    omega = qSqrt (k |/| m)      -- angular frequency
+    ti =    0 % [si| s |]      -- initial simulation time
+    tf = 1500 % [si| ms |]     -- final simulation time
+    x0 =   10 % [si| mm |]     -- initial position
+    v0 =    0 % [si| m/s |]    -- initial velocity
+    k  =   10 % [si| mN/mm |]  -- spring stiffness
+    m  =  500 % [si| g |]      -- mass
+    omega = qSqrt (k |/| m)    -- angular frequency
+
+    -- ODE we're solving
+    shmODE :: (U.Time Double, State Double) -> (U.Time Double :-* DState Double)
+    shmODE (_, state) = linear $ \dt ->
+      DState { _dpos = state^.vel |*| dt
+             , _dvel = qNegate(state^.pos |*| k |/| m) |*| dt }
 
     -- analytical solution
     analytic :: [U.Time Double] -> [(U.Time Double, U.Length Double)]
@@ -114,67 +142,75 @@ plotEulerSHM out = do
     numerical :: [U.Time Double] -> [(U.Time Double, U.Length Double)]
     numerical times =
       let
-        tne = NonEmpty.fromList times
-
-        f :: (U.Time Double, State Double) -> (U.Time Double :-* DState Double)
-        f (_, state) = linear
-                       $ \(dt :: U.Time Double) ->
-                           DState
-                           { _dpos = state^.vel |*| dt
-                           , _dvel = qNegate(state^.pos |*| k |/| m) |*| dt
-                           }
         state0 = State { _pos = x0, _vel = v0 }
-        timeAndPos r = (r^._1, r^._2.pos)
+        tstates = ODE.integrate ODE.eulerStep
+                                state0
+                                (NonEmpty.fromList times)
+                                shmODE
       in
-        NonEmpty.toList
-        $ timeAndPos <$> ODE.integrate ODE.eulerStep state0 tne f
+        NonEmpty.toList $ (\(t, s) -> (t, s^.pos)) <$> tstates
 
-  Plot.plotXYChartUnits
+  Plot.xyChartUnits
     out
     "Simple Harmonic Motion - Analytic vs Euler"
     "Time (ms)"
     "Position (mm)"
     ( [si| ms |], [si| mm |] )
-    [ (Plot.Line "Analytic Solution" $ analytic (ODE.linspace 200 ti tf))
-    , (Plot.Points "Euler (dt=75.0 ms)" $ numerical (ODE.linspace 20 ti tf))
-    , (Plot.Points "Euler (dt=37.5 ms)" $ numerical (ODE.linspace 40 ti tf))
-    , (Plot.Points "Euler (dt=7.5 ms)" $ numerical (ODE.linspace 200 ti tf))
-    ]
+    [ Plot.Line "Analytic Solution" $ analytic (ODE.linspace 200 ti tf)
+    , Plot.Points "Euler (dt=75.0 ms)" $ numerical (ODE.linspace 20 ti tf)
+    , Plot.Points "Euler (dt=37.5 ms)" $ numerical (ODE.linspace 40 ti tf)
+    , Plot.Points "Euler (dt=7.5 ms)" $ numerical (ODE.linspace 200 ti tf) ]
 
 
+-- | Plot comparison of Euler and RK4 integration of the Simple
+-- Harmonic Motion example.
 plotSHMComparison :: Plot.Output -> IO ()
-plotSHMComparison out = undefined {- do
+plotSHMComparison out = do
   let
-    analytic :: [Double] -> [(Double, Double)]
-    analytic times = [ (t, cos (t * (sqrt 0.2))) | t <- times ]
+    -- parameters
+    ti =    0 % [si| s |]      -- initial simulation time
+    tf = 1500 % [si| ms |]     -- final simulation time
+    x0 =   10 % [si| mm |]     -- initial position
+    v0 =    0 % [si| m/s |]    -- initial velocity
+    k  =   10 % [si| mN/mm |]  -- spring stiffness
+    m  =  500 % [si| g |]      -- mass
+    omega = qSqrt (k |/| m)    -- angular frequency
 
-    numeric
-      :: ODE.Stepper Double (State Double) (DState Double)
-      -> [Double]
-      -> [(Double, Double)]
-    numeric stepper times =
+    -- ODE we're solving
+    shmODE :: (U.Time Double, State Double) -> (U.Time Double :-* DState Double)
+    shmODE (_, state) = linear $ \dt ->
+      DState { _dpos = state^.vel |*| dt
+             , _dvel = qNegate(state^.pos |*| k |/| m) |*| dt }
+
+    -- analytical solution
+    analytic :: [U.Time Double] -> [(U.Time Double, U.Length Double)]
+    analytic times = [ (t, x0 |*| cos (t |*| omega)) | t <- times ]
+
+    -- numerical solution
+    numerical
+      :: ODE.Stepper (U.Time Double) (State Double)
+      -> [U.Time Double]
+      -> [(U.Time Double, U.Length Double)]
+    numerical stepper times =
       let
-        tne = NonEmpty.fromList times
-        timeAndPos r = (r^._1, r^._2.pos)
-        f (_, state) = DState
-                       { _dpos = state^.vel
-                       , _dvel = -0.2*state^.pos }
-        state0 = State { _pos = 1.0, _vel = 0.0 }
+        state0 = State { _pos = x0, _vel = v0 }
+        tstates = ODE.integrate stepper
+                                state0
+                                (NonEmpty.fromList times)
+                                shmODE
       in
-        NonEmpty.toList $ timeAndPos <$> integrate stepper state0 tne f
+        NonEmpty.toList $ (\(t, s) -> (t, s^.pos)) <$> tstates
 
-    euler :: [Double] -> [(Double, Double)]
-    euler = numeric eulerStep
+    -- Euler and RK4 numerical solutions
+    euler = numerical ODE.eulerStep
+    rk4   = numerical ODE.rk4Step
 
-    rk4 :: [Double] ->  [(Double, Double)]
-    rk4 = numeric rk4Step
-
-  Plot.plotXYChart out $ Plot.XYChart
-    (Plot.Title "Simple Harmonic Motion - Analytic vs Numerical")
-    (Plot.XLabel "Time (t) - no units assigned")
-    (Plot.YLabel "Position (pos) - no units assigned")
-    [ (Plot.Line "Analytic Solution" (analytic (linspace 200 0.0 20.0)))
-    , (Plot.Points "Euler (dt=0.5)" (euler (linspace 41 0.0 20.0)))
-    , (Plot.Points "RK4 (dt=2.0)" (rk4 (linspace 11 0.0 20.0)))
-    ]
-  -}
+  Plot.xyChartUnits
+    out
+    "Simple Harmonic Motion - Analytic, Euler and RK4"
+    "Time (ms)"
+    "Position (mm)"
+    ( [si| ms |], [si| mm |] )
+    [ Plot.Line "Analytic Solution" $ analytic (ODE.linspace 200 ti tf)
+    , Plot.Points "Euler (dt=37.5 ms)" $ euler (ODE.linspace 40 ti tf)
+    , Plot.Points "RK4 (dt=150.0 ms)" $ rk4 (ODE.linspace 10 ti tf) ]
