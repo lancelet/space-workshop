@@ -3,6 +3,8 @@
 
 module LunarAscent where
 
+{-
+
 import           Control.Lens          ((^.))
 import           Data.List.NonEmpty    (NonEmpty)
 import qualified Data.List.NonEmpty    as NonEmpty
@@ -25,6 +27,8 @@ import           LunarAscent.Types     (AscentStage (VerticalRise),
                                         pos, time, vel, unGravAccel)
 import qualified ODE
 import qualified Plot
+
+-}
 
 
 {-
