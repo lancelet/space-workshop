@@ -42,11 +42,15 @@ p12
   -> (AGCCommand a, AGCState a)
 p12 constants target sim =
   let
-    -- convert position and velocity from moon-fixed coordinates to
-    -- local vertical coordinates
+    -- convert position and velocity from moon-fixed coordinates
+    -- (MFCS) to local vertical coordinates (LVCS)
+    p_l :: U.Length (P2 LVCS a)
+    v_l :: U.Velocity (V2 LVCS a)
+    a_l :: U.Acceleration (V2 LVCS a)
     (p_l, v_l, a_l) = mfcsToLocal (sim^.dynamics^.pos)
                                   (sim^.dynamics^.vel)
                                   (sim^.accel)
+    p_lv :: U.Length (V2 LVCS a)
     p_lv = p_l |.-.| (zeroV %. [si| m |])  -- LVCS position as a vector
 
     -- unit vector in the radial direction of the local coordinate system
@@ -66,8 +70,7 @@ p12 constants target sim =
 
     -- compensate v_G' for g_eff
     g_N = averageG (constants^.moonSGP) p_l v_l a_l (2 % [si| s |])
-    g_eff = qSq (p_lv `qCross2D` v_l) |/| (r |*| r |*| r)
-            |-| qMagnitude g_N
+    g_eff = qSq (p_lv `qCross2D` v_l) |/| (r |*| r |*| r) |-| qMagnitude g_N
     v_G = v_G' |-| 0.5 *| sim^.agcState^.tgo |*| g_eff |*^| u_R
 
     -- update time-to-go estimate
@@ -83,39 +86,50 @@ p12 constants target sim =
     e = 0.5 *| tgo' |-| d21
     b' = (d21 |*| (rDot_D |-| rDot) |-| (r_D |-| r |-| rDot |^*| tgo'))
          |/| (tgo' |*| e)
+    -- "B" control parameter
     b
       -- in "Injection Position Control" mode, the B parameter is set to zero
       | tgo' < constants^.t3_PositionControl = 0 % [si| m/s^2 |]
       -- B parameter must be negative; it's clamped at zero
       | b' > 0 % [si| m/s^2 |]               = 0 % [si| m/s^2 |]
-      -- the B parameter has a lower threshold
+      -- the B parameter has a low threshold that it can't drop below
       | b' < constants^.bThreshold |*| tau   = constants^.bThreshold |*| tau
       -- in between the lower and upper thresholds; use the computed value
       | otherwise                            = b'
+    -- "A" control parameter.
     a = -1 *| b |*| d12 |-| (rDot_D |-| rDot) |/| l
 
     -- compute thrust angle
     aTR = (a |+| (1 % [si| s |]) |*| b) |/| tau |-| g_eff  -- desired rad accel
+    -- In the real ACG, the maximum acceleration is computed from
+    -- filtered measurements of thrust; that's not necessary
+    -- here... just using the nominal value based on the exhaust
+    -- velocity.
     aMax = constants^.apsExhaustVelocity |/| tau  -- maximum acceleration
     zSign = signum $ (target^.targetRadius |-| r) # [si| m |]
     angle = if aTR > aMax
-            -- if we request more radius thrust than the maximum, then
-            -- just command the thrust straight down
+            -- if we request more radial thrust than the maximum
+            -- possible acceleration, then just command the thrust
+            -- straight down
             then ThrustAngle 0
             -- otherwise, compute the thrust angle by comparing the
             -- required radial thrust to the total available thrust
             else ThrustAngle $ (pi/2) - zSign * (asin (aTR |/| aMax) # [si| |])
 
-    -- establish engine cutoff time if the time-to-go has passed the threshold
+    -- near the end of the burn, we schedule the engine to cut-off;
+    -- this is done once the time-to-go has passed a threshold point
     shutoff = if tgo' < constants^.tEngineThreshold
               then Just (EngineShutoff (sim^.time |+| tgo'))
               else Nothing
 
     -- compute the new commanded thrust angle
     thrustAngle
-      -- vertical ascent stage; use a zero thrust angle
+      -- during the vertical ascent we use a fixed zero thrust
+      -- angle. vertical ascent is any time prior to achieving a
+      -- vertical velocity of (nominally) 40feet-per-second
       | rDot < constants^.rDotFLVPEnd = ThrustAngle 0
-      -- final control-hold stage; use the previously-commanded thrust angle
+      -- during the final control-hold stage (nominally 2 sec), we use
+      -- the previously-commanded thrust angle
       | tgo' < constants^.t2_HoldAll = sim^.agcState^.prevThrustAngle
       -- all other times; use the computed control thrust angle
       | otherwise = angle

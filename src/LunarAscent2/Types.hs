@@ -156,7 +156,7 @@ data Dynamics a
 makeLenses ''Dynamics
 
 
--- | Delta in the dynamical state.
+-- | Delta of the dynamical state.
 data DDynamics a
   = DDynamics
     { _dpos         :: !(U.Length (V2 MFCS a))
