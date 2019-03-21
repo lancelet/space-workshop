@@ -19,6 +19,7 @@ module ODE
   , linspace
     -- ** vector-space versions
   , integrate
+  , integrateWithDiff
   , rk4Step
   , eulerStep
     -- ** Euler's method for Double only
@@ -196,6 +197,22 @@ integrate
 integrate -- stepper x0 (t0 :| ts) f
   = todo (FallbackSolution Solutions.ODE.integrate)
 
+
+-- | Integrate an ODE, recording the gradient.
+integrateWithDiff
+  :: forall state diff time s.
+     ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  => Stepper time state                     -- ^ Stepper function
+  -> state                                  -- ^ Initial state
+  -> NonEmpty time                          -- ^ Evaluation times
+  -> ((time, state) -> time :-* diff)       -- ^ Gradient function
+  -> NonEmpty (time, state, time :-* diff)  -- ^ Computed states
+integrateWithDiff -- stepper x0 (t0 :| ts) f =
+  = todo (FallbackSolution Solutions.ODE.integrateWithDiff)
+  
 
 {------------------------------------------------------------------------------
 Problem 2: Implement 4th-order Runge-Kutta Integration (RK4)

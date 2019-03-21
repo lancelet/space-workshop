@@ -11,6 +11,7 @@ module LunarAscent2.AGC where
 import           Control.Lens       ((^.))
 import           Data.Basis         (Basis, HasBasis)
 import           Data.VectorSpace   (InnerSpace, Scalar, VectorSpace, zeroV)
+import Debug.Trace
 
 import           LunarAscent2.Types (AGCCommand (AGCCommand),
                                      AGCState (AGCState), AscentTarget,
@@ -35,7 +36,7 @@ import qualified Units              as U
 -- | Ascent guidance program P12.
 p12
   :: forall a.
-     ( InnerSpace a, a ~ Scalar a, Floating a, Ord a, Basis a ~ (), HasBasis a )
+     ( InnerSpace a, a ~ Scalar a, Floating a, Ord a, Basis a ~ (), HasBasis a, Show a )
   => Constants a
   -> AscentTarget a
   -> Sim a
@@ -54,11 +55,11 @@ p12 constants target sim =
     p_lv = p_l |.-.| (zeroV %. [si| m |])  -- LVCS position as a vector
 
     -- unit vector in the radial direction of the local coordinate system
-    u_R = quantity $ v2 @LVCS 1 0
+    u_R = qv2 @LVCS 1 0
 
     -- radial position and velocity
-    r    = p_lv |.| u_R
-    rDot = v_l  |.| u_R
+    r    = qMagnitude p_lv
+    rDot = v_l |.| u_R
 
     -- target radial position and velocity
     r_D    = target^.targetRadius
@@ -71,19 +72,20 @@ p12 constants target sim =
     -- compensate v_G' for g_eff
     g_N = averageG (constants^.moonSGP) p_l v_l a_l (2 % [si| s |])
     g_eff = qSq (p_lv `qCross2D` v_l) |/| (r |*| r |*| r) |-| qMagnitude g_N
-    v_G = v_G' |-| 0.5 *| sim^.agcState^.tgo |*| g_eff |*^| u_R
+    v_G = v_G' |-| (0.5 *| sim^.agcState^.tgo |*| g_eff |*^| u_R)
 
     -- update time-to-go estimate
-    tau = -1 *| sim^.dynamics^.mass |/| constants^.apsMassFlowRate
+    tau = sim^.dynamics^.mass |/| constants^.apsMassFlowRate
     ve = constants^.apsExhaustVelocity
     v_G_mag = qMagnitude v_G
-    tgo' = tau |*| v_G_mag |/| ve |*| (1 |-| 0.5 *| v_G_mag |/| ve)
+    tgo' = tau |*| v_G_mag |/| ve |*| (1 |-| 0.5 *| v_G_mag |/| ve)  -- Apollo original
+    -- tgo' = tau |*| (1 |-| exp (-1 *| v_G_mag |/| ve))  -- more accurate
 
     -- compute control rate signals
-    l = log (1 |-| tgo' |/| tau)
+    l = log (1 |-| tgo' |/| tau)  -- ~= -1 *| v_G_mag |/| ve
     d12 = tau |+| tgo' |/| l
     d21 = tgo' |-| d12
-    e = 0.5 *| tgo' |-| d21
+    e = (tgo' |/ 2) |-| d21
     b' = (d21 |*| (rDot_D |-| rDot) |-| (r_D |-| r |-| rDot |^*| tgo'))
          |/| (tgo' |*| e)
     -- "B" control parameter
@@ -97,10 +99,10 @@ p12 constants target sim =
       -- in between the lower and upper thresholds; use the computed value
       | otherwise                            = b'
     -- "A" control parameter.
-    a = -1 *| b |*| d12 |-| (rDot_D |-| rDot) |/| l
+    a = (-1) *| b |*| d12 |-| (rDot_D |-| rDot) |/| l
 
     -- compute thrust angle
-    aTR = (a |+| (1 % [si| s |]) |*| b) |/| tau |-| g_eff  -- desired rad accel
+    aTR = (a |+| (1 % [si| s |]) |*| b) |/| tau |-| g_eff   -- desired rad accel
     -- In the real ACG, the maximum acceleration is computed from
     -- filtered measurements of thrust; that's not necessary
     -- here... just using the nominal value based on the exhaust
@@ -114,7 +116,7 @@ p12 constants target sim =
             then ThrustAngle 0
             -- otherwise, compute the thrust angle by comparing the
             -- required radial thrust to the total available thrust
-            else ThrustAngle $ (pi/2) - zSign * (asin (aTR |/| aMax) # [si| |])
+            else ThrustAngle $ acos (aTR |/| aMax) # [si| |]  -- (pi/2) + {- zSign * -} (asin (aTR |/| aMax) # [si| |])
 
     -- near the end of the burn, we schedule the engine to cut-off;
     -- this is done once the time-to-go has passed a threshold point
@@ -155,16 +157,16 @@ mfcsToLocal p v a =
     u_R = qNormalized $ pv
     u_Z = qRotatedCW u_R
 
-    i_LVCS = qv2 @LVCS 1 0
-    j_LVCS = qv2 @LVCS 0 1
+    r_LVCS = qv2 @LVCS 1 0
+    z_LVCS = qv2 @LVCS 0 1
 
     p' = (zeroV %. [si| m |])
-         |.+^| (pv |.| u_R |*^| i_LVCS)
-         |.+^| (pv |.| u_Z |*^| j_LVCS)
-    v' = (v |.| u_R |*^| i_LVCS)
-         |+| (v |.| u_Z |*^| j_LVCS)
-    a' = (a |.| u_R |*^| i_LVCS)
-         |+| (a |.| u_Z |*^| j_LVCS)
+         |.+^| ((pv |.| u_R) |*^| r_LVCS)
+         |.+^| ((pv |.| u_Z) |*^| z_LVCS)
+    v' = ((v |.| u_R) |*^| r_LVCS)
+         |+| ((v |.| u_Z) |*^| z_LVCS)
+    a' = ((a |.| u_R) |*^| r_LVCS)
+         |+| ((a |.| u_Z) |*^| z_LVCS)
   in
     (p', v', a')
 
@@ -181,27 +183,31 @@ qRotatedCW v =
     j = qv2 0 1
     x = v |.| i
     y = v |.| j
+    x' = y
+    y' = qNegate x
   in
-    (y |*^| i) |+| ((qNegate x) |*^| j)
+    (x' |*^| i) |+| (y' |*^| j)
 
 
 -- | Instantaneous acceleration due to gravity.
 gravAccel
-  :: forall a.
-     ( InnerSpace a, Fractional a, a ~ Scalar a )
+  :: forall a c.
+     ( InnerSpace a, Floating a, a ~ Scalar a )
   => U.SGPUnit a
-  -> U.Length (P2 LVCS a)
-  -> U.Acceleration (V2 LVCS a)
+  -> U.Length (P2 c a)
+  -> U.Acceleration (V2 c a)
 gravAccel mu r =
   let
-    r2 = qDistanceSq r (zeroV %. [si| m |])
+    vr = r |.-.| (zeroV %. [si| m |])
+    rhat = U.qNormalized vr
+    r2 = U.qMagnitudeSq vr
   in
-    mu |/| r2 |*^| (qv2 -1 0)
+    -1 *| mu |/| r2 |*^| rhat
 
 
 -- | Average gravity during a time period.
 averageG
-  :: ( InnerSpace a, a ~ Scalar a, Fractional a )
+  :: ( InnerSpace a, a ~ Scalar a, Floating a )
   => U.SGPUnit a                 -- Specific gravitational parameter.
   -> U.Length (P2 LVCS a)        -- Position of the vehicle.
   -> U.Velocity (V2 LVCS a)      -- Velocity of the vehicle.
@@ -210,8 +216,7 @@ averageG
   -> U.Acceleration (V2 LVCS a)  -- Average velocity during the time increment.
 averageG mu r v a dt =
   let
-    g0 = gravAccel mu r
-    r' = r |.+^| dt |*^| (v |+| (g0 |+| a) |^*| dt |/ 2)
+    r' = r |.+^| ((1/8) *| a |^*| (dt |*| dt)) |.+^| ((1/2) *| v |^*| dt)
   in
     gravAccel mu r'
 

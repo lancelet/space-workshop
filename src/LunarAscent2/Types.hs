@@ -13,15 +13,15 @@ module LunarAscent2.Types
     MFCS(MFCS)
   , LVCS(LVCS)
     -- * Vectors and Points
-  , V2, v2, qv2
+  , V2, v2, qv2, v2Tuple
   , P2, p2
   , qcsAssignV2
     -- * Ascent target
   , AscentTarget(..), targetVel, targetRadius
     -- * Ascent stage state
   , ThrustAngle(..)
-  , Dynamics(..), pos, vel, mass
-  , DDynamics(..), dpos, dvel, dmass
+  , Dynamics(..), pos, vel, mass, angle, angvel
+  , DDynamics(..), dpos, dvel, dmass, dangle, dangvel
   , AGCState(..), tgo, prevThrustAngle
   , Sim(..), time, engineShutoff, agcState, dynamics, ddynamics, accel
     -- * ACG commands
@@ -109,6 +109,11 @@ qv2 :: forall c a l. a -> a -> U.Qu '[] l (V2 c a)
 qv2 vx vy = U.quantity (v2 vx vy)
 
 
+-- | Convert a 'V2' to a tuple.
+v2Tuple :: forall c a. V2 c a -> (a, a)
+v2Tuple (V2 vx vy) = (vx, vy)
+
+
 -- | P2 is a 2D point in coordinate system @c@ with numeric type @a@.
 type P2 c a = U.Point (V2 c a)
 
@@ -127,7 +132,7 @@ p2 px py = U.Point (V2 px py)
 data AscentTarget a
   = AscentTarget
     { -- | Target velocity in local vertical coordinate system.
-      _targetVel      :: !(U.Velocity (V2 LVCS a))
+      _targetVel    :: !(U.Velocity (V2 LVCS a))
       -- | Target radius.
     , _targetRadius :: !(U.Length a)
     } deriving (Show)
@@ -148,10 +153,11 @@ newtype ThrustAngle a
 -- | Dynamical state of the ascent stage vehicle.
 data Dynamics a
   = Dynamics
-    { _pos         :: !(U.Length (P2 MFCS a))
-    , _vel         :: !(U.Velocity (V2 MFCS a))
-    , _mass        :: !(U.Mass a)
-    , _thrustAngle :: !(ThrustAngle a)
+    { _pos    :: !(U.Length (P2 MFCS a))
+    , _vel    :: !(U.Velocity (V2 MFCS a))
+    , _mass   :: !(U.Mass a)
+    , _angle  :: !(U.Count a)
+    , _angvel :: !(U.AngVelocity a)
     } deriving (Show)
 makeLenses ''Dynamics
 
@@ -159,26 +165,29 @@ makeLenses ''Dynamics
 -- | Delta of the dynamical state.
 data DDynamics a
   = DDynamics
-    { _dpos         :: !(U.Length (V2 MFCS a))
-    , _dvel         :: !(U.Velocity (V2 MFCS a))
-    , _dmass        :: !(U.Mass a)
-    , _dThrustAngle :: !(ThrustAngle a)
+    { _dpos    :: !(U.Length (V2 MFCS a))
+    , _dvel    :: !(U.Velocity (V2 MFCS a))
+    , _dmass   :: !(U.Mass a)
+    , _dangle  :: !(U.Count a)
+    , _dangvel :: !(U.AngVelocity a)
     } deriving (Show, Generic, AdditiveGroup, VectorSpace)
 makeLenses ''DDynamics
 
 instance (VectorSpace a) => AffineSpace (Dynamics a) where
   type Diff (Dynamics a) = DDynamics a
   d1 .-. d2 = DDynamics
-              { _dpos  = d1^.pos |.-.| d2^.pos
-              , _dvel  = d1^.vel |-| d2^.vel
-              , _dmass = d1^.mass |-| d2^.mass
-              , _dThrustAngle = d1^.thrustAngle ^-^ d2^.thrustAngle
+              { _dpos    = d1^.pos  |.-.| d2^.pos
+              , _dvel    = d1^.vel    |-| d2^.vel
+              , _dmass   = d1^.mass   |-| d2^.mass
+              , _dangle  = d1^.angle  |-| d2^.angle
+              , _dangvel = d1^.angvel |-| d2^.angvel
               }
   d .+^ dd = Dynamics
-             { _pos  = d^.pos |.+^| dd^.dpos
-             , _vel  = d^.vel |+| dd^.dvel
-             , _mass = d^.mass |+| dd^.dmass
-             , _thrustAngle = d^.thrustAngle ^+^ dd^.dThrustAngle
+             { _pos    = d^.pos  |.+^| dd^.dpos
+             , _vel    = d^.vel    |+| dd^.dvel
+             , _mass   = d^.mass   |+| dd^.dmass
+             , _angle  = d^.angle  |+| dd^.dangle
+             , _angvel = d^.angvel |+| dd^.dangvel
              }
 
 
@@ -194,24 +203,36 @@ makeLenses ''AGCState
 
 
 -- | Engine shutoff time.
-newtype EngineShutoff a = EngineShutoff (U.Time a) deriving (Show)
+newtype EngineShutoff a
+  = EngineShutoff { unEngineShutoff :: U.Time a }
+  deriving (Show)
+
+instance Semigroup (EngineShutoff a) where
+  x <> _ = x  -- accept the first shutoff command
 
 
 -- | Total simulation state.
 data Sim a
   = Sim
     { -- | Simulation time.
-      _time          :: U.Time a
+      _time          :: !(U.Time a)
       -- | Time for engine shutoff (if known yet).
-    , _engineShutoff :: EngineShutoff a
+    , _engineShutoff :: !(Maybe (EngineShutoff a))
       -- | Relevant state of the Apollo Guidance Computer.
-    , _agcState      :: AGCState a
+    , _agcState      :: !(AGCState a)
       -- | Dynamical state of the vehicle.
-    , _dynamics      :: Dynamics a
+    , _dynamics      :: !(Dynamics a)
       -- | Gradient of the dynamical state of the vehicle.
-    , _ddynamics     :: U.Time a :-* DDynamics a
+    , _ddynamics     :: !(U.Time a :-* DDynamics a)
     }
 makeLenses ''Sim
+
+instance (Show a, a ~ Scalar a, Basis a ~ (), InnerSpace a, HasBasis a, Floating a) => Show (Sim a) where
+  show sim = "Sim { _time          = " <> (show (sim^.time))          <> "\n"
+          <> "    , _engineShutoff = " <> (show (sim^.engineShutoff)) <> "\n"
+          <> "    , _agcState      = " <> (show (sim^.agcState))      <> "\n"
+          <> "    , _dynamics      = " <> (show (sim^.dynamics))      <> "\n"
+          <> "    , accel          = " <> (show (sim^.accel))         <> "}\n"
 
 
 -- | Getter for the current acceleration from 'Sim'.
@@ -271,7 +292,7 @@ data Constants a
     , _t3_PositionControl :: !(U.Time a)
       -- | Minimum threshold for "B" rate constant.
     , _bThreshold         :: !(U.BThresholdUnit a)
-    }
+    } deriving (Show)
 makeLenses ''Constants
 
 

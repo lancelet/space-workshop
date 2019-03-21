@@ -150,4 +150,17 @@ plotSystemItem :: OrbitSystemItem -> D.Diagram BR.B
 plotSystemItem (Planet r c)
   = D.circle r # D.fc c
 plotSystemItem (Trajectory pts c)
-  = D.fromVertices (D.p2 <$> pts) # D.lc c
+  = D.fromVertices (D.p2 . fancyScale <$> pts) # D.lc c
+
+
+fancyScale :: (Double, Double) -> (Double, Double)
+fancyScale (x, y) =
+  let
+    r = sqrt ((x*x) + (y*y))
+    theta = atan2 y x
+
+    r' = (r - 1737.1) * 10.0 + 1737.1
+    x' = r' * cos theta
+    y' = r' * sin theta
+  in
+    (x', y')

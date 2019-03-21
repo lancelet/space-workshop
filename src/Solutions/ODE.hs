@@ -10,6 +10,7 @@ module Solutions.ODE
   ( -- * Functions
     -- ** vector-space versions
     integrate
+  , integrateWithDiff
   , rk4Step
   , eulerStep
     -- ** Euler's method for Double only
@@ -49,6 +50,33 @@ integrate stepper x0 (t0 :| ts) f =
     stepFn q@(ti, _) tf = stepper (tf ^-^ ti) f q
   in
     NonEmpty.scanl stepFn (t0, x0) ts
+
+
+-- | Integrate an ODE, recording the gradient.
+integrateWithDiff
+  :: forall state diff time s.
+     ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  => Stepper time state                     -- ^ Stepper function
+  -> state                                  -- ^ Initial state
+  -> NonEmpty time                          -- ^ Evaluation times
+  -> ((time, state) -> time :-* diff)       -- ^ Gradient function
+  -> NonEmpty (time, state, time :-* diff)  -- ^ Computed states
+integrateWithDiff stepper x0 (t0 :| ts) f =
+  let
+    stepFn
+      :: (time, state, time :-* diff)
+      -> time
+      -> (time, state, time :-* diff)
+    stepFn (ti, si, _) tf =
+      let
+        (t', state') = stepper (tf ^-^ ti) f (ti, si)
+      in
+        (t', state', f (ti, si))
+  in
+    NonEmpty.scanl stepFn (t0, x0, f (t0, x0)) ts
 
 
 -- | Stepper function used in ODE integration.
