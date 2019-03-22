@@ -24,3 +24,14 @@ Early in the workshop, we have participants write integrators to solve the initi
 ![simple-harmonic-motion](https://raw.githubusercontent.com/lancelet/space-workshop/master/shm.png)
 
 This plot gives an idea of the regular graphical feedback that participants will get through the individual stages of some worked problems.
+
+### Drag Coefficient Curves
+
+In simulations of atmospheric flight from late in the workshop, we plan to include realistic simulation of drag and the variation of rocket nozzle efficiency with ambient pressure. Simulating drag in particular has posed numerous problems, as it's infeasible to address realistic CFD modeling within the workshop, and little reliable, referreed, or accessible data is available for historical or contemporary rocket designs. Consequently, we have evaluated several different phenomenological models. In the end, the figure below shows a plot of what we have settled on for the workshop:
+
+![drag-curves](https://raw.githubusercontent.com/lancelet/space-workshop/drag-coeff.png)
+
+These are plots of the "standardised" drag coefficients from:
+  - [Kephart, DC (1971) Boost: On-Line Computer Program for Estimating Powered-Rocket Performance. A Report prepared for United States Air Force Project Rand. R-670-PR.](https://www.rand.org/pubs/reports/R0670.html)
+  
+These drag coefficient models provide a reasonable match against the other phenomenological drag models we evaluated (MC-DRAG and Digital DATCOM), while being simpler to evaluate.
