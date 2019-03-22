@@ -11,7 +11,6 @@ module LunarAscent2.AGC where
 import           Control.Lens       ((^.))
 import           Data.Basis         (Basis, HasBasis)
 import           Data.VectorSpace   (InnerSpace, Scalar, VectorSpace, zeroV)
-import Debug.Trace
 
 import           LunarAscent2.Types (AGCCommand (AGCCommand),
                                      AGCState (AGCState), AscentTarget,
@@ -23,13 +22,11 @@ import           LunarAscent2.Types (AGCCommand (AGCCommand),
                                      mass, moonSGP, pos, prevThrustAngle,
                                      qcsAssignV2, qv2, rDotFLVPEnd, t2_HoldAll,
                                      t3_PositionControl, tEngineThreshold,
-                                     targetRadius, targetVel, tgo, time, v2,
-                                     vel)
-import           Units              (type (@+), Qu, qDistanceSq, qMagnitude,
-                                     qNegate, qNormalized, qSq, quantity, si,
-                                     ( # ), (%), (%.), (*|), (|*^|), (|*|),
-                                     (|+|), (|-|), (|.+^|), (|.-.|), (|.|),
-                                     (|/), (|/|), (|^*|))
+                                     targetRadius, targetVel, tgo, time, vel)
+import           Units              (type (@+), Qu, qMagnitude, qNegate,
+                                     qNormalized, qSq, si, ( # ), (%), (%.),
+                                     (*|), (|*^|), (|*|), (|+|), (|-|), (|.+^|),
+                                     (|.-.|), (|.|), (|/), (|/|), (|^*|))
 import qualified Units              as U
 
 
@@ -79,7 +76,7 @@ p12 constants target sim =
     ve = constants^.apsExhaustVelocity
     v_G_mag = qMagnitude v_G
     tgo' = tau |*| v_G_mag |/| ve |*| (1 |-| 0.5 *| v_G_mag |/| ve)  -- Apollo original
-    -- tgo' = tau |*| (1 |-| exp (-1 *| v_G_mag |/| ve))  -- more accurate
+    -- tgo' = tau |*| (1 |-| exp (-1 *| v_G_mag |/| ve))  -- more accurate Tsiolkovsky solution
 
     -- compute control rate signals
     l = log (1 |-| tgo' |/| tau)  -- ~= -1 *| v_G_mag |/| ve
@@ -108,7 +105,6 @@ p12 constants target sim =
     -- here... just using the nominal value based on the exhaust
     -- velocity.
     aMax = constants^.apsExhaustVelocity |/| tau  -- maximum acceleration
-    zSign = signum $ (target^.targetRadius |-| r) # [si| m |]
     angle = if aTR > aMax
             -- if we request more radial thrust than the maximum
             -- possible acceleration, then just command the thrust
@@ -116,7 +112,7 @@ p12 constants target sim =
             then ThrustAngle 0
             -- otherwise, compute the thrust angle by comparing the
             -- required radial thrust to the total available thrust
-            else ThrustAngle $ acos (aTR |/| aMax) # [si| |]  -- (pi/2) + {- zSign * -} (asin (aTR |/| aMax) # [si| |])
+            else ThrustAngle $ acos (aTR |/| aMax) # [si| |]
 
     -- near the end of the burn, we schedule the engine to cut-off;
     -- this is done once the time-to-go has passed a threshold point

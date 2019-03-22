@@ -7,14 +7,12 @@
 module LunarAscent2 where
 
 import           Control.Lens       ((<&>), (^.))
-import           Data.AdditiveGroup (AdditiveGroup)
 import           Data.Basis         (Basis, HasBasis)
 import           Data.LinearMap     ((:-*), linear)
 import           Data.List          (unfoldr)
 import           Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.VectorSpace   (InnerSpace, Scalar, VectorSpace, zeroV)
-import           Debug.Trace
 import qualified Diagrams.Prelude   as D
 
 import           LunarAscent2.AGC   (gravAccel, p12)
@@ -24,19 +22,18 @@ import           LunarAscent2.Types (AGCState (AGCState, _prevThrustAngle, _tgo)
                                      Dynamics (Dynamics, _angle, _angvel, _mass, _pos, _vel),
                                      EngineShutoff (EngineShutoff), MFCS, P2,
                                      Sim (Sim, _agcState, _ddynamics, _dynamics, _engineShutoff, _time),
-                                     ThrustAngle (ThrustAngle), V2, accel,
-                                     angle, angvel, apsExhaustVelocity,
+                                     ThrustAngle (ThrustAngle), agcState, angle,
+                                     angvel, apsExhaustVelocity,
                                      apsMassFlowRate, commandedEngineShutoff,
                                      commandedThrustAngle, dynamics,
                                      engineShutoff, initialMass, mass, moonSGP,
-                                     pos, qv2, time, unThrustAngle, v2, v2Tuple, agcState,
-                                     vel)
+                                     pos, qv2, time, v2, v2Tuple, vel)
 import qualified LunarAscent2.Types as Types
 import qualified ODE
 import qualified Plot
 import           Units              (si, ( # ), (%), (%.), (*|), (.#), (|*^|),
-                                     (|*|), (|+|), (|-|), (|.-.|), (|/|),
-                                     (|^*|), (|.|))
+                                     (|*|), (|+|), (|-|), (|.-.|), (|.|), (|/|),
+                                     (|^*|))
 import qualified Units              as U
 
 
@@ -55,14 +52,15 @@ goTemp = do
       putStrLn $ show $ (\x -> x^.dynamics) <$> xs
 
 
+
 plotTemp :: Plot.Output -> IO ()
 plotTemp output = do
   let
     target = AscentTarget
              (v2 5.9436 1679.2956 % [si| m/s |])
              ((1731.1 % [si| km |]) |+| (18288.0 % [si| m |]))
-    sims = burnBabyBurn 2 (Types.constants) target
-    coasts = coastBabyCoast (Types.constants) (last sims)
+    sims = burn 2 (Types.constants) target
+    coasts = coast (Types.constants) (last sims)
     rBurn = sims <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
     rCoast = coasts <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
 
@@ -76,14 +74,15 @@ plotTemp output = do
      ])
 
 
-burnBabyBurn
+
+burn
   :: forall a.
      ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
   => Int
   -> Constants a
   -> AscentTarget a
   -> [Sim a]
-burnBabyBurn nSteps constants target =
+burn nSteps constants target =
   let
     step :: Sim a -> Maybe (NonEmpty (Sim a), Sim a)
     step s =
@@ -92,16 +91,17 @@ burnBabyBurn nSteps constants target =
       in
         rs <&> \ne -> (ne, NonEmpty.last ne)
   in
-    concat $ NonEmpty.tail <$> unfoldr step (initSim constants)
+    -- concat $ NonEmpty.tail <$> unfoldr step (initSim constants)
+    NonEmpty.head <$> unfoldr step (initSim constants)
 
 
-coastBabyCoast
+coast
   :: forall a.
      ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
   => Constants a
   -> Sim a
   -> [Sim a]
-coastBabyCoast constants sim =
+coast constants sim =
   let
     f = gradFnNoThrust constants
     times = NonEmpty.fromList
@@ -119,10 +119,10 @@ coastBabyCoast constants sim =
         }
   in
     mkSim <$> dynStates
-    
 
 
-  
+
+
 burnStep
   :: forall a.
      ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
@@ -213,7 +213,7 @@ gradFnNoThrust
   => Constants a
   -> (U.Time a, Dynamics a)    -- ^ time and system dynamic state
   -> U.Time a :-* DDynamics a  -- ^ gradient of dynamic state
-gradFnNoThrust constants (t, dyn) =
+gradFnNoThrust constants (_, dyn) =
   let
     gravity = gravAccel (constants^.moonSGP) (dyn^.pos)
   in
@@ -241,7 +241,7 @@ thrustAngleToGlobal (ThrustAngle x) p =
     pangle = atan2 py px
   in
     U.quantity (pangle - x)
-  
+
 
 constAngAccel
   :: ( VectorSpace a, a ~ Scalar a, Fractional a )

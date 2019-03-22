@@ -18,6 +18,7 @@ import           Data.Text                                 (Text)
 import qualified Data.Text                                 as Text
 import           Data.VectorSpace                          (Scalar, VectorSpace)
 import qualified Diagrams.Backend.Rasterific               as BR
+import qualified Diagrams.Backend.SVG as SVG
 import           Diagrams.Prelude                          (( # ))
 import qualified Diagrams.Prelude                          as D
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as Chart
@@ -134,19 +135,24 @@ plotOrbitSystem output system =
       LBS.hPutStr stdout (ITermShow.displayImage png)
       putStrLn ""
     PNG _ -> error "Not yet implemented"
-    SVG _ -> error "Not yet implemented"
+    SVG filePath -> do
+      let
+        dia = mconcat (plotSystemItem <$> systemItems system)
+        framed = D.bgFrame 400 D.white dia
+      SVG.renderSVG filePath (D.mkWidth 1024) framed
 
 
 plotOrbitSystemPNGBS :: OrbitSystem -> LBS.ByteString
 plotOrbitSystemPNGBS system =
   let
     dia = mconcat (plotSystemItem <$> systemItems system)
-    img = BR.rasterRgb8 (D.dims2D 1600 1200) dia
+    diaFramed = D.bgFrame 400 D.white dia
+    img = BR.rasterRgb8 (D.dims2D 1600 1200) diaFramed
   in
     Png.encodePng img
 
 
-plotSystemItem :: OrbitSystemItem -> D.Diagram BR.B
+plotSystemItem :: (D.Renderable (D.Path D.V2 Double) b) => OrbitSystemItem -> D.QDiagram b D.V2 Double D.Any
 plotSystemItem (Planet r c)
   = D.circle r # D.fc c
 plotSystemItem (Trajectory pts c)
@@ -159,7 +165,7 @@ fancyScale (x, y) =
     r = sqrt ((x*x) + (y*y))
     theta = atan2 y x
 
-    r' = (r - 1737.1) * 10.0 + 1737.1
+    r' = (r - 1731.1) * 10.0 + 1731.1
     x' = r' * cos theta
     y' = r' * sin theta
   in

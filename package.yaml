@@ -27,6 +27,7 @@ dependencies:
 - colour
 - diagrams-lib
 - diagrams-rasterific
+- diagrams-svg
 - iterm-show
 - JuicyPixels
 - lens

@@ -2,39 +2,42 @@
 
 ## Abstract
 
-In the 50th Anniversary year of the Apollo 11 moon landing, this
-workshop is a spaceflight-themed exploration of basic numerical
-methods in Haskell. Attendees will solve a set of problems that
-involve simulation of several different spaceflight manoevres,
-learning a bit about Haskell libraries along the way.
+In celebration of the 50th Anniversary year of the Apollo 11 moon
+landing, we present a spaceflight-themed exploration of numerical
+methods in Haskell!
 
-On the Haskell side, you'll explore basic numerical algorithms for the
-solution of ordinary differential equations (ODEs), optimisation, and
-the simulation of dynamical systems. You'll see how Haskell ecosystem
-libraries such as `vector-spaces`, `vector` and `dimensional` can help
-to provide a type-safe scaffolding for numerical work. The focus isn't
-on optimality of the algorithms, which would require much longer than
-90 minutes, but rather on providing an understandable, accurate
-engineering solution to the problems posed in the available time.
+This workshop focuses on both the joys and pain-points of
+intentionally using Haskell's abstractions for numerical work. We
+consider what approaches are available to make the time-domain
+simulation of dynamical systems safer. To do this, we combine
+`vector-spaces`, `units`, `linear`, and several other libraries, to
+solve practical problems. The results are not always ergonomic
+(warning: may contain some horrible type errors), but we feel they
+help to demonstrate what is currently possible and motivate further
+development. Unlike many more theoretical presentations of this topic,
+our focus is very much on solving *real* problems, selected from the
+published spaceflight literature.
 
-On the spaceflight side, you'll see your code used as the core of a
-simulation of lunar ascent, using a guidance algorithm based on the
-P12 program of the Apollo Guidance Computer. You'll investigate the
-reasons that rockets have stages. You'll see how elliptical transfer
-orbits work and how they can be used to position spacecraft for
-rendezvous. Finally, you'll look at the challenges unique to 
-atmospheric rocket flight, including the effects of aerodynamic drag
-and the variation of rocket engine efficiency with ambient pressure.
+Participants will use abstractions from the `vector-spaces` library,
+applied to numerical integration of ordinary differential equations
+(ODEs) and simple optimization algorithms. They will see how these
+concepts allow the algorithms to be expressed more generally, even
+allowing types with statically-checked units to appear in them.
 
-While it is intended to be relatively challenging, the workshop also
-takes a "fun for everyone" approach, so that even those without a
-prior interest in numerical algorithms or spaceflight will be able to
-participate in an immersive way. Most of the setup of the various
-scenarios are pre-baked and referenced against the published
-literature. All of the problems posed have fallback solutions, so that
-it's possible for attendees to skip any parts that are too far outside
-their comfort zone, while still seeing the approach used and the
-outcomes.
+On the spaceflight side, participants will implement some basic
+spacecraft manoevures, and there are some pre-baked simulations that
+interact with participants' code. Among the scenarios examined is a
+simulation of the lunar ascent phase of the Apollo missions, including
+a faithful transcription into Haskell of the actual guidance algorithm
+used during the lunar ascent (our Haskell version has
+statically-checked, auto-converted units - which turned out to be
+useful when mixing feet, metres, and nautical miles!).
+
+We encourage all forms of participation; from people who want to
+follow the pre-baked set of problems, to those who may want to
+re-implement our examples in other languages, or just deep-dive into
+the spaceflight theory. All the problems have fallback solutions that
+can be examined or called directly.
 
 ## Theme / Topic / Category
 
@@ -63,69 +66,56 @@ come along to gain an insight into spaceflight mechanics.
 
 ## Session Prerequisite
 
-A MacOS or Linux machine (not tested on Windows - recommend to use a
-Linux VM hosted by VirtualBox in this case). Ideally download the
+A MacOS or Linux machine (not tested on Windows). Ideally download the
 workshop git repository in advance and make sure you have all the
 dependencies installed.
 
 ## Outline / Structure
 
-Participants will be presented with a series of problem in a Haskell
-project. Notes for the workshop will be provided in three forms:
-  1. A higher-level roadmap.
-  2. Inline instructions in the code.
-  3. A "theory manual" containing derivations that are too involved or
-     time-consuming to cover during the workshop itself, but can form
-	 pre- or post-reading.
+Participants will be presented with a series of problems in a Haskell
+project.
  
-Most of the scenarios covered in the workshop are "pre-baked", based
-either on broad descriptions in the published academic spaceflight
-literature or on specific research papers. Miscellaneous functionality 
-such as plotting results is already set up.
+The more complicated scenarios covered in the workshop are
+"pre-baked", based either on broad descriptions in the published
+academic spaceflight literature or on specific research
+papers. Miscellaneous functionality such as plotting results is
+generally already set up.
 
 Chronological list of topics / scenarios (this is an outline, NOT the 
 workshop instructions):
-  - Integration of ODEs:
-    - Euler's method specialized to Double,
-    - Plot Euler's method vs analytic for radioactive decay,
-	- Intro to `vector-spaces` and `dimensional` using simple harmonic 
-	  motion model,
-    - Generalize Euler's method to an affine space, using `vector-spaces`,
-    - Plot Euler's method vs analytic for SHM,
-    - Implement RK4 integration.
-	- (Easter egg: double pendulum.)
-  - Using the participant's RK4, simulate lunar ascent trajectory.
+  - Integration of ODEs. Solving the initial value problem using
+    Euler's method and RK4, implemented with both concrete types and
+    affine spaces. Introduction to derivatives as linear maps, with
+    the motivation of enabling type-safe units.
+  - Use the participant's RK4 implementation for the lunar ascent
+    simulation.
   - Implement triggers in ODE driver using bisection.
-  - Investigate rocket staging.
+  - Investigate rocket staging and support mass budget. Simple setup
+    of ODEs; comparison with closed-form results.
   - Orbital mechanics:
-    - Simulate Hohmann transfer with short, large magnitude burns.
-	- Simulate double Hohmann transfer for orbital phase adjustment
-	  (rendezvous with another spacecraft).
-  - Implement gradient descent optimizer.
-  - Simulate atmospheric orbital insertion by optimizing initial pitch 
-	angle for a simple gravity turn.
-  - Implement particle swarm optimizer.
-  - Simulate orbital insertion with a piecewise-linear guidance law and
-    objective function that deals with multiple parameters:
-	  - Maximise payload mass and remaining second-stage fuel,
-	  - Penalize dynamic pressure beyond a threshold value,
-	  - Penalize down-range displacement prior to stage separation
-        (useful for landing rocket stages).
+    - Simulated Hohmann transfers.
+	- Rendezvous manoeuvres with multiple transfers.
+  - Optimization methods. Implement gradient descent.
+    - Optimizing "pitchover" angle for a gravity-turn trajectory in a
+      vacuum flight.
+    - Optimizing multiple objectives for an atmospheric flight.
 
 ## Learning Outcomes
 
-- Introduction to some numerical methods.
-- Familiarity with type classes from `vector-spaces`, how they can
-  improve type safety and generalize algorithms.
-- Introduction to `dimensional` and `vector`.
-- Appreciation that naive Haskell is easily fast enough to tackle the
-  problems in the workshop, but also that different parts could be
-  farmed out to `ST`, Fortran or C libraries.
-- Appreciation of the under-developed nature of Haskell for numerical
-  applications; lack of good libraries providing
-  Matlab/SciPy/Julia-like capabilities.
-- Introduction to spaceflight. Appreciation of some of the basics of
-  mission and manoeuvre planning.
+- Introduction to practical examples of affine spaces, vector spaces,
+  derivatives as linear maps, and the interactions of these with other
+  numeric types, such as when type-checked units are introduced.
+- Appreciation of the benefits of writing more generic numerical
+  algorithms, abstracted over more than just a single scalar type
+  (ie. `Num a` is definitely not the end of useful abstraction).
+- Appreciation of cost-benefit, and some of the more difficult, thorny
+  points that arise: some difficulties in making libraries work
+  together, necessary orphans, the horrible type errors that can
+  appear when you have a unit type wrapping a vector type wrapping
+  some underlying scalar, dependent type checking failures, etc. (NB:
+  we have made sure that these are all "solved problems" in the
+  workshop, but we mention them as appropriate.)
+- Introduction to time-domain simulation of dynamical systems.
 
 ## Slides
 
@@ -137,7 +127,10 @@ N/A
 
 ## Links
 
-In-progress workshop: https://www.github.com/lancelet/haskell-spaceflight-workshop
+The workshop is very much in-progress, but we already have a working
+version of the Apollo guidance algorithm mentioned above. The
+WIP workshop is here: 
+https://www.github.com/lancelet/space-workshop
 
 ## Session Requirements
 
@@ -145,4 +138,4 @@ None.
 
 ## Labels
 
-Numerical programming, Haskell, Spaceflight.
+Numerical methods, Haskell, Spaceflight.

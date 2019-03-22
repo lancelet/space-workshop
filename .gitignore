@@ -2,6 +2,5 @@
 space-workshop.cabal
 *~
 .DS_Store
-*.png
 *.svg
 *.ps
