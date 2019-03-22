@@ -19,7 +19,8 @@ The radial axis in the figure is scaled by a factor of 10 above the lunar surfac
 
 ### Some Comparisons of ODE Integration
 
-Early in the workshop, we have participants write integrators to solve the initial value problem of a system of ordinary differential equations (ODEs). As part of this, we compare the results from Euler integration against those from a 4th-order Runge Kutta method (RK4). The plot below shows the culmination of this work, demonstrating a comparison of RK4 vs Euler for the same number of function evaluations. The RK4 method is much closer to the known analytical solution than the Euler method:
+Early in the workshop, we have participants write integrators to solve the initial value problem of a system of ordinary differential equations (ODEs). As part of this, we compare the results from Euler integration against those from a 4th-order Runge-Kutta method (RK4). The plot below shows the culmination of this work, demonstrating a comparison of RK4 vs Euler for the same number of function evaluations. The RK4 method is much closer to the known analytical solution than the Euler method:
+
 ![simple-harmonic-motion](https://raw.githubusercontent.com/lancelet/space-workshop/master/shm.png)
 
 This plot gives an idea of the regular graphical feedback that participants will get through the individual stages of some worked problems.
