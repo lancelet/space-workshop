@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-module LunarAscent2 where
+module LunarAscent where
 
 import           Control.Lens       ((<&>), (^.))
 import           Data.Basis         (Basis, HasBasis)
@@ -15,8 +15,8 @@ import qualified Data.List.NonEmpty as NonEmpty
 import           Data.VectorSpace   (InnerSpace, Scalar, VectorSpace, zeroV)
 import qualified Diagrams.Prelude   as D
 
-import           LunarAscent2.AGC   (gravAccel, p12)
-import           LunarAscent2.Types (AGCState (AGCState, _prevThrustAngle, _tgo),
+import           LunarAscent.AGC    (gravAccel, p12)
+import           LunarAscent.Types  (AGCState (AGCState, _prevThrustAngle, _tgo),
                                      AscentTarget (AscentTarget), Constants,
                                      DDynamics (DDynamics, _dangle, _dangvel, _dmass, _dpos, _dvel),
                                      Dynamics (Dynamics, _angle, _angvel, _mass, _pos, _vel),
@@ -28,7 +28,7 @@ import           LunarAscent2.Types (AGCState (AGCState, _prevThrustAngle, _tgo)
                                      commandedThrustAngle, dynamics,
                                      engineShutoff, initialMass, mass, moonSGP,
                                      pos, qv2, time, v2, v2Tuple, vel)
-import qualified LunarAscent2.Types as Types
+import qualified LunarAscent.Types  as Types
 import qualified ODE
 import qualified Plot
 import           Units              (si, ( # ), (%), (%.), (*|), (.#), (|*^|),

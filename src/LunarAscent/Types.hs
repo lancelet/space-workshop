@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-module LunarAscent2.Types
+module LunarAscent.Types
   ( -- * Coordinate systems
     MFCS(MFCS)
   , LVCS(LVCS)

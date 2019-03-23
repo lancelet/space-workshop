@@ -6,28 +6,28 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-module LunarAscent2.AGC where
+module LunarAscent.AGC where
 
-import           Control.Lens       ((^.))
-import           Data.Basis         (Basis, HasBasis)
-import           Data.VectorSpace   (InnerSpace, Scalar, VectorSpace, zeroV)
+import           Control.Lens      ((^.))
+import           Data.Basis        (Basis, HasBasis)
+import           Data.VectorSpace  (InnerSpace, Scalar, VectorSpace, zeroV)
 
-import           LunarAscent2.Types (AGCCommand (AGCCommand),
-                                     AGCState (AGCState), AscentTarget,
-                                     Constants, EngineShutoff (EngineShutoff),
-                                     LVCS, MFCS, P2, Sim,
-                                     ThrustAngle (ThrustAngle), V2, accel,
-                                     agcState, apsExhaustVelocity,
-                                     apsMassFlowRate, bThreshold, dynamics,
-                                     mass, moonSGP, pos, prevThrustAngle,
-                                     qcsAssignV2, qv2, rDotFLVPEnd, t2_HoldAll,
-                                     t3_PositionControl, tEngineThreshold,
-                                     targetRadius, targetVel, tgo, time, vel)
-import           Units              (type (@+), Qu, qMagnitude, qNegate,
-                                     qNormalized, qSq, si, ( # ), (%), (%.),
-                                     (*|), (|*^|), (|*|), (|+|), (|-|), (|.+^|),
-                                     (|.-.|), (|.|), (|/), (|/|), (|^*|))
-import qualified Units              as U
+import           LunarAscent.Types (AGCCommand (AGCCommand),
+                                    AGCState (AGCState), AscentTarget,
+                                    Constants, EngineShutoff (EngineShutoff),
+                                    LVCS, MFCS, P2, Sim,
+                                    ThrustAngle (ThrustAngle), V2, accel,
+                                    agcState, apsExhaustVelocity,
+                                    apsMassFlowRate, bThreshold, dynamics, mass,
+                                    moonSGP, pos, prevThrustAngle, qcsAssignV2,
+                                    qv2, rDotFLVPEnd, t2_HoldAll,
+                                    t3_PositionControl, tEngineThreshold,
+                                    targetRadius, targetVel, tgo, time, vel)
+import           Units             (type (@+), Qu, qMagnitude, qNegate,
+                                    qNormalized, qSq, si, ( # ), (%), (%.),
+                                    (*|), (|*^|), (|*|), (|+|), (|-|), (|.+^|),
+                                    (|.-.|), (|.|), (|/), (|/|), (|^*|))
+import qualified Units             as U
 
 
 -- | Ascent guidance program P12.
