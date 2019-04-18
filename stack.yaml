@@ -13,3 +13,6 @@ extra-deps:
   subdirs:
   - chart
   - chart-diagrams
+
+nix:
+  pure: false

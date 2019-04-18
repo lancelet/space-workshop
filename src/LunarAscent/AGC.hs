@@ -45,8 +45,8 @@ p12 constants target sim =
     p_l :: U.Length (P2 LVCS a)
     v_l :: U.Velocity (V2 LVCS a)
     a_l :: U.Acceleration (V2 LVCS a)
-    (p_l, v_l, a_l) = mfcsToLocal (sim^.dynamics^.pos)
-                                  (sim^.dynamics^.vel)
+    (p_l, v_l, a_l) = mfcsToLocal (sim^.dynamics.pos)
+                                  (sim^.dynamics.vel)
                                   (sim^.accel)
     p_lv :: U.Length (V2 LVCS a)
     p_lv = p_l |.-.| (zeroV %. [si| m |])  -- LVCS position as a vector
@@ -69,10 +69,10 @@ p12 constants target sim =
     -- compensate v_G' for g_eff
     g_N = averageG (constants^.moonSGP) p_l v_l a_l (2 % [si| s |])
     g_eff = qSq (p_lv `qCross2D` v_l) |/| (r |*| r |*| r) |-| qMagnitude g_N
-    v_G = v_G' |-| (0.5 *| sim^.agcState^.tgo |*| g_eff |*^| u_R)
+    v_G = v_G' |-| (0.5 *| sim^.agcState.tgo |*| g_eff |*^| u_R)
 
     -- update time-to-go estimate
-    tau = sim^.dynamics^.mass |/| constants^.apsMassFlowRate
+    tau = sim^.dynamics.mass |/| constants^.apsMassFlowRate
     ve = constants^.apsExhaustVelocity
     v_G_mag = qMagnitude v_G
     tgo' = tau |*| v_G_mag |/| ve |*| (1 |-| 0.5 *| v_G_mag |/| ve)  -- Apollo original
@@ -128,7 +128,7 @@ p12 constants target sim =
       | rDot < constants^.rDotFLVPEnd = ThrustAngle 0
       -- during the final control-hold stage (nominally 2 sec), we use
       -- the previously-commanded thrust angle
-      | tgo' < constants^.t2_HoldAll = sim^.agcState^.prevThrustAngle
+      | tgo' < constants^.t2_HoldAll = sim^.agcState.prevThrustAngle
       -- all other times; use the computed control thrust angle
       | otherwise = angle
   in
