@@ -17,8 +17,9 @@ import           Data.String                               (IsString)
 import           Data.Text                                 (Text)
 import qualified Data.Text                                 as Text
 import           Data.VectorSpace                          (Scalar, VectorSpace)
+import qualified Diagrams.Backend.PGF                      as PGF
 import qualified Diagrams.Backend.Rasterific               as BR
-import qualified Diagrams.Backend.SVG as SVG
+import qualified Diagrams.Backend.SVG                      as SVG
 import           Diagrams.Prelude                          (( # ))
 import qualified Diagrams.Prelude                          as D
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as Chart
@@ -31,6 +32,7 @@ data Output
   = Screen
   | PNG FilePath
   | SVG FilePath
+  | PGF FilePath
 
 
 data XYChart
@@ -95,6 +97,7 @@ xyChart out t x y items =
          png <- plotXYChartPNGBS chart
          LBS.hPutStr stdout (ITermShow.displayImage png)
          putStrLn ""
+       PGF filePath -> plotXYChartPGF filePath chart
        PNG _ -> error "Not yet implemented"
        SVG _ -> error "Not yet implemented"
 
@@ -105,6 +108,13 @@ plotXYChartPNGBS chart = do
   let dia = fst $ Chart.runBackendR env (Chart.toRenderable (xyChartEC chart))
   let img = BR.rasterRgb8 (D.mkWidth 1600) dia
   pure (Png.encodePng img)
+
+
+plotXYChartPGF :: FilePath -> XYChart -> IO ()
+plotXYChartPGF filePath chart = do
+  env <- Chart.defaultEnv Chart.vectorAlignmentFns 500 375
+  let dia = fst $ Chart.runBackendR env (Chart.toRenderable (xyChartEC chart))
+  PGF.renderPGF filePath (D.mkWidth 500) dia
 
 
 xyChartEC :: XYChart -> Chart.Renderable ()
@@ -134,6 +144,7 @@ plotOrbitSystem output system =
       let png = plotOrbitSystemPNGBS system
       LBS.hPutStr stdout (ITermShow.displayImage png)
       putStrLn ""
+    PGF _ -> error "Not yet implemented"
     PNG _ -> error "Not yet implemented"
     SVG filePath -> do
       let

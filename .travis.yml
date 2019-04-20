@@ -43,6 +43,8 @@ script:
 # Build the package, its tests, and its docs and run the tests
 - export IDDQD=1
 - stack --no-terminal test --haddock --no-haddock-deps
+# Generate PGF diagrams for the notes
+- stack exec tex-plots
 # Set publication date strings
 - export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
 - sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex

@@ -26,6 +26,7 @@ dependencies:
 - Chart-diagrams
 - colour
 - diagrams-lib
+- diagrams-pgf
 - diagrams-rasterific
 - diagrams-svg
 - iterm-show
@@ -61,6 +62,13 @@ executables:
   drag-plots:
     main:                Main.hs
     source-dirs:         app/drag-plots
+    ghc-options:         *ghc-options
+    dependencies:
+    - space-workshop
+
+  tex-plots:
+    main:                Main.hs
+    source-dirs:         app/tex-plots
     ghc-options:         *ghc-options
     dependencies:
     - space-workshop
