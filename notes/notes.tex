@@ -1,0 +1,109 @@
+\documentclass[12pt,openany]{book}
+
+%------------------------------------------------------------------------------
+% PRELUDE
+%------------------------------------------------------------------------------
+
+% Font encoding
+\usepackage[T1]{fontenc}
+
+% Set up page geometry (margins, etc)
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
+
+% Allow inclusion of external graphics with graphicx
+\usepackage{graphicx}
+
+% AMS mathematics
+\usepackage{amsmath}
+
+% Bibliography style
+\usepackage[numbers]{natbib}
+
+% Hyperlinks
+\usepackage[breaklinks,hidelinks]{hyperref}
+
+% More sophisticated tables
+\usepackage{booktabs}
+
+% Color boxes
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+
+% Color specification
+\usepackage{xcolor}
+
+% Fancy headers
+\usepackage{fancyhdr}
+\pagestyle{plain}
+
+% Set the title of the table of contents and bibliography
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\bibname}{References}
+
+% Paragraph setting
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
+% Set fonts
+\usepackage{fontspec}
+\setmainfont{Tex Gyre Pagella}
+\setsansfont{Tex Gyre Adventor}
+
+% Chapter styling
+\usepackage[grey]{quotchap}
+\makeatletter
+\renewcommand*{\chapnumfont}{%
+  \usefont{T1}{\@defaultcnfont}{b}{n}\fontsize{80}{100}\selectfont% Default: 100/130
+  \color{chaptergrey}%
+}
+\makeatother
+
+% Title and Author
+\usepackage{titling}
+\title{Haskell Spaceflight Workshop}
+\author{Jonathan Merritt \and Luke Clifton}
+\date{May 2019}
+
+% Glossary of mathematical symbols
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}
+\usepackage[symbols,nogroupskip]{glossaries-extra}
+\glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
+
+%------------------------------------------------------------------------------
+% DOCUMENT
+%------------------------------------------------------------------------------
+\begin{document}
+
+% Customized title page with a nice logo
+\begin{titlepage}
+\begin{center}
+  \vspace*{2cm}
+  {\Huge\MakeUppercase{\thetitle}}\par
+  \vspace{1.5cm}
+  \includegraphics[width=0.8\textwidth]{fig/logo-text.pdf}\par
+  \vspace{1.5cm}
+  {\Large\theauthor}\par
+  {\Large\thedate}\par           
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+
+\chapter{Introduction}
+
+In this workshop, we take an enthusiastic numerical approach to simulating spacecraft maneuvers. Our workshop examples appear in the published literature, yet we must begin by stating that there are often more elegant solutions to the problems we describe, allowing results to be found more economically and precisely. For these solutions, we must refer readers to a comprehensive textbook on astrodynamics (eg.~\cite{battin1999}). We have chosen to take our somewhat simplified numerical approach for the following reasons:
+\begin{enumerate}
+\item{It makes a 90 minute workshop possible, where an exploration of tailored methods would require weeks of work,}
+\item{It allows us to frame several problems as initial value problems of ODE integration,}
+\item{It introduces techniques that are widely applicable to dynamical systems outside of spaceflight, and}
+\item{We believe it provides a good introduction, motivating more sophisticated approaches quite naturally as individuals explore further.}
+\end{enumerate}
+
+% References
+\clearpage\phantomsection
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plainnat}
+\bibliography{references.bib}
+
+\end{document}

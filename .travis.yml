@@ -18,6 +18,16 @@ addons:
   apt:
     packages:
       - libgmp-dev
+      - texlive-fonts-extra
+      - texlive-fonts-recommended
+      - texlive-generic-extra
+      - texlive-latex-extra
+      - texlive-luatex
+      - texlive-science
+      - texlive-xetex
+      - latexmk
+      - fonts-lmodern
+      - fonts-texgyre
 
 before_install:
 # Download and unpack the stack executable
@@ -33,3 +43,16 @@ script:
 # Build the package, its tests, and its docs and run the tests
 - export IDDQD=1
 - stack --no-terminal test --haddock --no-haddock-deps
+# Build the notes
+- pushd notes; make; popd
+- cp notes/notes.pdf gh-pages/notes.pdf
+
+# Deploy necessary components to GitHub Pages
+deploy:
+  provider: pages
+  local_dir: gh-pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: true
+  on:
+    branch: master
