@@ -3,8 +3,10 @@ packages:
 - .
 extra-deps:
 - iterm-show-0.1.0.1
+- diagrams-pgf-1.4.1
 - diagrams-postscript-1.4.1
 - tasty-hedgehog-0.2.0.0
+- texrunner-0.0.1.2
 - units-2.4.1.1
 - units-defs-2.0.1.1
 - units-parser-0.1.1.3

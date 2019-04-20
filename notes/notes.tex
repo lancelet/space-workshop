@@ -4,6 +4,9 @@
 % PRELUDE
 %------------------------------------------------------------------------------
 
+% Don't pause on errors (useful for CI)
+\nonstopmode
+
 % Font encoding
 \usepackage[T1]{fontenc}
 
@@ -25,12 +28,25 @@
 % More sophisticated tables
 \usepackage{booktabs}
 
-% Color boxes
-\usepackage{tcolorbox}
-\tcbuselibrary{skins}
+% Formatting chemical isotopes
+\usepackage{isotope}
+
+% Caption customization
+\usepackage[format=hang,labelfont=bf]{caption}
 
 % Color specification
 \usepackage{xcolor}
+
+% Color boxes
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\definecolor{midpurple}{RGB}{93,76,134}
+\definecolor{vlightgrey}{RGB}{240,240,240}
+
+% Problem boxen
+\newtcolorbox[auto counter]{problem}[2][]{%
+  colback=vlightgrey,colframe=midpurple,fonttitle=\bfseries,
+  title=Problem~\thetcbcounter: #2,#1}
 
 % Fancy headers
 \usepackage{fancyhdr}
@@ -42,7 +58,12 @@
 
 % Paragraph setting
 \setlength{\parindent}{0em}
-\setlength{\parskip}{1em}
+\setlength{\parskip}{1.1\baselineskip plus 1.2\baselineskip}
+\linespread{1.1}
+
+% Enumerate and itemize *within* paragraphs
+\usepackage{paralist}
+\setlength{\pltopsep}{-0.75\parskip}
 
 % Set fonts
 \usepackage{fontspec}
@@ -62,13 +83,20 @@
 \usepackage{titling}
 \title{Haskell Spaceflight Workshop}
 \author{Jonathan Merritt \and Luke Clifton}
-\date{May 2019}
+\date{YOW! LambdaJam 2019, May 13--15}
 
 % Glossary of mathematical symbols
 \usepackage{siunitx}
 \sisetup{per-mode = symbol}
 \usepackage[symbols,nogroupskip]{glossaries-extra}
+\glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
+\glsxtrnewsymbol[description={Time step (\si{s}).}]{dt}{\ensuremath{h}}
+\glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
+\glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
+\glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\frac{1}{2}}}}
+\glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
+\glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
 
 %------------------------------------------------------------------------------
 % DOCUMENT
@@ -78,14 +106,17 @@
 % Customized title page with a nice logo
 \begin{titlepage}
 \begin{center}
-  \vspace*{2cm}
-  {\Huge\MakeUppercase{\thetitle}}\par
-  \vspace{1.5cm}
+  \vspace*{1.5cm}
+  {\Huge\textsf{\MakeUppercase{\thetitle}}}\par
+  \vspace{1.cm}
   \includegraphics[width=0.8\textwidth]{fig/logo-text.pdf}\par
-  \vspace{1.5cm}
-  {\Large\theauthor}\par
-  {\Large\thedate}\par           
-  Version timestamp: PUBDATE
+  \vspace{1.cm}
+  {\Large\textsf{\theauthor}}\par
+  \vspace{0.2em}
+  {\Large\textsf{\thedate}}\par           
+  \vspace{0.5cm}
+  \rule{2cm}{0.5pt}\\\vspace{0.2cm}
+  \textsf{Version timestamp: PUBDATE}
 \end{center}
 \end{titlepage}
 
@@ -95,16 +126,99 @@
 
 In this workshop, we take an enthusiastic numerical approach to simulating spacecraft maneuvers. Our workshop examples appear in the published literature, yet we must begin by stating that there are often more elegant solutions to the problems we describe, allowing results to be found more economically and precisely. For these solutions, we must refer readers to a comprehensive textbook on astrodynamics (eg.~\cite{battin1999}). We have chosen to take our somewhat simplified numerical approach for the following reasons:
 \begin{enumerate}
-\item{It makes a 90 minute workshop possible, where an exploration of tailored methods would require weeks of work,}
-\item{It allows us to frame several problems as initial value problems of ODE integration,}
-\item{It introduces techniques that are widely applicable to dynamical systems outside of spaceflight, and}
-\item{We believe it provides a good introduction, motivating more sophisticated approaches quite naturally as individuals explore further.}
+\item It makes a 90 minute workshop possible, where an exploration of tailored methods would require weeks of work,
+\item It allows us to frame several problems as initial value problems of ODE integration,
+\item It introduces techniques that are widely applicable to dynamical systems outside of spaceflight, and
+\item We believe it provides a good introduction, motivating more sophisticated approaches quite naturally as individuals explore further.
 \end{enumerate}
+
+\chapter{ODE Integration and Initial Value Problems}
+
+The models we use for a spacecraft depend upon a set of variables that represent its state at an instant in time. These state variables typically include:
+\begin{compactitem}
+\item Position
+\item Velocity
+\item Mass
+\end{compactitem}
+They may be scalar quantities or vectors, as appropriate to the problem.
+
+Our simulations are all examples of ``Initial Value Problems''. In an initial value problem, we know the starting state of the spacecraft, and we have a set of ordinary differential equations (ODEs), which describe how its state evolves with time. We will integrate these ODEs to predict the state at future times. Using this approach, we can compute the time history of state variables that are critial to mission or maneuver planning. For example, we might find the trajectory of a spacecraft (its position as a function of time), and check whether it places the spacecraft in a desired orbit.
+
+The motion of a spacecraft depends on multiple forces that might be acting on it. For example:
+\begin{compactitem}
+\item Gravity
+\item Atmospheric drag
+\item Rocket thrust
+\end{compactitem}
+Thrust from a rocket engine may be controlled (ie.\ its magnitude and direction may be commanded), and these control inputs can be modeled easily in our system. Testing the behavior of a control system, particularly under conditions of real-world variations, is a modern practical use of the methods we cover (eg.~\cite{prince2011, brauer1977}).
+
+\section{Euler's Method}
+
+We can write a set of ODEs as:
+\begin{align}
+  \frac{d\gls{stvec}}{d\gls{t}} &= \dot{\gls{stvec}} = \gls{f}(\gls{t}, \gls{stvec})
+\end{align}
+Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some function. In Euler's method, we approximate a step forward in time by multiplying the gradient by the size of the time step, \gls{dt}:
+\begin{align}
+  \gls{stvec}(\gls{t} + \gls{dt})
+  &\approx \gls{stvec}(\gls{t}) + \dot{\gls{stvec}}\,\gls{dt} \\
+  &\approx \gls{stvec}(\gls{t}) + \gls{f}\left(\gls{t}, \gls{stvec}(\gls{t})\right)\,\gls{dt}
+\end{align}
+
+\subsection{Radioactive Decay}
+
+We will begin implementing Euler's method, specialized to \texttt{Double}, using the process of radioactive decay as an example. Radioactive decay is a useful example because it is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable, which can be represented as a \texttt{Double}.
+
+In radioactive decay, the rate of decay, \(\dot{\gls{N}}\), is proportional to the number of moles of radioactive particles that remain at any instant in time, \gls{N} (\gls{N} being the only state variable in this case):
+\begin{align}
+  \dot{\gls{N}} &= -\gls{lambda}\gls{N}
+\end{align}
+where \gls{lambda} is called the decay constant. This equation can be solved by knowing in advance that an exponential function happens to fit exactly the expected equation:
+\begin{align}
+  \gls{N} &= \gls{N0} \exp\left({-\gls{lambda}\gls{t}}\right)
+\end{align}
+So that:
+\begin{align}
+  \dot{\gls{N}} &= -\gls{lambda}\left(\gls{N0}\exp\left({-\gls{lambda}\gls{t}}\right)\right) \\
+                &= -\gls{lambda}\gls{N}
+\end{align}
+as required. Conventionally, \gls{lambda} is specified in terms of the half-life of an isotope, \gls{thalf}:
+\begin{align}
+  \textrm{at } \gls{t} = \gls{thalf} ,\; \gls{N} = \frac{\gls{N0}}{2}
+\end{align}
+thus:
+\begin{align}
+  \frac{\gls{N0}}{2} &= \gls{N0}\exp\left({-\gls{lambda}\gls{thalf}}\right) \\
+  \ln\left(\frac{1}{2}\right) &= -\gls{lambda}\gls{thalf} \\
+  \gls{lambda} &= \frac{\ln 2}{\gls{thalf}}
+\end{align}
+As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has been used in radioisotope thermoelectric generators (RTGs) for spacecraft (eg.\ Voyager 1 and 2). This isotope has a half-life of approximately \(\gls{thalf}=\SI{2.77e9}{\s}\) (87.7 years), so that \(\gls{lambda}=\SI{2.50e-10}{\per\s}\).
+
+\begin{problem}[label=eulerStepDouble]{Euler integration specialized to \texttt{Double}.}
+  In the file \texttt{ODE.hs},
+  \begin{compactitem}
+  \item implement \texttt{eulerStepDouble}, which takes a single step of Euler integration,
+  \item implement \texttt{integrateEulerDouble}, which takes multiple steps.
+  \end{compactitem}
+\end{problem}
+
+We can observe how Euler integration behaves on the exponential decay problem with \texttt{plotEulerDoubleExpDecay} in the module \texttt{Examples.ODEExamples}.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{\input{fig/euler-double-exp-decay}}
+  \caption{Comparison of Euler integration with the analytic result for exponential decay of \isotope[238]{Pu}.}
+  \label{fig:euler-double-exp-decay}
+\end{figure}
+
+
+% Symbol Glossary
+\printunsrtglossary[type=symbols,style=long]
 
 % References
 \clearpage\phantomsection
 \addcontentsline{toc}{chapter}{References}
-\bibliographystyle{plainnat}
+\bibliographystyle{IEEEtran}
 \bibliography{references.bib}
 
 \end{document}
