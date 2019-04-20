@@ -49,8 +49,6 @@ script:
 
 # Deploy necessary components to GitHub Pages
 deploy:
-  edge:
-    branch: v1.10.7
   provider: pages
   local_dir: gh-pages
   skip_cleanup: true
