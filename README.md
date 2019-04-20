@@ -5,6 +5,9 @@
 <img src="./logo.svg" width="150px" height="150px" alt="Logo"/>
 This workshop is still WIP.
 
+The current notes for the workshop (VERY WIP) are available from
+[GitHub pages](https://lancelet.github.io/space-workshop), built using Travis CI.
+
 ## Progress so far
 
 ### Apollo Lunar Ascent Guidance
