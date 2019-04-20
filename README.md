@@ -1,7 +1,8 @@
-# space-workshop
+# Haskell Spaceflight Workshop
 
 [![Build Status](https://travis-ci.org/lancelet/space-workshop.svg?branch=master)](https://travis-ci.org/lancelet/space-workshop)
 
+<img src="./logo.svg" width="150px" height="150px" alt="Logo"/>
 This workshop is still WIP.
 
 ## Progress so far
