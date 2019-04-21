@@ -43,9 +43,14 @@ script:
 # Build the package, its tests, and its docs and run the tests
 - export IDDQD=1
 - stack --no-terminal test --haddock --no-haddock-deps
-# Build the notes
+# Set publication date strings
+- export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
+- sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
+- sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
+# Build the notes and GH Pages site
 - pushd notes; make; popd
 - cp notes/notes.pdf gh-pages/notes.pdf
+- cp logo.svg gh-pages/logo.svg
 
 # Deploy necessary components to GitHub Pages
 deploy:
