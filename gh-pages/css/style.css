@@ -1,3 +1,71 @@
 body {
-    font-family: "Helvetica", sans;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15pt;
+    margin-top: 60px;
+    margin-right: 60px;
+    margin-bottom: 60px;
+    margin-left: 60px;
+}
+h1 {
+    text-align: center;
+    font-size: 32pt;
+}
+p {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+a:link {
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+.title {
+    margin-top: 5px;
+    margin-bottom: 0px;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    padding-bottom: 15px;
+}
+.notes-box {
+    background: #efefef;
+    border-color: #c9c9c9;
+    padding-left: 15px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-left-width: 4px;
+    border-left-style: solid;
+    margin-top: 20px;
+    margin-left: 50px;
+    margin-bottom: 20px
+}
+.current-notes {
+    margin-top: 20px;
+}
+.notes-link {
+    font-size: 18pt; 
+}
+.last-published {
+    font-size: 12pt;
+}
+
+/* Grid */
+.container {
+    display: grid;
+    grid-template-columns: auto 200px;
+    grid-template-rows: 200px auto;
+}
+.logo {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+.text {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 3;
+    margin-right: 30px;
 }
