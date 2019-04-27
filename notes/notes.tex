@@ -67,8 +67,11 @@
 \linespread{1.1}
 
 % Enumerate and itemize *within* paragraphs
-\usepackage{paralist}
-\setlength{\pltopsep}{-0.75\parskip}
+\usepackage{enumitem}
+\newlist{paritemize}{itemize}{1}
+\setlist[paritemize]{label=\textbullet,nosep,topsep=-0.75\parskip}
+\newlist{probitemize}{itemize}{1}
+\setlist[probitemize]{label=\textbullet,nosep}
 
 % Chapter styling
 \usepackage{quotchap}
@@ -78,6 +81,9 @@
   \color{midpurple}%
 }
 \makeatother
+
+% Show oferfull boxes and lines
+\overfullrule=2pt
 
 % Title and Author
 \usepackage{titling}
@@ -135,26 +141,26 @@ In this workshop, we take an enthusiastic numerical approach to simulating space
 \chapter{ODE Integration and Initial Value Problems}
 
 The models we use for a spacecraft depend upon a set of variables that represent its state at an instant in time. These state variables typically include:
-\begin{compactitem}
+\begin{paritemize}
 \item Position
 \item Velocity
 \item Mass
-\end{compactitem}
+\end{paritemize}
 They may be scalar quantities or vectors, as appropriate to the problem.
 
 Our simulations are all examples of ``Initial Value Problems''. In an initial value problem, we know the starting state of the spacecraft, and we have a set of ordinary differential equations (ODEs), which describe how its state evolves with time. We will integrate these ODEs to predict the state at future times. Using this approach, we can compute the time history of state variables that are critial to mission or maneuver planning. For example, we might find the trajectory of a spacecraft (its position as a function of time), and check whether it places the spacecraft in a desired orbit.
 
 The motion of a spacecraft depends on multiple forces that might be acting on it. For example:
-\begin{compactitem}
+\begin{paritemize}
 \item Gravity
 \item Atmospheric drag
 \item Rocket thrust
-\end{compactitem}
+\end{paritemize}
 Thrust from a rocket engine may be controlled (ie.\ its magnitude and direction may be commanded), and these control inputs can be modeled easily in our system. Testing the behavior of a control system, particularly under conditions of real-world variations, is a modern practical use of the methods we cover (eg.~\cite{prince2011, brauer1977}).
 
 \section{Euler's Method}
 
-We can write a set of ODEs as:
+We can write a set of coupled, first-order ODEs as:
 \begin{align}
   \frac{d\gls{stvec}}{d\gls{t}} &= \dot{\gls{stvec}} = \gls{f}(\gls{t}, \gls{stvec})
 \end{align}
@@ -184,7 +190,8 @@ So that:
 \end{align}
 as required. Conventionally, \gls{lambda} is specified in terms of the half-life of an isotope, \gls{thalf}:
 \begin{align}
-  \textrm{at } \gls{t} = \gls{thalf} ,\; \gls{N} = \frac{\gls{N0}}{2}
+  \textrm{at } \gls{t} &= 0,\: \gls{N} = \gls{N0} \\
+  \textrm{at } \gls{t} &= \gls{thalf},\: \gls{N} = \frac{\gls{N0}}{2}
 \end{align}
 thus:
 \begin{align}
@@ -192,25 +199,28 @@ thus:
   \ln\left(\frac{1}{2}\right) &= -\gls{lambda}\gls{thalf} \\
   \gls{lambda} &= \frac{\ln 2}{\gls{thalf}}
 \end{align}
-As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has been used in radioisotope thermoelectric generators (RTGs) for spacecraft (eg.\ Voyager 1 and 2). This isotope has a half-life of approximately \(\gls{thalf}=\SI{2.77e9}{\s}\) (87.7 years), so that \(\gls{lambda}=\SI{2.50e-10}{\per\s}\).
+As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has been used in radioisotope thermoelectric generators (RTGs) for spacecraft such as the Voyager 1 and 2 probes. This isotope has a half-life of approximately 87.7 years.
 
 \begin{problem}[label=eulerStepDouble]{Euler integration specialized to \texttt{Double}.}
   In the file \texttt{ODE.hs},
-  \begin{compactitem}
-  \item implement \texttt{eulerStepDouble}, which takes a single step of Euler integration,
-  \item implement \texttt{integrateEulerDouble}, which takes multiple steps.
-  \end{compactitem}
+  \begin{probitemize}
+  \item implement \texttt{eulerStepDouble}, which takes a single step of Euler integration
+  \item implement \texttt{integrateEulerDouble}, which takes multiple steps
+  \end{probitemize}
+  In \texttt{ODEExamples.hs},
+  \begin{probitemize}
+  \item run \texttt{plotEulerDoubleExpDecay Screen}, to view a plot of Euler integration applied to the radioactive decay example
+  \end{probitemize}
 \end{problem}
-
-We can observe how Euler integration behaves on the exponential decay problem with \texttt{plotEulerDoubleExpDecay} in the module \texttt{Examples.ODEExamples}.
 
 \begin{figure}[htbp]
   \centering
   \resizebox{\textwidth}{!}{\input{fig/euler-double-exp-decay}}
-  \caption{Comparison of Euler integration with the analytic result for exponential decay of \isotope[238]{Pu}.}
+  \caption{Comparison of Euler integration with the analytical result for radioactive decay of the isotope \isotope[238]{Pu}. The solid line shows the analytic solution while the points demonstrate the Euler approximation for different time steps.}
   \label{fig:euler-double-exp-decay}
 \end{figure}
 
+Figure~\ref{fig:euler-double-exp-decay} shows the result of applying Euler integration to the radioactive decay example. In this figure, it is evident that when smaller time-steps are taken, the Euler method more closely approximates the analytical solution. This is usually the case practically with numerical integration, although there is a limit beyond which smaller time steps will begin to diverge from the correct solution due to accruing floating-point errors. We will see later that raising the polynomial order of the integration approximation can improve accuracy with greater computational efficiency than taking smaller time steps.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]

@@ -40,20 +40,26 @@ import qualified Units                 as U
 
 
 -- | Plot Euler integration of an exponential decay ODE.
+--
+-- The example here is decay of Plutonium-238, with a half-life of 87.7 years.
 plotEulerDoubleExpDecay :: Plot.Output -> IO ()
 plotEulerDoubleExpDecay out = do
   let
+    tHalf = 87.7            -- half-life of Pu-238 (years)
+    ln = logBase (exp 1)
+    lambda = ln 2 / tHalf   -- decay constant of Pu-238 (1/years)
+    
     -- the analytic equation; takes a list of times; produces a list of
     --  (time, x)
     analytic :: [Double] -> [(Double, Double)]
-    analytic times = [ (t, exp(-0.2 * t)) | t <- times ]
+    analytic times = [ (t, exp(-lambda * t)) | t <- times ]
 
     -- the numerical solution; takes a list of times; produces a list of
     --  (time, x)
     numerical :: [Double] -> [(Double, Double)]
     numerical times =
       let
-        f (_, x) = -0.2 * x   -- the gradient function
+        f (_, x) = -lambda * x   -- the gradient function
       in
         NonEmpty.toList $
         ODE.integrateEulerDouble f 1.0 (NonEmpty.fromList times)
@@ -61,13 +67,13 @@ plotEulerDoubleExpDecay out = do
   -- plot everything
   Plot.xyChart
     out
-    "Exponential Decay - Analytic vs Euler"
-    "Time (t) - no units assigned"
-    "Amount (x) - no units assigned"
-    [ Plot.Line "Analytic Solution" (analytic (ODE.linspace 50 0.0 10.0))
-    , Plot.Points "Euler (dt=2.0)" (numerical (ODE.linspace 6 0.0 10.0))
-    , Plot.Points "Euler (dt=1.0)" (numerical (ODE.linspace 11 0.0 10.0))
-    , Plot.Points "Euler (dt=0.2)" (numerical (ODE.linspace 51 0.0 10.0)) ]
+    "Radioactive Decay of Pu-238 - Analytic vs Euler"
+    "Time (t) - years"
+    "Amount (N) - fraction of original"
+    [ Plot.Line "Analytic Solution" (analytic (ODE.linspace 50 0.0 200.0))
+    , Plot.Points "Euler (dt=40 years)" (numerical (ODE.linspace 6 0.0 200.0))
+    , Plot.Points "Euler (dt=20 years)" (numerical (ODE.linspace 11 0.0 200.0))
+    , Plot.Points "Euler (dt=4 years)" (numerical (ODE.linspace 51 0.0 200.0)) ]
 
 
 -------------------------------------------------------------------------------
