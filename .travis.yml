@@ -16,13 +16,15 @@ cache:
 # Ensure necessary system libraries are present
 addons:
   apt:
+    sources:
+      - sourceline: 'ppa:jonathonf/texlive-2018'
     packages:
       - libgmp-dev
-      - texlive-fonts-extra
       - texlive-fonts-recommended
       - texlive-generic-extra
       - texlive-latex-extra
       - texlive-luatex
+      - texlive-publishers
       - texlive-science
       - texlive-xetex
       - latexmk
