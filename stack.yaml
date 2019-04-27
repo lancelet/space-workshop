@@ -8,11 +8,6 @@ extra-deps:
 - units-2.4.1.1
 - units-defs-2.0.1.1
 - units-parser-0.1.1.3
-- github: lancelet/haskell-chart
-  commit: 609ba441e55bc1925dd0845ab23a3e8971a34e94
-  subdirs:
-  - chart
-  - chart-diagrams
 
 nix:
   pure: false
