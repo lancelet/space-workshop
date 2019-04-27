@@ -10,6 +10,11 @@
 % Font encoding
 \usepackage[T1]{fontenc}
 
+% Set fonts
+\usepackage{fontspec}
+\setmainfont{Tex Gyre Pagella}
+\setsansfont{Tex Gyre Adventor}
+
 % Set up page geometry (margins, etc)
 \usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
 
@@ -58,17 +63,12 @@
 
 % Paragraph setting
 \setlength{\parindent}{0em}
-\setlength{\parskip}{1.1\baselineskip plus 1.2\baselineskip}
+\setlength{\parskip}{1.1\baselineskip}
 \linespread{1.1}
 
 % Enumerate and itemize *within* paragraphs
 \usepackage{paralist}
 \setlength{\pltopsep}{-0.75\parskip}
-
-% Set fonts
-\usepackage{fontspec}
-\setmainfont{Tex Gyre Pagella}
-\setsansfont{Tex Gyre Adventor}
 
 % Chapter styling
 \usepackage{quotchap}
