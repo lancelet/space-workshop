@@ -12,6 +12,7 @@ language: generic
 cache:
   directories:
   - $HOME/.stack
+  - $HOME/lancelet/space-workshop/.stack-work/install
 
 # Ensure necessary system libraries are present
 addons:
@@ -30,6 +31,7 @@ addons:
       - latexmk
       - fonts-lmodern
       - fonts-texgyre
+      - python-pygments
 
 before_install:
 # Download and unpack the stack executable
