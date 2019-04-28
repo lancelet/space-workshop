@@ -72,6 +72,8 @@
 \setlist[paritemize]{label=\textbullet,nosep,topsep=-0.75\parskip}
 \newlist{probitemize}{itemize}{1}
 \setlist[probitemize]{label=\textbullet,nosep}
+\newlist{pardescription}{description}{1}
+\setlist[pardescription]{nosep,topsep=-0.75\parskip}
 
 % Chapter styling
 \usepackage{quotchap}
@@ -85,6 +87,9 @@
 % Show oferfull boxes and lines
 \overfullrule=2pt
 
+% Code snippets
+\usepackage{minted}
+
 % Title and Author
 \usepackage{titling}
 \title{Haskell Spaceflight Workshop}
@@ -96,13 +101,20 @@
 \sisetup{per-mode = symbol}
 \usepackage[symbols,nogroupskip]{glossaries-extra}
 \glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
+\glsxtrnewsymbol[description={Total force, scalar (\si{N}).}]{Fs}{\ensuremath{F}}
 \glsxtrnewsymbol[description={Time step (\si{s}).}]{dt}{\ensuremath{h}}
+\glsxtrnewsymbol[description={Spring constant (\si{N/m}).}]{k}{\ensuremath{k}}
+\glsxtrnewsymbol[description={Mass (\si{kg}).}]{m}{\ensuremath{m}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
 \glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
+\glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
+\glsxtrnewsymbol[description={Position, scalar, at \(t=0\) (\si{m}).}]{rs0}{\ensuremath{r_0}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
 \glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\frac{1}{2}}}}
+\glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
+\glsxtrnewsymbol[description={Angular frequency (\si{\per\s}).}]{omega}{\ensuremath{\omega}}
 
 %------------------------------------------------------------------------------
 % DOCUMENT
@@ -148,7 +160,7 @@ The models we use for a spacecraft depend upon a set of variables that represent
 \end{paritemize}
 They may be scalar quantities or vectors, as appropriate to the problem.
 
-Our simulations are all examples of ``Initial Value Problems''. In an initial value problem, we know the starting state of the spacecraft, and we have a set of ordinary differential equations (ODEs), which describe how its state evolves with time. We will integrate these ODEs to predict the state at future times. Using this approach, we can compute the time history of state variables that are critial to mission or maneuver planning. For example, we might find the trajectory of a spacecraft (its position as a function of time), and check whether it places the spacecraft in a desired orbit.
+Our simulations are all examples of ``Initial Value Problems''. In an initial value problem, we know the starting state of the spacecraft, and we have a set of first-order ordinary differential equations (ODEs), which describe how its state evolves with time. We will integrate these ODEs to predict the state at future times. Using this approach, we can compute the time history of state variables that are critial to mission or maneuver planning. For example, we might find the trajectory of a spacecraft (its position as a function of time), and check whether it places the spacecraft in a desired orbit.
 
 The motion of a spacecraft depends on multiple forces that might be acting on it. For example:
 \begin{paritemize}
@@ -156,7 +168,7 @@ The motion of a spacecraft depends on multiple forces that might be acting on it
 \item Atmospheric drag
 \item Rocket thrust
 \end{paritemize}
-Thrust from a rocket engine may be controlled (ie.\ its magnitude and direction may be commanded), and these control inputs can be modeled easily in our system. Testing the behavior of a control system, particularly under conditions of real-world variations, is a modern practical use of the methods we cover (eg.~\cite{prince2011, brauer1977}).
+Thrust from a rocket engine may be controlled, and control inputs can be modeled easily in our system. Testing the behavior of a control system, particularly under conditions of real-world variations, is a modern practical use of the methods we cover (eg.~\cite{prince2011, brauer1977}).
 
 \section{Euler's Method}
 
@@ -173,9 +185,9 @@ Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some func
 
 \subsection{Radioactive Decay}
 
-We will begin implementing Euler's method, specialized to \texttt{Double}, using the process of radioactive decay as an example. Radioactive decay is a useful example because it is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable, which can be represented as a \texttt{Double}.
+We will begin implementing Euler's method, specialized to \texttt{Double}, using the process of radioactive decay as an example. Radioactive decay is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable (\gls{N}), which can be represented as a \texttt{Double}. Specializing to \texttt{Double} also gives us a simple starting point that is representative of the approach used in many other programming languages.
 
-In radioactive decay, the rate of decay, \(\dot{\gls{N}}\), is proportional to the number of moles of radioactive particles that remain at any instant in time, \gls{N} (\gls{N} being the only state variable in this case):
+In radioactive decay, the rate of decay, \(\dot{\gls{N}}\), is proportional to the number of moles of radioactive particles that remain at any instant in time, \gls{N}:
 \begin{align}
   \dot{\gls{N}} &= -\gls{lambda}\gls{N}
 \end{align}
@@ -221,6 +233,98 @@ As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has
 \end{figure}
 
 Figure~\ref{fig:euler-double-exp-decay} shows the result of applying Euler integration to the radioactive decay example. In this figure, it is evident that when smaller time-steps are taken, the Euler method more closely approximates the analytical solution. This is usually the case practically with numerical integration, although there is a limit beyond which smaller time steps will begin to diverge from the correct solution due to accruing floating-point errors. We will see later that raising the polynomial order of the integration approximation can improve accuracy with greater computational efficiency than taking smaller time steps.
+
+\section{Generalizing Euler's Method}
+
+We will now generalize Euler's method using the abstractions available in the \texttt{vector-space} package. The necessary constraints are captured in Listing~\ref{lst:euler-vector-space}. Don't panic if this seems a lot to take in, since we'll see a few concrete examples.
+
+\begin{listing}[htbp]
+\begin{minted}[fontsize=\small]{haskell}
+eulerStep
+  :: ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar diff, s ~ Scalar time )
+  => time                              -- ^ Step size @dt@
+  -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
+  -> (time, state)                     -- ^ Before the step @(t, x)@
+  -> (time, state)                     -- ^ After the step @(t, x)@
+\end{minted}
+\caption{Constraints for Euler's method generalized by \texttt{vector-space}.}
+\label{lst:euler-vector-space}
+\end{listing}
+
+The first concept we introduce is the difference between an \texttt{AffineSpace} and its associated \texttt{VectorSpace}. In the present context, points in the \texttt{AffineSpace} are points belonging to the state space of the problem, of type \texttt{state}. Vectors of the associated \texttt{VectorSpace}, of type \texttt{diff}, represent deltas or differences between the points. We can add a vector to a point to obtain a new point, but we don't sum points directly. Most widely-used frameworks for numerical integration do not make this distinction.
+
+Next is the concept of a linear map representing the co-domain of the gradient function: \texttt{time :-* diff}. In our case, where we deal with finite differences, this constructor can be considered analogous to a function of type \texttt{time -> diff}, but constrained to be linear. A very simple illustration of the linear map is shown in Listing~\ref{lst:linear-map-scalar}. The \texttt{linear} function assumes that the function it has been provided is linear, and it memoizes the values of that function along each basis vector of the vector space.
+
+\begin{listing}[htbp]
+\begin{minted}[fontsize=\small]{haskell}
+> :set -XFlexibleContexts
+> import Data.LinearMap ((:-*), linear, lapply)
+> :{
+| f :: Double -> Double
+| f x = 5 * x
+| :}
+> linearMap = linear f
+> :t linearMap
+linearMap :: Double :-* Double
+> lapply linearMap 1
+5.0
+> lapply linearMap 2
+10.0
+\end{minted}
+\caption{Illustration of a simple, scalar linear map.}
+\label{lst:linear-map-scalar}
+\end{listing}
+
+Finally, we need to describe the operations that can be used on instances of \texttt{AffineSpace} and its associated \texttt{VectorSpace}:
+\begin{pardescription}[leftmargin=6em,style=nextline]
+\item [\texttt{lapply m h}] applies linear map \texttt{m} to vector \texttt{h}
+\item [\texttt{p .+\^{} v}] adds vector \texttt{v} to point \texttt{p}
+\item [\texttt{a \^{}+\^{} b}] adds vector \texttt{a} to vector \texttt{b}
+\end{pardescription}
+These operations are sufficient to implement the generalized form of Euler's method.
+
+\subsection{Simple Harmonic Motion}
+
+To motivate the generalized form of Euler's method, let's consider simple harmonic motion, with two scalar state variables:
+\begin{paritemize}
+\item Position, \gls{rs}
+\item Velocity, \gls{vs}
+\end{paritemize}
+The data type \texttt{State} in \texttt{ODEExamples.hs} describes this state, which is the \texttt{AffineSpace} of the problem. It introduces statically type-checked units from the \texttt{units} package for length and velocity. The data type \texttt{DState} is the correspondng \texttt{VectorSpace} of the problem, representing deltas in the state.
+
+In simple harmonic motion, a linear spring force, \gls{Fs}, is proportional to the position:
+\begin{align}
+  \gls{Fs} &= -\gls{k}\gls{rs}
+\end{align}
+This is combined with the equations of motion of a point mass to produce the following governing ODE:
+\begin{align}
+  \dot{\gls{stvec}} =
+  \begin{bmatrix}\dot{\gls{rs}}\\\dot{\gls{vs}}\end{bmatrix} &=
+  \begin{bmatrix}\gls{vs}\\-k\gls{rs}/\gls{m}\end{bmatrix}
+\end{align}
+If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gls{rs0}\) and \(\gls{vs} = 0\) then the analytic solution is:
+\begin{align}
+  \gls{stvec}(t) &=
+  \begin{bmatrix}
+    \gls{rs0}\cos(\gls{omega}t) \\
+    -\gls{omega}\gls{rs0}\sin(\gls{omega}t)
+  \end{bmatrix}
+\end{align}
+where the angular velocity, \gls{omega}, is:
+\begin{align}
+  \gls{omega} &= \sqrt{\frac{\gls{k}}{\gls{m}}}
+\end{align}
+
+\begin{problem}[label=eulerStepVectorSpace]{Generalized Euler integration.}
+  In the file \texttt{ODE.hs},
+  \begin{probitemize}
+  \item implement \texttt{eulerStep}
+  \item implement \texttt{integrate} and \texttt{integrateWithDiff}
+  \end{probitemize}
+\end{problem}
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]

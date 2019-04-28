@@ -126,7 +126,7 @@ plotEulerSHM :: Plot.Output -> IO ()
 plotEulerSHM out = do
   let
     -- parameters
-    ti =    0 % [si| s |]      -- initial simulation time
+    ti =    0 % [si| ms |]     -- initial simulation time
     tf = 1500 % [si| ms |]     -- final simulation time
     x0 =   10 % [si| mm |]     -- initial position
     v0 =    0 % [si| m/s |]    -- initial velocity
