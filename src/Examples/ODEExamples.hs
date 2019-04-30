@@ -67,10 +67,10 @@ plotEulerDoubleExpDecay out = do
   -- plot everything
   Plot.xyChart
     out
-    "Radioactive Decay of Pu-238 - Analytic vs Euler"
+    "Radioactive Decay of Pu-238 - Analytical vs Euler"
     "Time (t) - years"
     "Amount (N) - fraction of original"
-    [ Plot.Line "Analytic Solution" (analytic (ODE.linspace 50 0.0 200.0))
+    [ Plot.Line "Analytical Solution" (analytic (ODE.linspace 50 0.0 200.0))
     , Plot.Points "Euler (dt=40 years)" (numerical (ODE.linspace 6 0.0 200.0))
     , Plot.Points "Euler (dt=20 years)" (numerical (ODE.linspace 11 0.0 200.0))
     , Plot.Points "Euler (dt=4 years)" (numerical (ODE.linspace 51 0.0 200.0)) ]
@@ -158,11 +158,11 @@ plotEulerSHM out = do
 
   Plot.xyChartUnits
     out
-    "Simple Harmonic Motion - Analytic vs Euler"
+    "Simple Harmonic Motion - Analytical vs Euler"
     "Time (ms)"
     "Position (mm)"
     ( [si| ms |], [si| mm |] )
-    [ Plot.Line "Analytic Solution" $ analytic (ODE.linspace 200 ti tf)
+    [ Plot.Line "Analytical Solution" $ analytic (ODE.linspace 200 ti tf)
     , Plot.Points "Euler (dt=75.0 ms)" $ numerical (ODE.linspace 20 ti tf)
     , Plot.Points "Euler (dt=37.5 ms)" $ numerical (ODE.linspace 40 ti tf)
     , Plot.Points "Euler (dt=7.5 ms)" $ numerical (ODE.linspace 200 ti tf) ]
@@ -213,10 +213,10 @@ plotSHMComparison out = do
 
   Plot.xyChartUnits
     out
-    "Simple Harmonic Motion - Analytic, Euler and RK4"
+    "Simple Harmonic Motion - Analytical, Euler and RK4"
     "Time (ms)"
     "Position (mm)"
     ( [si| ms |], [si| mm |] )
-    [ Plot.Line "Analytic Solution" $ analytic (ODE.linspace 200 ti tf)
+    [ Plot.Line "Analytical Solution" $ analytic (ODE.linspace 200 ti tf)
     , Plot.Points "Euler (dt=37.5 ms)" $ euler (ODE.linspace 40 ti tf)
     , Plot.Points "RK4 (dt=150.0 ms)" $ rk4 (ODE.linspace 10 ti tf) ]

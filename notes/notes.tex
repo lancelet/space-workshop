@@ -84,6 +84,9 @@
 }
 \makeatother
 
+% Nice(r) fraction symbols
+\usepackage{nicefrac}
+
 % Show oferfull boxes and lines
 \overfullrule=2pt
 
@@ -113,7 +116,7 @@
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
 \glsxtrnewsymbol[description={Position, scalar, at \(t=0\) (\si{m}).}]{rs0}{\ensuremath{r_0}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
-\glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\frac{1}{2}}}}
+\glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\left(\nicefrac{1}{2}\right)}}}
 \glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
@@ -145,13 +148,9 @@
 
 \chapter{Introduction}
 
-In this workshop, we take an enthusiastic numerical approach to simulating spacecraft maneuvers. Our workshop examples appear in the published literature, yet we must begin by stating that there are often more elegant solutions to the problems we describe, allowing results to be found more economically and precisely. For these solutions, we must refer readers to a comprehensive textbook on astrodynamics (eg.~\cite{battin1999}). We have chosen to take our somewhat simplified numerical approach for the following reasons:
-\begin{enumerate}
-\item It makes a 90 minute workshop possible, where an exploration of tailored methods would require weeks of work,
-\item It allows us to frame several problems as initial value problems of ODE integration,
-\item It introduces techniques that are widely applicable to dynamical systems outside of spaceflight, and
-\item We believe it provides a good introduction, motivating more sophisticated approaches quite naturally as individuals explore further.
-\end{enumerate}
+This workshop consists of these published notes and a set of problems contained in the associated GitHub Haskell project.
+
+How much of the notes it will be necessary to read depends on the background of an individual participant. Those who are already familiar with numerical methods might be able to skip most of the notes and simply work on the problems directly. However, we have tried to make the notes fairly comprehensive for newcomers, so that people unfamiliar with numerical methods at least have a starting point.
 
 \chapter{ODE Integration and Initial Value Problems}
 
@@ -173,13 +172,13 @@ The motion of a spacecraft depends on multiple forces that might be acting on it
 \end{paritemize}
 Thrust from a rocket engine may be controlled, and control inputs can be modeled easily in our system. Testing the behavior of a control system, particularly under conditions of real-world variations, is a modern practical use of the methods we cover (eg.~\cite{prince2011, brauer1977}).
 
-\section{Euler's Method}
+\section{1D Euler's Method}
 
 We can write a set of coupled, first-order ODEs as:
 \begin{align}
   \frac{d\gls{stvec}}{d\gls{t}} &= \dot{\gls{stvec}} = \gls{f}(\gls{t}, \gls{stvec})
 \end{align}
-Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some function. In Euler's method, we approximate a step forward in time by multiplying the gradient by the size of the time step, \gls{dt}:
+Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some function. In Euler's method, we approximate a step forward in time by adding the product of the gradient, \(\dot{\gls{stvec}}\), and the time step, \gls{dt}, to the current state, \gls{stvec}:
 \begin{align}
   \gls{stvec}(\gls{t} + \gls{dt})
   &\approx \gls{stvec}(\gls{t}) + \dot{\gls{stvec}}\,\gls{dt} \\
@@ -188,7 +187,7 @@ Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some func
 
 \subsection{Radioactive Decay}
 
-We will begin implementing Euler's method, specialized to \code{Double}, using the process of radioactive decay as an example. Radioactive decay is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable (\gls{N}), which can be represented as a \code{Double}. Specializing to \code{Double} also gives us a simple starting point that is representative of the approach used in many other programming languages.
+We will begin implementing Euler's method with a 1D state, specialized to \code{Double}, using the process of radioactive decay as an example. Radioactive decay has an analytical solution, thus providing a ground truth against which the numerical result can be compared. It only involves a single state variable, \gls{N}, which can be represented as a \code{Double}. Specializing to \code{Double} gives us a simple starting point that is close to the approach used in many other programming languages.
 
 In radioactive decay, the rate of decay, \(\dot{\gls{N}}\), is proportional to the number of moles of radioactive particles that remain at any instant in time, \gls{N}:
 \begin{align}
@@ -211,7 +210,7 @@ as required. Conventionally, \gls{lambda} is specified in terms of the half-life
 thus:
 \begin{align}
   \frac{\gls{N0}}{2} &= \gls{N0}\exp\left({-\gls{lambda}\gls{thalf}}\right) \\
-  \ln\left(\frac{1}{2}\right) &= -\gls{lambda}\gls{thalf} \\
+  \ln\left(\tfrac{1}{2}\right) &= -\gls{lambda}\gls{thalf} \\
   \gls{lambda} &= \frac{\ln 2}{\gls{thalf}}
 \end{align}
 As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has been used in radioisotope thermoelectric generators (RTGs) for spacecraft such as the Voyager 1 and 2 probes. This isotope has a half-life of approximately 87.7 years.
@@ -237,7 +236,7 @@ As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has
 
 Figure~\ref{fig:euler-double-exp-decay} shows the result of applying Euler integration to the radioactive decay example. In this figure, it is evident that when smaller time-steps are taken, the Euler method more closely approximates the analytical solution. This is usually the case practically with numerical integration, although there is a limit beyond which smaller time steps will begin to diverge from the correct solution due to accruing floating-point errors. We will see later that raising the polynomial order of the integration approximation can improve accuracy with greater computational efficiency than taking smaller time steps.
 
-\section{Generalizing Euler's Method}
+\section{Euler's Method for an \code{AffineSpace} State}
 
 We will now generalize Euler's method using the abstractions available in the \hspackage{vector-space} package. The necessary constraints are captured in Listing~\ref{lst:euler-vector-space}. Don't panic if this seems a lot to take in, since we'll see a few concrete examples.
 
@@ -257,9 +256,9 @@ eulerStep
 \label{lst:euler-vector-space}
 \end{listing}
 
-The first concept we introduce is the difference between an \code{AffineSpace} and its associated \code{VectorSpace}. In the present context, points in the \code{AffineSpace} are points belonging to the state space of the problem, of type \code{state}. Vectors of the associated \code{VectorSpace}, of type \code{diff}, represent deltas or differences between the points. We can add a vector to a point to obtain a new point, but we don't sum points directly. Most widely-used frameworks for numerical integration do not make this distinction.
+The first concept we introduce is the difference between an \code{AffineSpace} and its associated \code{VectorSpace}. In the present context, points in the \code{AffineSpace} are points belonging to the state space of the problem, of type \code{state} (eg.~position, velocity, etc). Vectors of the associated \code{VectorSpace}, of type \code{diff}, represent deltas or differences between the points (eg.~an offset of position, a delta in velocity, etc). We can add a vector to a point to obtain a new point, but we don't sum points directly. Similarly, we can multiply a vector by a scalar, but we cannot multiply a point by a scalar. Most widely-used frameworks for numerical integration do not make this distinction.
 
-Next is the concept of a linear map representing the derivative: \code{time :-* diff}. In our case, where we deal with finite differences, this constructor can be considered analogous to a function of type \code{time -> diff}, but constrained to be linear. A very simple illustration of the linear map is shown in Listing~\ref{lst:linear-map-scalar}. The \code{linear} function assumes that the function it has been provided is linear, and it memoizes the values of that function along each basis vector of the vector space.
+Next is the concept of a linear map representing the derivative: \code{time :-* diff}. In our case, where we deal with finite differences, this constructor can be considered analogous to a (linear) function of type \code{time -> diff}. What this function represents is the delta, \code{diff}, which arises from taking a time-step, \gls{dt}, of type \code{time}. A very simple illustration of the linear map is shown in Listing~\ref{lst:linear-map-scalar}, with a version for vectors shown in Listing~\ref{lst:linear-map-vector}. The \code{linear} function assumes that the function it has been provided is linear, and it memoizes the values of that function along each basis vector of the vector space.
 
 \begin{listing}[htbp]
 \begin{minted}[fontsize=\small]{haskell}
@@ -269,13 +268,35 @@ Next is the concept of a linear map representing the derivative: \code{time :-* 
 > lm = linear f
 > :t lm
 lm :: Double :-* Double
-> lapply lm 1
+> :force lm
+lm = Data.LinearMap.LMap (Just 5.0)
+> lapply lm 1.0
 5.0
-> lapply lm 2
+> lapply lm 2.0
 10.0
 \end{minted}
-\caption{Illustration of a simple, scalar linear map.}
+\caption{A scalar linear map. Once the map has been defined (by the \code{linear} function), the \code{lapply} function multiplies the input vector (a \code{Double}) by the memoized value along the unit basis vector.}
 \label{lst:linear-map-scalar}
+\end{listing}
+
+\begin{listing}[htbp]
+\begin{minted}[fontsize=\small]{haskell}
+> :set -XFlexibleContexts
+> import Data.LinearMap ((:-*), linear, lapply)
+> :{
+| f :: (Double, Double) -> (Double, Double, Double)
+| f (x, y) = (2*x + y, 3*x - y, 4*y)
+| :}
+> lm = linear f
+> :force lm
+lm = Data.LinearMap.LMap
+     (Just
+       (Data.MemoTrie.EitherTrie ((,,) 2.0 3.0 0.0) ((,,) 1.0 -1.0 4.0)))
+> lapply lm (5, 6)
+(16.0,9.0,24.0)
+\end{minted}
+\caption{A vector linear map, using tuples for vectors. This provides a better view of the memoisation that is occurring under the hood. The construction of a matrix-like representation (but with automatic dimension checking) is evident.}
+\label{lst:linear-map-vector}
 \end{listing}
 
 Finally, we need to describe the operations that can be used on instances of \code{AffineSpace} and its associated \code{VectorSpace}:
@@ -295,7 +316,7 @@ To motivate the generalized form of Euler's method, let's consider simple harmon
 \end{paritemize}
 The data type \code{State} in \filename{ODEExamples.hs} describes this state, which is the \code{AffineSpace} of the problem. It introduces statically type-checked units from the \hspackage{units} package for length and velocity. The data type \code{DState} is the correspondng \code{VectorSpace} of the problem, representing deltas in the state.
 
-In SHM, a linear spring force, \gls{Fs}, is proportional to the position:
+In SHM, a linear spring force, \gls{Fs}, is proportional to the position, \gls{rs}, with a spring constant, \gls{k}:
 \begin{align}
   \gls{Fs} &= -\gls{k}\gls{rs}
 \end{align}
@@ -305,7 +326,7 @@ This is combined with the equations of motion of a point mass to produce the fol
   \begin{bmatrix}\dot{\gls{rs}}\\\dot{\gls{vs}}\end{bmatrix} &=
   \begin{bmatrix}\gls{vs}\\-k\gls{rs}/\gls{m}\end{bmatrix}
 \end{align}
-If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gls{rs0}\) and \(\gls{vs} = 0\) then the analytical solution is:
+where \gls{vs} is the velocity and \gls{m} is the mass. If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gls{rs0}\) and \(\gls{vs} = 0\) then the analytical solution is:
 \begin{align}
   \gls{stvec}(t) &=
   \begin{bmatrix}
@@ -313,10 +334,11 @@ If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gl
     -\gls{omega}\gls{rs0}\sin(\gls{omega}t)
   \end{bmatrix}
 \end{align}
-where the angular velocity, \gls{omega}, is:
+in which \gls{omega} is the angular velocity, given by:
 \begin{align}
   \gls{omega} &= \sqrt{\frac{\gls{k}}{\gls{m}}}
 \end{align}
+This analytical solution can be differentiated twice manually to confirm that it satisfies the governing ODE, and values substituted to confirm that it satisfies the initial conditions.
 
 \begin{problem}[label=eulerStepVectorSpace]{Generalized Euler integration.}
   In the file \filename{ODE.hs},
@@ -332,7 +354,7 @@ where the angular velocity, \gls{omega}, is:
 
 \begin{figure}[htbp]
   \resizebox{\textwidth}{!}{\input{fig/euler-shm}}
-  \caption{Comparison of Euler integration with the analytical result for the position variable of a simple harmonic oscillator. The solid line shows the analytical solution while the points demonstrate the Euler approximation for different time steps.}
+  \caption{Comparison of Euler integration with the analytical result for the position variable of a simple harmonic oscillator. The solid line shows the analytical solution while the points demonstrate the Euler approximations for different time steps.}
   \label{fig:euler-shm}
 \end{figure}
 
@@ -340,10 +362,48 @@ Figure~\ref{fig:euler-shm} shows the position variable of a simple harmonic osci
 
 \section{4th-Order Runge-Kutta Integration}
 
-So far, we have used Euler integration because it is the simplest approach, and it satisfactorily introduced the concepts we rely on from \hspackage{vector-space}. However, there is a more common default for numerical integration of ODEs: the 4th-Order Runge-Kutta method (RK4). RK4 is the default in Matlab and SciPy, although in those packages it is used with an embedded 5th-order approximation for step-size control---something we won't implement here. RK4 is usually a much better choice than the Euler method in terms of the accuracy/performance tradeoff.
+We have used Euler integration so far because it introduced the concepts we rely on from \hspackage{vector-space}. However, there is a more common default for numerical integration of ODEs: the 4th-Order Runge-Kutta method (RK4). RK4 is the default in Matlab and SciPy (in those packages it is typically used with an embedded 5th-order approximation for step-size control; something we won't implement here). RK4 is usually a much better choice than the Euler method in terms of the accuracy/performance tradeoff.
 
-RK4 is far from the final word in numerical integration, however. The popular Numerical Recipes textbook makes the general recommendation of an 8th-order method (Dopr853) for production use \cite{press2007}. Specialized integrators may also be used for particular problems. The Apollo Guidance Computer used Nystr\"om's Method to perform integration, because spacecraft motion was dominated by a central force; the gravitational pull of either the moon or the earth \cite{levine1971}.\footnote{The Draper Lab Apollo documents do refer to RK4 though, as ``The usual fourth-order Runge-Kutta integration''. Apparently it has a long history!} Long-duration astrodynamics problems, such as those concerning solar-system formation, or the behaviour of orbits over thousands of years, may have to use symplectic integrators to achieve reasonable accuracy (eg.~\cite{rein2017}). We don't investigate these methods here because of time limitations, and because RK4 is both easy to implement and entirely sufficient for the examples.
+RK4 is definitely not the final word though! The popular Numerical Recipes textbook recommends an 8th-order method (Dopr853) for general production use in non-stiff systems \cite{press2007}. Specialized integrators may also be used for particular problems. The Apollo Guidance Computer used Nystr\"om's Method to perform integration for efficiency and because of the dominant effect of a single, central gravitational force in most situations \cite{levine1971}.\footnote{The Draper Lab Apollo documents do refer to RK4 though, as ``The usual fourth-order Runge-Kutta integration''. Apparently it has a long history as the ``go to'' approach!} Long-duration astrodynamics problems, such as those concerning solar-system formation, or the behaviour of orbits over thousands of years, may have to use symplectic integrators to achieve reasonable accuracy (eg.~\cite{rein2017}). We don't investigate these methods here because of time limitations, and because RK4 is both easy to implement and entirely sufficient for the examples.
 
+We will only supply the equations for RK4 here and refer readers elsewhere (eg.~\cite{press2007,battin1999}) for a complete derivation:
+\begin{align}
+\mathbf{k_1} &= \gls{dt}\,\gls{f}(\gls{t},\gls{stvec})\\
+\mathbf{k_2} &= \gls{dt}\,\gls{f}(\gls{t} + \tfrac{1}{2}\gls{dt}, \gls{stvec} + \tfrac{1}{2}\mathbf{k_1})\\
+\mathbf{k_3} &= \gls{dt}\,\gls{f}(\gls{t} + \tfrac{1}{2}\gls{dt}, \gls{stvec} + \tfrac{1}{2}\mathbf{k_2})\\
+\mathbf{k_4} &= \gls{dt}\,\gls{f}(\gls{t} + \gls{dt}, \gls{stvec} + \mathbf{k_3}) \\
+\gls{stvec}(\gls{t} + \gls{dt})
+  &\approx
+  \gls{stvec} +
+  \tfrac{1}{6}\mathbf{k_1} +
+  \tfrac{1}{3}\mathbf{k_2} +
+  \tfrac{1}{3}\mathbf{k_3} +
+  \tfrac{1}{6}\mathbf{k_4}
+\end{align}
+The vectors \(\mathbf{k_1}\ldots\mathbf{k_4}\) can be treated as stages of the computation, and are good candidates for let-floating. However, be aware that these equations do not directly represent the Haskell code. Instead, when implementing them, some care must be taken to consider what components are computed by \code{lapply}, what operations are adding vectors, and what operations are offsetting a point by a vector. Determining these are left as part of the exercise.
+
+\begin{problem}[label=rk4shm]{Runge-Kutta Integration.}
+  In the file \filename{ODE.hs},
+  \begin{probitemize}
+  \item implement \code{rk4Step}
+  \end{probitemize}
+  In \filename{ODEExamples.hs},
+  \begin{probitemize}
+  \item run \code{plotSHMComparison Screen}, to view a plot of Euler vs RK4 for the SHM example, using the same number of function evaluations
+  \end{probitemize}
+\end{problem}
+
+Figure~\ref{fig:shm-comparison} shows the comparison of Euler's method and RK4, for the same number of function evaluations. It is clear that RK4 much more closely approximates the analytical result.
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/shm-comparison}}
+  \caption{Comparison of Euler and RK4 integrations, for the same number of function evaluations, with the analytical result of a simple harmonic oscillator.}
+  \label{fig:shm-comparison}
+\end{figure}
+
+\section{Simulating Apollo Lunar Ascent}
+
+WIP.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]

@@ -17,6 +17,7 @@ main = do
   let plots
         = [ (ODEExamples.plotEulerDoubleExpDecay, "euler-double-exp-decay")
           , (ODEExamples.plotEulerSHM, "euler-shm")
+          , (ODEExamples.plotSHMComparison, "shm-comparison")
           ]
 
   putStrLn "Plotting diagrams for the notes."
