@@ -338,6 +338,13 @@ where the angular velocity, \gls{omega}, is:
 
 Figure~\ref{fig:euler-shm} shows the position variable of a simple harmonic oscillator example. Once again, the smaller the time step, the more closely the result tracks the analytical solution.
 
+\section{4th-Order Runge-Kutta Integration}
+
+So far, we have used Euler integration because it is the simplest approach, and it satisfactorily introduced the concepts we rely on from \hspackage{vector-space}. However, there is a more common default for numerical integration of ODEs: the 4th-Order Runge-Kutta method (RK4). RK4 is the default in Matlab and SciPy, although in those packages it is used with an embedded 5th-order approximation for step-size control---something we won't implement here. RK4 is usually a much better choice than the Euler method in terms of the accuracy/performance tradeoff.
+
+RK4 is far from the final word in numerical integration, however. The popular Numerical Recipes textbook makes the general recommendation of an 8th-order method (Dopr853) for production use \cite{press2007}. Specialized integrators may also be used for particular problems. The Apollo Guidance Computer used Nystr\"om's Method to perform integration, because spacecraft motion was dominated by a central force; the gravitational pull of either the moon or the earth \cite{levine1971}.\footnote{The Draper Lab Apollo documents do refer to RK4 though, as ``The usual fourth-order Runge-Kutta integration''. Apparently it has a long history!} Long-duration astrodynamics problems, such as those concerning solar-system formation, or the behaviour of orbits over thousands of years, may have to use symplectic integrators to achieve reasonable accuracy (eg.~\cite{rein2017}). We don't investigate these methods here because of time limitations, and because RK4 is both easy to implement and entirely sufficient for the examples.
+
+
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
 
