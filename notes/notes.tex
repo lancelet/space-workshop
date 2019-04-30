@@ -89,6 +89,9 @@
 
 % Code snippets
 \usepackage{minted}
+\newcommand{\filename}[1]{\texttt{#1}}  % inline file name
+\newcommand{\code}[1]{\texttt{#1}}      % inline code snippet
+\newcommand{\hspackage}[1]{\href{http://hackage.haskell.org/package/#1}{\texttt{#1}}}
 
 % Title and Author
 \usepackage{titling}
@@ -185,7 +188,7 @@ Here, \gls{stvec} is the state vector, \gls{t} is time, and \gls{f} is some func
 
 \subsection{Radioactive Decay}
 
-We will begin implementing Euler's method, specialized to \texttt{Double}, using the process of radioactive decay as an example. Radioactive decay is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable (\gls{N}), which can be represented as a \texttt{Double}. Specializing to \texttt{Double} also gives us a simple starting point that is representative of the approach used in many other programming languages.
+We will begin implementing Euler's method, specialized to \code{Double}, using the process of radioactive decay as an example. Radioactive decay is simple enough to solve analytically, thus providing a comparison with the numerical result, and it only involves a single state variable (\gls{N}), which can be represented as a \code{Double}. Specializing to \code{Double} also gives us a simple starting point that is representative of the approach used in many other programming languages.
 
 In radioactive decay, the rate of decay, \(\dot{\gls{N}}\), is proportional to the number of moles of radioactive particles that remain at any instant in time, \gls{N}:
 \begin{align}
@@ -213,22 +216,22 @@ thus:
 \end{align}
 As an example, consider the isotope Plutonium-238 (\isotope[238]{Pu}), which has been used in radioisotope thermoelectric generators (RTGs) for spacecraft such as the Voyager 1 and 2 probes. This isotope has a half-life of approximately 87.7 years.
 
-\begin{problem}[label=eulerStepDouble]{Euler integration specialized to \texttt{Double}.}
-  In the file \texttt{ODE.hs},
+\begin{problem}[label=eulerStepDouble]{Euler integration specialized to \code{Double}.}
+  In the file \filename{ODE.hs},
   \begin{probitemize}
-  \item implement \texttt{eulerStepDouble}, which takes a single step of Euler integration
-  \item implement \texttt{integrateEulerDouble}, which takes multiple steps
+  \item implement \code{eulerStepDouble}, which takes a single step of Euler integration
+  \item implement \code{integrateEulerDouble}, which takes multiple steps
   \end{probitemize}
-  In \texttt{ODEExamples.hs},
+  In \filename{ODEExamples.hs},
   \begin{probitemize}
-  \item run \texttt{plotEulerDoubleExpDecay Screen}, to view a plot of Euler integration applied to the radioactive decay example
+  \item run \code{plotEulerDoubleExpDecay Screen}, to view a plot of Euler integration applied to the radioactive decay example
   \end{probitemize}
 \end{problem}
 
 \begin{figure}[htbp]
   \centering
   \resizebox{\textwidth}{!}{\input{fig/euler-double-exp-decay}}
-  \caption{Comparison of Euler integration with the analytical result for radioactive decay of the isotope \isotope[238]{Pu}. The solid line shows the analytic solution while the points demonstrate the Euler approximation for different time steps.}
+  \caption{Comparison of Euler integration with the analytical result for radioactive decay of the isotope \isotope[238]{Pu}. The solid line shows the analytical solution while the points demonstrate the Euler approximation for different time steps.}
   \label{fig:euler-double-exp-decay}
 \end{figure}
 
@@ -236,7 +239,7 @@ Figure~\ref{fig:euler-double-exp-decay} shows the result of applying Euler integ
 
 \section{Generalizing Euler's Method}
 
-We will now generalize Euler's method using the abstractions available in the \texttt{vector-space} package. The necessary constraints are captured in Listing~\ref{lst:euler-vector-space}. Don't panic if this seems a lot to take in, since we'll see a few concrete examples.
+We will now generalize Euler's method using the abstractions available in the \hspackage{vector-space} package. The necessary constraints are captured in Listing~\ref{lst:euler-vector-space}. Don't panic if this seems a lot to take in, since we'll see a few concrete examples.
 
 \begin{listing}[htbp]
 \begin{minted}[fontsize=\small]{haskell}
@@ -250,52 +253,49 @@ eulerStep
   -> (time, state)                     -- ^ Before the step @(t, x)@
   -> (time, state)                     -- ^ After the step @(t, x)@
 \end{minted}
-\caption{Constraints for Euler's method generalized by \texttt{vector-space}.}
+\caption{Constraints for Euler's method generalized by \hspackage{vector-space}.}
 \label{lst:euler-vector-space}
 \end{listing}
 
-The first concept we introduce is the difference between an \texttt{AffineSpace} and its associated \texttt{VectorSpace}. In the present context, points in the \texttt{AffineSpace} are points belonging to the state space of the problem, of type \texttt{state}. Vectors of the associated \texttt{VectorSpace}, of type \texttt{diff}, represent deltas or differences between the points. We can add a vector to a point to obtain a new point, but we don't sum points directly. Most widely-used frameworks for numerical integration do not make this distinction.
+The first concept we introduce is the difference between an \code{AffineSpace} and its associated \code{VectorSpace}. In the present context, points in the \code{AffineSpace} are points belonging to the state space of the problem, of type \code{state}. Vectors of the associated \code{VectorSpace}, of type \code{diff}, represent deltas or differences between the points. We can add a vector to a point to obtain a new point, but we don't sum points directly. Most widely-used frameworks for numerical integration do not make this distinction.
 
-Next is the concept of a linear map representing the co-domain of the gradient function: \texttt{time :-* diff}. In our case, where we deal with finite differences, this constructor can be considered analogous to a function of type \texttt{time -> diff}, but constrained to be linear. A very simple illustration of the linear map is shown in Listing~\ref{lst:linear-map-scalar}. The \texttt{linear} function assumes that the function it has been provided is linear, and it memoizes the values of that function along each basis vector of the vector space.
+Next is the concept of a linear map representing the derivative: \code{time :-* diff}. In our case, where we deal with finite differences, this constructor can be considered analogous to a function of type \code{time -> diff}, but constrained to be linear. A very simple illustration of the linear map is shown in Listing~\ref{lst:linear-map-scalar}. The \code{linear} function assumes that the function it has been provided is linear, and it memoizes the values of that function along each basis vector of the vector space.
 
 \begin{listing}[htbp]
 \begin{minted}[fontsize=\small]{haskell}
 > :set -XFlexibleContexts
 > import Data.LinearMap ((:-*), linear, lapply)
-> :{
-| f :: Double -> Double
-| f x = 5 * x
-| :}
-> linearMap = linear f
-> :t linearMap
-linearMap :: Double :-* Double
-> lapply linearMap 1
+> f = (*) 5 :: Double -> Double
+> lm = linear f
+> :t lm
+lm :: Double :-* Double
+> lapply lm 1
 5.0
-> lapply linearMap 2
+> lapply lm 2
 10.0
 \end{minted}
 \caption{Illustration of a simple, scalar linear map.}
 \label{lst:linear-map-scalar}
 \end{listing}
 
-Finally, we need to describe the operations that can be used on instances of \texttt{AffineSpace} and its associated \texttt{VectorSpace}:
+Finally, we need to describe the operations that can be used on instances of \code{AffineSpace} and its associated \code{VectorSpace}:
 \begin{pardescription}[leftmargin=6em,style=nextline]
-\item [\texttt{lapply m h}] applies linear map \texttt{m} to vector \texttt{h}
-\item [\texttt{p .+\^{} v}] adds vector \texttt{v} to point \texttt{p}
-\item [\texttt{a \^{}+\^{} b}] adds vector \texttt{a} to vector \texttt{b}
+\item [\code{lapply m h}] applies linear map \code{m} to vector \code{h}
+\item [\code{p .+\^{} v}] adds vector \code{v} to point \code{p}
+\item [\code{a \^{}+\^{} b}] adds vector \code{a} to vector \code{b}
 \end{pardescription}
 These operations are sufficient to implement the generalized form of Euler's method.
 
 \subsection{Simple Harmonic Motion}
 
-To motivate the generalized form of Euler's method, let's consider simple harmonic motion, with two scalar state variables:
+To motivate the generalized form of Euler's method, let's consider simple harmonic motion (SHM), with two scalar state variables:
 \begin{paritemize}
 \item Position, \gls{rs}
 \item Velocity, \gls{vs}
 \end{paritemize}
-The data type \texttt{State} in \texttt{ODEExamples.hs} describes this state, which is the \texttt{AffineSpace} of the problem. It introduces statically type-checked units from the \texttt{units} package for length and velocity. The data type \texttt{DState} is the correspondng \texttt{VectorSpace} of the problem, representing deltas in the state.
+The data type \code{State} in \filename{ODEExamples.hs} describes this state, which is the \code{AffineSpace} of the problem. It introduces statically type-checked units from the \hspackage{units} package for length and velocity. The data type \code{DState} is the correspondng \code{VectorSpace} of the problem, representing deltas in the state.
 
-In simple harmonic motion, a linear spring force, \gls{Fs}, is proportional to the position:
+In SHM, a linear spring force, \gls{Fs}, is proportional to the position:
 \begin{align}
   \gls{Fs} &= -\gls{k}\gls{rs}
 \end{align}
@@ -305,7 +305,7 @@ This is combined with the equations of motion of a point mass to produce the fol
   \begin{bmatrix}\dot{\gls{rs}}\\\dot{\gls{vs}}\end{bmatrix} &=
   \begin{bmatrix}\gls{vs}\\-k\gls{rs}/\gls{m}\end{bmatrix}
 \end{align}
-If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gls{rs0}\) and \(\gls{vs} = 0\) then the analytic solution is:
+If the initial conditions of the problem at \(\gls{t} = 0\) are \(\gls{rs} = \gls{rs0}\) and \(\gls{vs} = 0\) then the analytical solution is:
 \begin{align}
   \gls{stvec}(t) &=
   \begin{bmatrix}
@@ -319,12 +319,24 @@ where the angular velocity, \gls{omega}, is:
 \end{align}
 
 \begin{problem}[label=eulerStepVectorSpace]{Generalized Euler integration.}
-  In the file \texttt{ODE.hs},
+  In the file \filename{ODE.hs},
   \begin{probitemize}
-  \item implement \texttt{eulerStep}
-  \item implement \texttt{integrate} and \texttt{integrateWithDiff}
+  \item implement \code{eulerStep}
+  \item implement \code{integrate} and \code{integrateWithDiff}
+  \end{probitemize}
+  In \filename{ODEExamples.hs},
+  \begin{probitemize}
+  \item run \code{plotEulerSHM Screen}, to view a plot of the position state variable, computed by Euler integration of SHM equations
   \end{probitemize}
 \end{problem}
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/euler-shm}}
+  \caption{Comparison of Euler integration with the analytical result for the position variable of a simple harmonic oscillator. The solid line shows the analytical solution while the points demonstrate the Euler approximation for different time steps.}
+  \label{fig:euler-shm}
+\end{figure}
+
+Figure~\ref{fig:euler-shm} shows the position variable of a simple harmonic oscillator example. Once again, the smaller the time step, the more closely the result tracks the analytical solution.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
