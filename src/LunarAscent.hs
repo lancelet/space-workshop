@@ -48,13 +48,10 @@ defaultAscentTarget
 plotLunarAscentMoonView :: Plot.Output -> IO ()
 plotLunarAscentMoonView output = do
   let
-    burnSteps = burn 10 (Types.constants) defaultAscentTarget
+    burnSteps = burn BurnLastOnly 10 (Types.constants) defaultAscentTarget
     coastSteps = coast (Types.constants) (last burnSteps)
     rBurn = (eachN 10 burnSteps) <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
     rCoast = coastSteps <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
-
-  -- putStrLn $ show sims
-
   Plot.plotOrbitSystem output
     (Plot.OrbitSystem
      [ Plot.Trajectory "Burn" (0,1) rBurn D.red
@@ -63,19 +60,32 @@ plotLunarAscentMoonView output = do
      ])
 
 
+plotLunarAscentVerticalRise :: Plot.Output -> IO ()
+plotLunarAscentVerticalRise output = do
+  let
+    burnSteps = burn BurnIncludeAll 10 (Types.constants) defaultAscentTarget
+    initRise = takeWhile (\sim -> sim^.time <= 16.0 % [si| s |]) burnSteps
+    rInitRise = initRise
+            <&> (\sim -> sim^.dynamics.pos .# [si| km |])
+            <&> v2Tuple
+            <&> toRangeCoords
+            <&> (\(x, y) -> (x * 1000.0, y * 1000.0))
+    twoSecondFlags = eachN 10 rInitRise
+  Plot.xyChart
+    output
+    "Vertical Rise Phase (16 seconds)"
+    "Down Range (m)"
+    "Altitude (m)"
+    [ Plot.Line "Ascent Trajectory" rInitRise
+    , Plot.Points "2s markers (one every 2s)" twoSecondFlags
+    ]
+
+
 plotLunarAscentBurnOnly :: Plot.Output -> IO ()
 plotLunarAscentBurnOnly output = do
   let
-    burnSteps = burn 10 (Types.constants) defaultAscentTarget
+    burnSteps = burn BurnLastOnly 10 (Types.constants) defaultAscentTarget
     rBurn = burnSteps <&> (\sim -> sim^.dynamics.pos .# [si| km |]) <&> v2Tuple <&> toRangeCoords
-
-    -- converts MFCS to range coordinates (Down-range, altitude); units of km
-    toRangeCoords :: (Double, Double) -> (Double, Double)
-    toRangeCoords (xmfcs, ymfcs) = (downRange, altitude)
-      where
-        altitude  = sqrt (xmfcs*xmfcs + ymfcs*ymfcs) - 1731.1
-        downRange = 1731.1 * atan2 xmfcs ymfcs
-
   Plot.xyChart
     output
     "Lunar Ascent Burn Trajectory"
@@ -84,15 +94,32 @@ plotLunarAscentBurnOnly output = do
     [ Plot.Line "Burn Trajectory" rBurn
     ]
 
+-- | Convert MFCS to range coordinates (Down-range, altitude); units of km.
+toRangeCoords :: (Double, Double) -> (Double, Double)
+toRangeCoords (xmfcs, ymfcs) = (downRange, altitude)
+  where
+    altitude  = sqrt (xmfcs*xmfcs + ymfcs*ymfcs) - 1731.1
+    downRange = 1731.1 * atan2 xmfcs ymfcs
+
+
+-- | Which points to keep from the burn phase.
+--
+-- It turns out that `diagrams` just isn't plotting properly if all the points
+-- are kept, so this lets us switch depending on the detail required.
+data BurnInterp
+  = BurnIncludeAll  -- ^ Include all interpolated points during the burn phase
+  | BurnLastOnly    -- ^ Include only the last point from each 2s burn phase
+
 
 burn
   :: forall a.
      ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
-  => Int
+  => BurnInterp
+  -> Int
   -> Constants a
   -> AscentTarget a
   -> [Sim a]
-burn nSteps constants target =
+burn burnInterp nSteps constants target =
   let
     step :: Sim a -> Maybe (NonEmpty (Sim a), Sim a)
     step s =
@@ -101,10 +128,12 @@ burn nSteps constants target =
       in
         rs <&> \ne -> (ne, NonEmpty.last ne)
   in
-    NonEmpty.head <$> unfoldr step (initSim constants)
+    case burnInterp of
+      BurnLastOnly   -> NonEmpty.head <$> unfoldr step (initSim constants)
+      BurnIncludeAll -> concat $ NonEmpty.toList <$> unfoldr step (initSim constants)
 
 
--- | Take every nth item from a list.
+-- | Take every nth item from a list, starting from the first.
 eachN
   :: Int  -- ^ how many to drop
   -> [a]  -- ^ input list of items

@@ -145,11 +145,15 @@ plotOrbitSystem output system =
       let png = plotOrbitSystemPNGBS system
       LBS.hPutStr stdout (ITermShow.displayImage png)
       putStrLn ""
-    PGF _ -> error "Not yet implemented"
+    PGF filePath -> do
+      let
+        dia = mconcat (plotSystemItem output <$> systemItems system)
+        -- framed = D.bgFrame 400 D.white dia
+      PGF.renderPGF filePath (D.mkWidth 400) dia
     PNG _ -> error "Not yet implemented"
     SVG filePath -> do
       let
-        dia = mconcat (plotSystemItem <$> systemItems system)
+        dia = mconcat (plotSystemItem output <$> systemItems system)
         framed = D.bgFrame 400 D.white dia
       SVG.renderSVG filePath (D.mkWidth 1024) framed
 
@@ -157,7 +161,7 @@ plotOrbitSystem output system =
 plotOrbitSystemPNGBS :: OrbitSystem -> LBS.ByteString
 plotOrbitSystemPNGBS system =
   let
-    dia = mconcat (plotSystemItem <$> systemItems system)
+    dia = mconcat (plotSystemItem (PNG undefined) <$> systemItems system)
     diaFramed = D.bgFrame 400 D.white dia
     img = BR.rasterRgb8 (D.dims2D 1200 1200) diaFramed
   in
@@ -167,15 +171,22 @@ plotOrbitSystemPNGBS system =
 plotSystemItem
   :: ( D.Renderable (D.Path D.V2 Double) b
      , D.Renderable (D.Text Double) b )
-  => OrbitSystemItem
+  => Output
+  -> OrbitSystemItem
   -> D.QDiagram b D.V2 Double D.Any
-plotSystemItem (Planet pname r c)
-  = D.text (Text.unpack pname) # D.fontSize (D.output 30) # D.fc D.black
+plotSystemItem output (Planet pname r c)
+  = D.text (Text.unpack pname) # D.fontSize (getFontSize output) # D.fc D.black
  <> D.circle r # D.fc c
-plotSystemItem (Trajectory tname tnamePos pts c)
+plotSystemItem output (Trajectory tname tnamePos pts c)
   = D.beside (D.r2 tnamePos)
              (D.fromVertices (D.p2 . fancyScale <$> pts) # D.lc c # D.pad 1.1)
-             (D.alignedText 0.5 0.0 (Text.unpack tname) # D.fontSize (D.output 30) # D.fc c)
+             (D.alignedText 0.5 0.0 (Text.unpack tname) # D.fontSize (getFontSize output) # D.fc c)
+
+
+getFontSize :: Output -> D.Measured Double Double
+getFontSize (PNG _) = D.output 30.0
+getFontSize (PGF _) = D.output 12.0
+getFontSize _       = error "Not Implemented"
 
 
 fancyScale :: (Double, Double) -> (Double, Double)

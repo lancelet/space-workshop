@@ -12,7 +12,7 @@ main :: IO ()
 main = putStrLn "TODO"
 
 plotKephartDragCurves :: FilePath -> IO ()
-plotKephartDragCurves filePath =
+plotKephartDragCurves _ =
   let
     x1, x2, x3, x4 :: [(Double, Double)]
     ms :: [Double]
