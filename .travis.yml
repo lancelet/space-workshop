@@ -12,7 +12,6 @@ language: generic
 cache:
   directories:
   - $HOME/.stack
-  - $HOME/lancelet/space-workshop/.stack-work/install
 
 # Ensure necessary system libraries are present
 addons:
