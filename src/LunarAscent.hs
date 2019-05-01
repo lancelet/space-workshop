@@ -1,4 +1,5 @@
 {-# LANGUAGE NegativeLiterals    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -37,42 +38,51 @@ import           Units              (si, ( # ), (%), (%.), (*|), (.#), (|*^|),
 import qualified Units              as U
 
 
-goTemp :: IO ()
-goTemp = do
+defaultAscentTarget :: AscentTarget Double
+defaultAscentTarget
+  = AscentTarget
+    (v2 5.9436 1679.2956 % [si| m/s |])
+    ((1731.1 % [si| km |]) |+| (18288.0 % [si| m |]))
+
+
+plotLunarAscentMoonView :: Plot.Output -> IO ()
+plotLunarAscentMoonView output = do
   let
-    target = AscentTarget
-             (v2 5.9436 1679.2956 % [si| m/s |])
-             ((1731.1 % [si| km |]) |+| (18288.0 % [si| m |]))
-    sim0 = initSim @Double (Types.constants)
-    sim1 = burnStep 1 (Types.constants) target sim0
+    burnSteps = burn 10 (Types.constants) defaultAscentTarget
+    coastSteps = coast (Types.constants) (last burnSteps)
+    rBurn = (eachN 10 burnSteps) <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
+    rCoast = coastSteps <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
 
-  case sim1 of
-    Nothing -> putStrLn "No sim1"
-    Just xs -> do
-      putStrLn $ show $ (\x -> x^.dynamics) <$> xs
-
-
-
-plotTemp :: Plot.Output -> IO ()
-plotTemp output = do
-  let
-    target = AscentTarget
-             (v2 5.9436 1679.2956 % [si| m/s |])
-             ((1731.1 % [si| km |]) |+| (18288.0 % [si| m |]))
-    sims = burn 2 (Types.constants) target
-    coasts = coast (Types.constants) (last sims)
-    rBurn = sims <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
-    rCoast = coasts <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
-
-  putStrLn $ show sims
+  -- putStrLn $ show sims
 
   Plot.plotOrbitSystem output
     (Plot.OrbitSystem
-     [ Plot.Trajectory rBurn D.red
-     , Plot.Trajectory rCoast D.green
-     , Plot.Planet 1731.1 D.grey
+     [ Plot.Trajectory "Burn" (0,1) rBurn D.red
+     , Plot.Trajectory "Coast" (1,1) rCoast D.green
+     , Plot.Planet "Moon" 1731.1 D.grey
      ])
 
+
+plotLunarAscentBurnOnly :: Plot.Output -> IO ()
+plotLunarAscentBurnOnly output = do
+  let
+    burnSteps = burn 10 (Types.constants) defaultAscentTarget
+    rBurn = burnSteps <&> (\sim -> sim^.dynamics.pos .# [si| km |]) <&> v2Tuple <&> toRangeCoords
+
+    -- converts MFCS to range coordinates (Down-range, altitude); units of km
+    toRangeCoords :: (Double, Double) -> (Double, Double)
+    toRangeCoords (xmfcs, ymfcs) = (downRange, altitude)
+      where
+        altitude  = sqrt (xmfcs*xmfcs + ymfcs*ymfcs) - 1731.1
+        downRange = 1731.1 * atan2 xmfcs ymfcs
+
+  Plot.xyChart
+    output
+    "Lunar Ascent Burn Trajectory"
+    "Down Range (km)"
+    "Altitude (km)"
+    [ Plot.Line "Burn Trajectory" rBurn
+    ]
 
 
 burn
@@ -91,8 +101,16 @@ burn nSteps constants target =
       in
         rs <&> \ne -> (ne, NonEmpty.last ne)
   in
-    -- concat $ NonEmpty.tail <$> unfoldr step (initSim constants)
     NonEmpty.head <$> unfoldr step (initSim constants)
+
+
+-- | Take every nth item from a list.
+eachN
+  :: Int  -- ^ how many to drop
+  -> [a]  -- ^ input list of items
+  -> [a]  -- ^ output list of items
+eachN _ []     = []
+eachN n (x:xs) = x : eachN n (drop (n - 1) xs)
 
 
 coast
@@ -119,8 +137,6 @@ coast constants sim =
         }
   in
     mkSim <$> dynStates
-
-
 
 
 burnStep

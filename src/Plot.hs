@@ -22,6 +22,7 @@ import qualified Diagrams.Backend.Rasterific               as BR
 import qualified Diagrams.Backend.SVG                      as SVG
 import           Diagrams.Prelude                          (( # ))
 import qualified Diagrams.Prelude                          as D
+import qualified Diagrams.TwoD.Text                        as D
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as Chart
 import qualified Graphics.Rendering.Chart.Easy             as Chart
 import qualified ITermShow
@@ -133,8 +134,8 @@ data OrbitSystem
   = OrbitSystem
     { systemItems :: [OrbitSystemItem] }
 data OrbitSystemItem
-  = Planet { radius :: Double, color :: Colour Double }
-  | Trajectory { points :: [(Double, Double)], color :: Colour Double }
+  = Planet { name :: Text, radius :: Double, color :: Colour Double }
+  | Trajectory { name :: Text, namePos :: (Double, Double), points :: [(Double, Double)], color :: Colour Double }
 
 
 plotOrbitSystem :: Output -> OrbitSystem -> IO ()
@@ -158,16 +159,23 @@ plotOrbitSystemPNGBS system =
   let
     dia = mconcat (plotSystemItem <$> systemItems system)
     diaFramed = D.bgFrame 400 D.white dia
-    img = BR.rasterRgb8 (D.dims2D 1600 1200) diaFramed
+    img = BR.rasterRgb8 (D.dims2D 1200 1200) diaFramed
   in
     Png.encodePng img
 
 
-plotSystemItem :: (D.Renderable (D.Path D.V2 Double) b) => OrbitSystemItem -> D.QDiagram b D.V2 Double D.Any
-plotSystemItem (Planet r c)
-  = D.circle r # D.fc c
-plotSystemItem (Trajectory pts c)
-  = D.fromVertices (D.p2 . fancyScale <$> pts) # D.lc c
+plotSystemItem
+  :: ( D.Renderable (D.Path D.V2 Double) b
+     , D.Renderable (D.Text Double) b )
+  => OrbitSystemItem
+  -> D.QDiagram b D.V2 Double D.Any
+plotSystemItem (Planet pname r c)
+  = D.text (Text.unpack pname) # D.fontSize (D.output 30) # D.fc D.black
+ <> D.circle r # D.fc c
+plotSystemItem (Trajectory tname tnamePos pts c)
+  = D.beside (D.r2 tnamePos)
+             (D.fromVertices (D.p2 . fancyScale <$> pts) # D.lc c # D.pad 1.1)
+             (D.alignedText 0.5 0.0 (Text.unpack tname) # D.fontSize (D.output 30) # D.fc c)
 
 
 fancyScale :: (Double, Double) -> (Double, Double)
