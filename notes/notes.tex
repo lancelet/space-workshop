@@ -440,6 +440,36 @@ In our version of the algorithm, we have made some minor simplifications to suit
 
 Although the details above are unlikely to be investigated deeply during the workshop, the larger point is to demonstrate that a relatively involved control algorithm can be simulated using the integration approaches developed in this chapter.
 
+\begin{problem}[label=rk4shm]{Using the RK4 Integrator to Simulate Apollo Lunar Ascent Guidance.}
+  In the file \filename{LunarAscent.hs},
+  \begin{probitemize}
+  \item run \code{plotLunarAscentVerticalRise Screen}, to view the vertical rise phase of the ascent
+  \item run \code{plotLunarAscentBurnOnly Screen}, to view the entire burn phase
+  \item run \code{plotLunarAscentMoonView Screen}, to display a moon-centred view of the burn and coasting 
+  \end{probitemize}
+\end{problem}
+
+Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phase of the lunar ascent. This closely matches the published vertical rise phase reported in Bennett~\cite{bennett1970} (Figure~13). Figure~\ref{fig:lunar-ascent-burn-only} shows the entire orbital insertion phase, which corresponds to Figures~14 and 15 from Bennett~\cite{bennett1970}. Finally, Figure~\ref{fig:lunar-ascent-moon-view} shows a moon-centred view of the burn and later coasting orbit, computed numerically. In Figure~\ref{fig:lunar-ascent-moon-view}, the radial altitude above the moon is magnified by a factor of 10 to better distinguish the orbits. This is common in many illustrations of lunar orbits (for example, Figure~12 of Bennett~\cite{bennett1970}).
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/lunar-ascent-vertical-rise}}
+  \caption{The first \SI{16}{\s} of lunar ascent, including the vertical rise phase.}
+  \label{fig:lunar-ascent-vertical-rise}
+\end{figure}
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/lunar-ascent-burn-only}}
+  \caption{The entire burn phase of the lunar ascent, shown using altitude-downrange coordinates. The altitude is the radial height above the moon surface, while downrange is the arc-length distance travelled when projected radially downward onto the lunar surface.}
+  \label{fig:lunar-ascent-burn-only}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.5\textwidth}{!}{\input{fig/lunar-ascent-moon-view}}
+  \caption{Moon-centred view of the burn and coasting phases. The radial (altitude) scale above the lunar surface is magnified by a factor of 10.}
+  \label{fig:lunar-ascent-moon-view}
+\end{figure}
+
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
 

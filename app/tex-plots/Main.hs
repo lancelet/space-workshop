@@ -9,6 +9,7 @@ import           Control.Monad        (forM_)
 import           System.IO            (hFlush, stdout)
 
 import qualified Examples.ODEExamples as ODEExamples
+import qualified LunarAscent          as LunarAscent
 import qualified Plot                 as Plot
 
 
@@ -18,6 +19,9 @@ main = do
         = [ (ODEExamples.plotEulerDoubleExpDecay, "euler-double-exp-decay")
           , (ODEExamples.plotEulerSHM, "euler-shm")
           , (ODEExamples.plotSHMComparison, "shm-comparison")
+          , (LunarAscent.plotLunarAscentVerticalRise, "lunar-ascent-vertical-rise")
+          , (LunarAscent.plotLunarAscentBurnOnly, "lunar-ascent-burn-only")
+          , (LunarAscent.plotLunarAscentMoonView, "lunar-ascent-moon-view")
           ]
 
   putStrLn "Plotting diagrams for the notes."
