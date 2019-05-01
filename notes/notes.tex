@@ -411,12 +411,13 @@ The approach we use for simulation involves checking-in with our version of the 
 
 A rare feature of this simulation is that it incorporates statically-checked units, from the \hspackage{units} package. Whether or not that was a worthwhile exercise is debatable, as the overhead and extra code complexity is somewhat overwhelming. However, we do have static confirmation that almost all aspects of the algorithm use consistent units.
 
-The ascent guidance uses the following parameters as a target:
+The ascent guidance used the following parameters as a target:
 \begin{paritemize}
-\item target velocity (a 2D vector)
+\item target velocity (a 2D vector in our version; 3D in the original)
 \item target radius (a scalar distance measured from the center of the moon)
+\item distance from the Command Service Module (CSM) orbital plane (removed in our version)
 \end{paritemize}
-During the Apollo missions, the desired insertion orbit of the ascent stage was computed by Misson Control in advance of starting the ascent. That orbit determined a final radius and velocity that should be reached at the end of the burn, specifying the required target parameters. In our simulation, we did not perform any of those calculations, but instead used the target parameters for a ``quick, early takeoff'', which were programmed by default into the AGC, and would typically be overridden by the astronauts under nominal conditions \cite{levine1971}. The phase of the orbit relative to the Command Service Module (CSM) would be set approximately, by knowing the nominal ascent duration and timing the takeoff accordingly \cite{levine1971}. Rendezvous with the CSM was an entirely different manouvre, performed after the ascent, and not part of the ascent guidance \cite{levine1971}.
+During the Apollo missions, the desired insertion orbit of the ascent stage was computed by Misson Control in advance of starting the ascent. That orbit determined the target parameters. In our simulation, we did not perform those calculations, but instead used the target parameters for a ``quick, early takeoff'', which were programmed by default into the AGC, and would typically be overridden by the astronauts under nominal conditions \cite{levine1971}. The phase of the orbit relative to the CSM would be set approximately, by knowing the nominal ascent duration and scheduling the takeoff accordingly \cite{levine1971}. Rendezvous with the CSM was an entirely different manouvre, performed after the ascent, and not part of the ascent guidance \cite{levine1971}.
 
 The inner workings of the guidance algorithm are somewhat outside the scope of this workshop, and in fact are not derived in the Draper Lab document \cite{levine1971}. We can roughly describe our inferred understanding of the approach based upon other texts. A detailed derivation of multiple types of guidance is provided by Battin \cite{battin1999}, who was a core member of the Draper Lab during the Apollo era. A freely-available derivation that quite closely matches the Apollo algorithm is also provided by Townsend et al.~\cite{townsend1968}, although those authors do not specifically mention Apollo.
 
@@ -434,9 +435,10 @@ In our version of the algorithm, we have made some minor simplifications to suit
 \item Window Pointing Direction (WDP) is unused and not specified (it always points toward the center of the moon in the original version anyway).
 \item The Digital Autopilot (not technically part of the Ascent Guidance itself) is not modelled in full, and is instead substituted by a piecewise constant angular acceleration.
 \item We did not take into account additional thrust produced by +X firing of the RCS for attitude control. Due to the regular angular acceleration, and thus regular RCS burns during ascent, this may result in our slightly underestimating the net thrust.
+\item We did not compute any of the user-feedback parameters that were only computed to be displayed on the AGC Display and Keyboard (DSKY), rather than participating in guidance.
 \end{itemize}
 
-Although the details above are unlikely to be investigated deeply during the workshop, the larger point is to demonstrate that a relatively involved control algorithm, that was part of one of the most astounding engineering achievements in history, can be simulated fairly easily using the integration approaches developed in this chapter.
+Although the details above are unlikely to be investigated deeply during the workshop, the larger point is to demonstrate that a relatively involved control algorithm can be simulated using the integration approaches developed in this chapter.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
