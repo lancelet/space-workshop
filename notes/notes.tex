@@ -108,9 +108,14 @@
 \usepackage[symbols,nogroupskip]{glossaries-extra}
 \glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
 \glsxtrnewsymbol[description={Total force, scalar (\si{N}).}]{Fs}{\ensuremath{F}}
+\glsxtrnewsymbol[description={Thrust force, scalar (\si{N}).}]{FTs}{\ensuremath{F_T}}
+\glsxtrnewsymbol[description={Standard gravity (\SI{9.80665}{m/s^2}).}]{g0}{\ensuremath{g_0}}
 \glsxtrnewsymbol[description={Time step (\si{s}).}]{dt}{\ensuremath{h}}
+\glsxtrnewsymbol[description={Vacuum specific impulse (\si{s}).}]{Is}{\ensuremath{I_s}}
 \glsxtrnewsymbol[description={Spring constant (\si{N/m}).}]{k}{\ensuremath{k}}
 \glsxtrnewsymbol[description={Mass (\si{kg}).}]{m}{\ensuremath{m}}
+\glsxtrnewsymbol[description={Dry mass; mass of rocket stage without propellant (\si{kg}).}]{md}{\ensuremath{m_d}}
+\glsxtrnewsymbol[description={Propellant mass (\si{kg}).}]{mp}{\ensuremath{m_p}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
 \glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
@@ -121,6 +126,7 @@
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
 \glsxtrnewsymbol[description={Angular frequency (\si{\per\s}).}]{omega}{\ensuremath{\omega}}
+\glsxtrnewsymbol[description={Propellant mass fraction.}]{zeta}{\ensuremath{\zeta}}
 
 %------------------------------------------------------------------------------
 % DOCUMENT
@@ -469,6 +475,92 @@ Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phas
   \caption{Moon-centred view of the burn and coasting phases. The radial (altitude) scale above the lunar surface is magnified by a factor of 10.}
   \label{fig:lunar-ascent-moon-view}
 \end{figure}
+
+\chapter{Rocket Staging: Mass Budget, Specific Impulse and the Tsiolkovsky Rocket Equation}
+
+Rockets that deliver payloads to Earth orbit usually have multiple stages. There are several reasons for using multi-stage rockets, including:
+
+\begin{itemize}
+\item Greatly reduced fuel use. This is achieved by discarding portions of the rocket that were only used to support the fuel that was previously being carried.
+\item Selection of rocket engines for the various stages that operate well in different parts of the atmosphere or in vacuum. For example, the optimal nozzle geometry of liquid fuel rocket engines depends on the ambient pressure \cite{marble1964,huzel1967}.
+\item Economic factors. Earlier rocket stages can often be returned to Earth, recovered and re-used more cheaply than a single stage, due to lower mass and less downrange displacement.
+\end{itemize}
+
+We will examine the first of these benefits by considering the Tsiolkovsky Rocket Equation. This equation is often used as the basis of high-level discussions of mission planning and rocket capabilities.
+
+This chapter of the workshop introduces many basic approximations that are frequently used for simulating rockets. We will build up to a simulation where we compare the behaviour of a single-stage vs two-stage rocket, carring the same amount of fuel, during a gravity-free vacuum burn.
+
+\section{Propellant Mass Fraction}
+
+We shall define the propellant mass fraction of a rocket stage, \gls{zeta}, as the available mass of propellant, \gls{mp}, divided by the total mass of the stage:
+\begin{align}
+  \gls{zeta} &= \frac{\gls{mp}}{\gls{mp} + \gls{md}}
+\end{align}
+where \gls{md} is the ``dry mass'' of the stage (ie. the mass without any propellant). For real rocket systems, this equation may need to be modified to incorporate factors such as liquid propellant residuals and reserves \cite{holt2009}, but we ignore those components here for simplicity. Rearranging to solve for \gls{md} gives:
+\begin{align}
+  \gls{md} &= \gls{mp} \left(\frac{1}{\gls{zeta}} - 1\right)
+\end{align}
+
+The dry mass, \gls{md}, is the mass of entire stage without fuel, and thus accounts for the mass of components such as the engines, the fuel tanks, and the payload. However, the payload mass is only approximately 30\% of the dry mass on average \cite{springmann2004}, so most of the dry mass is consumed by non-payload components. This percentage depends heavily on the mission type \cite{gerberich2013}, with wide variation, but it demonstrates the importance of the overall structure of the rocket compared with the payload.
+
+Holt and Monk \cite{holt2009} provide some plots of typical propellant mass fractions for various launch systems. As a nominal figure we will choose \(\gls{zeta}=0.9\) for our simulations. This figure does not greatly impact the observations we will eventually make regarding the impact of staging, so a ``typical'' value is entirely adequate to illustrate the point.
+
+\section{Specific Impulse}
+
+In our simulation, we will specify that the rocket is burning a bipropellant mixture of liquid oxygen (LOx) and Rocket Propellant-1 (RP1). RP1 is a refined kerosene. This is the propellant system reported to be used by SpaceX Merlin engines.
+
+A commonly-used measure for the performance of a rocket engine is its specific impulse \cite{huzel1967}, \gls{Is}. This represents not just the propellant but the entire engine design. Thus, an \gls{Is} figure could vary somewhat between engines even if they were to use identical propellant. However, bearing this in mind, specific impulse values can be used in the design phase as representative of the performance of a particular propellant, assuming some near-optimal engine were to be provided later. The magnitude of the thrust force, \gls{FTs}, is related to the specific impulse by:
+\begin{align}
+  \gls{FTs} &= \gls{g0} \gls{Is} \dot{\gls{m}}
+\end{align}
+where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\) is the mass flow rate of propellant (the rate at which fuel is being burned). In the current discussion, this figure is valid only for a vacuum. Under conditions of atmospheric pressure at sea level, the effective \gls{Is}, and thus the thrust produced, is typically reduced by around 10\% \cite{kephart1971}.
+
+We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web that quote a figure more like \SI{350}{\s}, but we were unable to find any high-quality references to support this in the time prior to the workshop.}
+
+\section{Simulating The Effect of Staging}
+
+Now let's compare the effect of using one stage vs two for a rocket carrying the same total amount of propellant, with a fixed propellant mass fraction for each stage. We will simulate the rocket burning all its propellant from a zero-velocity start, in a vacuum with no gravitational effects. Table~\ref{tab:staging-param} shows the parameters for the simulation. In the single stage simulation, the propellant mass will be carried in just one stage (Table~\ref{tab:single-stage}), while for the two-stage simulation, it will be split evenly between stages (Table~\ref{tab:two-stage}).
+
+\begin{table}
+  \centering
+  \begin{tabular}[htbp]{ l r l l }
+    \toprule
+    Parameter              & Symbol            & Value        & Units     \\ \midrule
+    Total propellant mass  & \gls{mp}          & \num{500000} & \si{kg}   \\
+    Mass flow rate         & \(\dot{\gls{m}}\) & \num{300}    & \si{kg/s} \\
+    Specific Impulse       & \gls{Is}          & \num{0.9}    &           \\
+    \bottomrule
+  \end{tabular}
+  \caption{Rocket parameters for staging simulation.}
+  \label{tab:staging-param}
+\end{table}
+
+\begin{table}
+  \centering
+  \begin{tabular}[htbp]{ l r l l }
+    \toprule
+    Parameter       & Symbol   & Value        & Units     \\ \midrule
+    Propellant mass & \gls{mp} & \num{500000} & \si{kg}   \\
+    Dry mass        & \gls{md} & \num{55556}  & \si{kg}   \\
+    \bottomrule
+  \end{tabular}
+  \caption{Single-stage rocket parameters.}
+  \label{tab:single-stage}
+\end{table}
+
+\begin{table}
+  \centering
+  \begin{tabular}[htbp]{ l r l l l }
+    \toprule
+                    &          & \multicolumn{2}{c}{Value}    &           \\ \cmidrule{3-4}
+    Parameter       & Symbol   & Stage 1      & Stage 2       & Units     \\ \midrule
+    Propellant mass & \gls{mp} & \num{250000} & \num{250000}  & \si{kg}   \\
+    Dry mass        & \gls{md} & \num{27778}  & \num{27778}   & \si{kg}   \\
+    \bottomrule
+  \end{tabular}
+  \caption{Two-stage rocket parameters.}
+  \label{tab:two-stage}
+\end{table}
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
