@@ -116,6 +116,7 @@
 \glsxtrnewsymbol[description={Mass (\si{kg}).}]{m}{\ensuremath{m}}
 \glsxtrnewsymbol[description={Dry mass; mass of rocket stage without propellant (\si{kg}).}]{md}{\ensuremath{m_d}}
 \glsxtrnewsymbol[description={Propellant mass (\si{kg}).}]{mp}{\ensuremath{m_p}}
+\glsxtrnewsymbol[description={Total mass of remaining stages (\si{kg}).}]{mr}{\ensuremath{m_r}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
 \glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
@@ -511,6 +512,7 @@ In our simulation, we will specify that the rocket is burning a bipropellant mix
 A commonly-used measure for the performance of a rocket engine is its specific impulse \cite{huzel1967}, \gls{Is}. This represents not just the propellant but the entire engine design. Thus, an \gls{Is} figure could vary somewhat between engines even if they were to use identical propellant. However, bearing this in mind, specific impulse values can be used in the design phase as representative of the performance of a particular propellant, assuming some near-optimal engine were to be provided later. The magnitude of the thrust force, \gls{FTs}, is related to the specific impulse by:
 \begin{align}
   \gls{FTs} &= \gls{g0} \gls{Is} \dot{\gls{m}}
+  \label{eq:fts-specific-impulse}
 \end{align}
 where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\) is the mass flow rate of propellant (the rate at which fuel is being burned). In the current discussion, this figure is valid only for a vacuum. Under conditions of atmospheric pressure at sea level, the effective \gls{Is}, and thus the thrust produced, is typically reduced by around 10\% \cite{kephart1971}.
 
@@ -562,7 +564,30 @@ Now let's compare the effect of using one stage vs two for a rocket carrying the
   \label{tab:two-stage}
 \end{table}
 
-
+The state vector for the simulation will represent the propellant mass, position and velocity:
+\begin{align}
+  \gls{stvec} &=
+  \begin{bmatrix}
+    \gls{mp} \\
+    \gls{rs} \\
+    \gls{vs}
+  \end{bmatrix}
+\end{align}
+While the equation of motion of the system is:
+\begin{align}
+  \dot{\gls{stvec}} &=
+  \begin{bmatrix}
+    \dot{\gls{mp}} \\
+    \dot{\gls{rs}} \\
+    \dot{\gls{vs}}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    -\dot{\gls{m}} \\
+    \gls{vs} \\
+    \gls{g0}\gls{Is}\dot{\gls{m}} / (\gls{mp} + \gls{md} + \gls{mr})
+  \end{bmatrix}
+\end{align}
+where the new symbol, \gls{mr}, is the total mass of all remaining stages. The rate of change of the propellant is the mass flow rate, the rate of change of position is velocity, and the rate of change of velocity is the thrust force (Eq~\ref{eq:fts-specific-impulse}) divided by the total instantaneous mass. The burn for each stage will be conducted for \((\gls{mp}/\dot{\gls{m}})\)~\si{s}, which is the time required to burn all the propellant.
 
 \section{Tsiolkovsky Rocket Equation}
 
