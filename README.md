@@ -4,9 +4,9 @@
 
 [![Build Status](https://travis-ci.org/lancelet/space-workshop.svg?branch=master)](https://travis-ci.org/lancelet/space-workshop)
 
-This workshop is still WIP.
+This workshop is still WIP. Estimated completion is currently 70%.
 
-The current notes for the workshop (VERY WIP) are available from
+The current notes for the workshop are available from
 [GitHub pages](https://lancelet.github.io/space-workshop), built using Travis CI.
 
 ## Developer Notes
