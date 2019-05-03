@@ -446,7 +446,7 @@ In our version of the algorithm, we have made some minor simplifications to suit
 
 Although the details above are unlikely to be investigated deeply during the workshop, the larger point is to demonstrate that a relatively involved control algorithm can be simulated using the integration approaches developed in this chapter.
 
-\begin{problem}[label=rk4shm]{Using the RK4 Integrator to Simulate Apollo Lunar Ascent Guidance.}
+\begin{problem}[label=lunar-ascent-guidance]{Using the RK4 Integrator to Simulate Apollo Lunar Ascent Guidance.}
   In the file \filename{LunarAscent.hs},
   \begin{probitemize}
   \item run \code{plotLunarAscentVerticalRise Screen}, to view the vertical rise phase of the ascent
@@ -476,7 +476,7 @@ Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phas
   \label{fig:lunar-ascent-moon-view}
 \end{figure}
 
-\chapter{Rocket Staging: Mass Budget, Specific Impulse and the Tsiolkovsky Rocket Equation}
+\chapter{Rocket Staging and the Tsiolkovsky Rocket Equation}
 
 Rockets that deliver payloads to Earth orbit usually have multiple stages. There are several reasons for using multi-stage rockets, including:
 
@@ -496,14 +496,13 @@ We shall define the propellant mass fraction of a rocket stage, \gls{zeta}, as t
 \begin{align}
   \gls{zeta} &= \frac{\gls{mp}}{\gls{mp} + \gls{md}}
 \end{align}
-where \gls{md} is the ``dry mass'' of the stage (ie. the mass without any propellant). For real rocket systems, this equation may need to be modified to incorporate factors such as liquid propellant residuals and reserves \cite{holt2009}, but we ignore those components here for simplicity. Rearranging to solve for \gls{md} gives:
+where \gls{md} is the ``dry mass'' of the stage (ie.\ the mass without any propellant). For real rocket systems, this equation may need to be modified to incorporate factors such as liquid propellant residuals and reserves \cite{holt2009}, but we ignore those components here for simplicity. Rearranging to solve for \gls{md} gives:
 \begin{align}
   \gls{md} &= \gls{mp} \left(\frac{1}{\gls{zeta}} - 1\right)
 \end{align}
-
 The dry mass, \gls{md}, is the mass of entire stage without fuel, and thus accounts for the mass of components such as the engines, the fuel tanks, and the payload. However, the payload mass is only approximately 30\% of the dry mass on average \cite{springmann2004}, so most of the dry mass is consumed by non-payload components. This percentage depends heavily on the mission type \cite{gerberich2013}, with wide variation, but it demonstrates the importance of the overall structure of the rocket compared with the payload.
 
-Holt and Monk \cite{holt2009} provide some plots of typical propellant mass fractions for various launch systems. As a nominal figure we will choose \(\gls{zeta}=0.9\) for our simulations. This figure does not greatly impact the observations we will eventually make regarding the impact of staging, so a ``typical'' value is entirely adequate to illustrate the point.
+Holt and Monk \cite{holt2009} provide some plots of typical propellant mass fractions for various launch systems. As a nominal figure we will choose \(\gls{zeta}=0.9\) for our simulations.
 
 \section{Specific Impulse}
 
@@ -517,18 +516,19 @@ where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\)
 
 We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web that quote a figure more like \SI{350}{\s}, but we were unable to find any high-quality references to support this in the time prior to the workshop.}
 
-\section{Simulating The Effect of Staging}
+\section{Simulating Staging}
 
 Now let's compare the effect of using one stage vs two for a rocket carrying the same total amount of propellant, with a fixed propellant mass fraction for each stage. We will simulate the rocket burning all its propellant from a zero-velocity start, in a vacuum with no gravitational effects. Table~\ref{tab:staging-param} shows the parameters for the simulation. In the single stage simulation, the propellant mass will be carried in just one stage (Table~\ref{tab:single-stage}), while for the two-stage simulation, it will be split evenly between stages (Table~\ref{tab:two-stage}).
 
 \begin{table}
   \centering
-  \begin{tabular}[htbp]{ l r l l }
+  \begin{tabular}[htbp]{ l r r l }
     \toprule
-    Parameter              & Symbol            & Value        & Units     \\ \midrule
-    Total propellant mass  & \gls{mp}          & \num{500000} & \si{kg}   \\
-    Mass flow rate         & \(\dot{\gls{m}}\) & \num{300}    & \si{kg/s} \\
-    Specific Impulse       & \gls{Is}          & \num{0.9}    &           \\
+    Parameter                & Symbol            & Value        & Units     \\ \midrule
+    Total propellant mass    & \gls{mp}          & \num{500000} & \si{kg}   \\
+    Mass flow rate           & \(\dot{\gls{m}}\) & \num{290}    & \si{kg/s} \\
+    Specific impulse         & \gls{Is}          & \num{300}    & \si{s}    \\
+    Propellant mass fraction & \gls{zeta}        & \num{0.9}    &           \\
     \bottomrule
   \end{tabular}
   \caption{Rocket parameters for staging simulation.}
@@ -537,20 +537,20 @@ Now let's compare the effect of using one stage vs two for a rocket carrying the
 
 \begin{table}
   \centering
-  \begin{tabular}[htbp]{ l r l l }
+  \begin{tabular}[htbp]{ l r r l }
     \toprule
     Parameter       & Symbol   & Value        & Units     \\ \midrule
     Propellant mass & \gls{mp} & \num{500000} & \si{kg}   \\
     Dry mass        & \gls{md} & \num{55556}  & \si{kg}   \\
     \bottomrule
   \end{tabular}
-  \caption{Single-stage rocket parameters.}
+  \caption{Single-stage starting mass parameters.}
   \label{tab:single-stage}
 \end{table}
 
 \begin{table}
   \centering
-  \begin{tabular}[htbp]{ l r l l l }
+  \begin{tabular}[htbp]{ l r r r l }
     \toprule
                     &          & \multicolumn{2}{c}{Value}    &           \\ \cmidrule{3-4}
     Parameter       & Symbol   & Stage 1      & Stage 2       & Units     \\ \midrule
@@ -558,9 +558,14 @@ Now let's compare the effect of using one stage vs two for a rocket carrying the
     Dry mass        & \gls{md} & \num{27778}  & \num{27778}   & \si{kg}   \\
     \bottomrule
   \end{tabular}
-  \caption{Two-stage rocket parameters.}
+  \caption{Two-stage starting mass parameters.}
   \label{tab:two-stage}
 \end{table}
+
+
+
+\section{Tsiolkovsky Rocket Equation}
+
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
