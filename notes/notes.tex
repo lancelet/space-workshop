@@ -84,6 +84,9 @@
 }
 \makeatother
 
+% Tikz pictures
+\usepackage{tikz}
+
 % Nice(r) fraction symbols
 \usepackage{nicefrac}
 
@@ -106,6 +109,11 @@
 \usepackage{siunitx}
 \sisetup{per-mode = symbol}
 \usepackage[symbols,nogroupskip]{glossaries-extra}
+\glsxtrnewsymbol[description={Acceleration (\si{\m/\s/\s}).}]{a}{\ensuremath{\mathbf{a}}}
+\glsxtrnewsymbol[description={Unit vector in the \(r\) direction.}]{er}{\ensuremath{\mathbf{e_r}}}
+\glsxtrnewsymbol[description={Unit vector in the \(x\) direction.}]{ex}{\ensuremath{\mathbf{e_x}}}
+\glsxtrnewsymbol[description={Unit vector in the \(y\) direction.}]{ey}{\ensuremath{\mathbf{e_y}}}
+\glsxtrnewsymbol[description={Unit vector in the \(\theta\) direction.}]{etheta}{\ensuremath{\mathbf{e_{\theta}}}}
 \glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
 \glsxtrnewsymbol[description={Total force, scalar (\si{N}).}]{Fs}{\ensuremath{F}}
 \glsxtrnewsymbol[description={Thrust force, scalar (\si{N}).}]{FTs}{\ensuremath{F_T}}
@@ -121,16 +129,19 @@
 \glsxtrnewsymbol[description={Total mass of remaining stages (\si{kg}).}]{mr}{\ensuremath{m_r}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
 \glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
+\glsxtrnewsymbol[description={Position (\si{m}).}]{r}{\ensuremath{\mathbf{r}}}
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
 \glsxtrnewsymbol[description={Position, scalar, at \(t=0\) (\si{m}).}]{rs0}{\ensuremath{r_0}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
 \glsxtrnewsymbol[description={Final time (\si{\s}).}]{tf}{\ensuremath{t_f}}
 \glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\left(\nicefrac{1}{2}\right)}}}
+\glsxtrnewsymbol[description={Velocity (\si{m/s}).}]{v}{\ensuremath{\mathbf{v}}}
 \glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
 \glsxtrnewsymbol[description={Initial velocity, scalar (\si{m/s}).}]{vsi}{\ensuremath{v_i}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Delta-V (\si{m/s}).}]{deltav}{\ensuremath{\Delta{}v}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
+\glsxtrnewsymbol[description={Angle (radians).}]{theta}{\ensuremath{\theta}}
 \glsxtrnewsymbol[description={Angular frequency (\si{\per\s}).}]{omega}{\ensuremath{\omega}}
 \glsxtrnewsymbol[description={Propellant mass fraction.}]{zeta}{\ensuremath{\zeta}}
 
@@ -521,7 +532,7 @@ A commonly-used measure for the performance of a rocket engine is its specific i
 \end{align}
 where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\) is the mass flow rate of propellant (the rate at which propellant, including both the base fuel and oxidiser, is being burned). In the current discussion, this figure is valid only for a vacuum. Under conditions of atmospheric pressure at sea level, the effective \gls{Is}, and thus the thrust produced, is typically reduced by around 10\% \cite{kephart1971}.
 
-We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web, particularly relating to the SpaceX Merlin engines, that quote a figure more like \SI{350}{\s}. However, we were unable to find any high-quality academic or NASA-endorsed references to support this in the time prior to the workshop. The reference we quote has a foreword written by Wernher von Braun, so it seems rather more trustworthy.}
+We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web, particularly relating to the SpaceX Merlin engines, that quote a figure more like \SI{350}{\s}. However, we were unable to find any high-quality academic or NASA-endorsed references to support this in the time prior to the workshop. The reference we quote has a foreword written by Wernher von Braun, so it seems rather more trustworthy albeit possibly out-of-date.}
 
 \section{Simulating Staging}
 
@@ -569,7 +580,7 @@ Now let's compare the effect of using one stage vs two for a rocket carrying the
   \label{tab:two-stage}
 \end{table}
 
-The state vector for the simulation will represent the propellant mass, position and velocity:
+The state space for the simulation will represent the propellant mass, position and velocity:
 \begin{align}
   \gls{stvec} &=
   \begin{bmatrix}
@@ -684,6 +695,105 @@ And for the two-stage rocket, we simply add the \gls{deltav} from burning each s
   &= \SI{8536}{m/s}
 \end{align}
 
+\chapter{Hohmann Transfers}
+
+In this chapter, we will set up our first 2D spacecraft manoeuvre in which the available analytical solution is only approximate (but still close enought to provide a guide).
+
+We will set up a Hohmann transfer, which is a way to transfer between two coplanar orbits \cite{battin1999}. To simplify the situation, we will assume that the source and destination orbits are circular. Analytical treatments of Hohmann transfer manoeuvres assume that an instantaneous impulse can be delivered to the spacecraft. In reality, this instantaneous impulse becomes a burn that is merely very short compared with the orbital periods involved.
+
+The analytical derivation in this chapter involves some mathematics that is more involved than previous chapters. Feel free to skip it if necessary (only the results are important for the numerical simulation). We provide it because a short yet complete treatment is somewhat difficult to find online.
+
+\section{Acceleration in Polar Coordinates}
+
+Figure~\ref{fig:polar} shows a pair of 2D coordinate systems: an inertial system with orthogonal unit vectors \gls{ex} and \gls{ey}, and a non-inertial system, with instantaneous orthogonal unit vectors \gls{er} and \gls{etheta}, which correspond to the instantaneous directions of a polar coordinate system. A point is illustrated at a distance \gls{rs} from the origin at angle \gls{theta} from the \(x\) axis. Notice that if the point moves, then the basis vectors \gls{er} and \gls{etheta} would also change. We are going to describe motion in terms of the \gls{er} and \gls{etheta} directions, because the force applied to orbiting bodies will be applied only along \gls{er}. However, because these vectors constitute a non-inertial reference frame, we must account for their time dependence.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    % Main coordinate lines
+    \draw[semithick,->] (-0.5,0) -- (4,0) node [right] {\(x\)};
+    \draw[semithick,->] (0,-0.5) -- (0,4) node [left] {\(y\)};
+    % ex and ey
+    \draw[ultra thick,<->]
+    (1,0) node [below] {\gls{ex}}
+    -- (0,0)
+    -- (0,1) node [left] {\gls{ey}};
+    %\draw[ultra thick,->] (0,0) -- (1,0) node [below]{\gls{ex}};
+    %\draw[ultra thick,->] (0,0) -- (0,1) node [left]{\gls{ey}};
+    % point
+    \fill (3,2) circle [radius=0.1];
+    % er and etheta
+    \begin{scope}[rotate=33.69,xshift=3.60555cm]
+      \draw[ultra thick,->] (0,0) -- (1,0) node [right]{\gls{er}};
+      \draw[ultra thick,->] (0,0) -- (0,1) node [left]{\gls{etheta}};
+    \end{scope}
+    % r
+    \draw[thick] (0,0) -- (3,2) node [midway,above] {\gls{rs}};
+    % theta
+    \draw[thick,->,shorten >=1mm,shorten <=1mm] (2,0) arc [start angle=0,end angle=33.69,radius=2cm]
+      node [midway,right] {\gls{theta}};
+  \end{tikzpicture}
+  \caption{Polar coordinates and polar unit vectors.}
+  \label{fig:polar}
+\end{figure}
+
+We can write \gls{er} and \gls{etheta} in terms of \gls{ex} and \gls{ey} as follows:
+\begin{align}
+  \gls{er} &= \gls{ex}\cos\gls{theta} + \gls{ey}\sin\gls{theta} \\
+  \gls{etheta} &= -\gls{ex}\sin\gls{theta} + \gls{ey}\cos\gls{theta}
+\end{align}
+Now consider the derivatives of these unit vectors with respect to the angle \gls{theta} (and notice that they have no dependence on \gls{rs}):
+\begin{align}
+  \frac{d\gls{er}}{d\gls{theta}}
+  &= -\gls{ex}\sin\gls{theta} + \gls{ey}\cos\gls{theta} = \gls{etheta} \\
+  \frac{d\gls{etheta}}{d\gls{theta}}
+  &= -\gls{ex}\cos\gls{theta} - \gls{ey}\sin\gls{theta} = -\gls{er}
+\end{align}
+As indicated, we will need the time derivatives of these basis vectors. Relative to the inertial system, they depend only on \gls{theta}, so the time derivatives can be expressed using the chain rule as follows:
+\begin{align}
+  \dot{\gls{er}} &= \frac{d\gls{er}}{d\gls{theta}}\frac{d\gls{theta}}{d\gls{t}}
+    = \dot{\gls{theta}}\gls{etheta} \\
+  \dot{\gls{etheta}} &= \frac{d\gls{etheta}}{d\gls{theta}}\frac{d\gls{theta}}{d\gls{t}}
+    = -\dot{\gls{theta}}\gls{er}
+\end{align}
+To describe motion in this coordinate system, we must have terms for position, velocity and acceleration. Position, \gls{r}, is given very simply by:
+\begin{align}
+  \gls{r} &= \gls{rs}\gls{er}
+\end{align}
+Velocity, \gls{v}, is then the time derivative, using the chain rule:
+\begin{align}
+  \gls{v} &= \frac{d\gls{r}}{d\gls{t}} \\
+  &= \frac{d}{d\gls{t}}\,\gls{rs}\gls{er} \\
+  &= \dot{\gls{rs}}\gls{er} + r\dot{\gls{er}} \\
+  &= \dot{\gls{rs}}\gls{er} + r\dot{\gls{theta}}\gls{etheta}
+\end{align}
+Finally, acceleration, \gls{a}, is the time derivative of velocity:
+\begin{align}
+  \gls{a} &= \frac{d\gls{v}}{d\gls{t}} \\
+  &= \frac{d}{d\gls{t}}\,\left(\dot{\gls{rs}}\gls{er} + r\dot{\gls{theta}}\gls{etheta}\right) \\
+  &= \ddot{\gls{rs}}\gls{er}
+     + \dot{\gls{rs}}\dot{\gls{er}}
+     + \dot{\gls{rs}}\dot{\gls{theta}}\gls{etheta}
+     + \gls{rs}\ddot{\gls{theta}}\gls{etheta}
+     + \gls{rs}\dot{\gls{theta}}\dot{\gls{etheta}} \\
+  &= \ddot{\gls{rs}}\gls{er}
+     + \dot{\gls{rs}}\dot{\gls{theta}}\gls{etheta}
+     + \dot{\gls{rs}}\dot{\gls{theta}}\gls{etheta}
+     + \gls{rs}\ddot{\gls{theta}}\gls{etheta}
+     - \gls{rs}\dot{\gls{theta}}^2\gls{er} \\
+  &= \left(
+     \ddot{\gls{rs}}
+     - \gls{rs}\dot{\gls{theta}}^2
+     \right)\gls{er}
+     + \left(
+     \gls{rs}\ddot{\gls{theta}}
+     + 2\dot{\gls{rs}}\dot{\gls{theta}}
+     \right)\gls{etheta}
+\end{align}
+
+\section{Kepler Problem and Elliptical Orbit Solutions}
+
+\section{Energetics of Transfer Orbits}
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
