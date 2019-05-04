@@ -115,6 +115,8 @@
 \glsxtrnewsymbol[description={Spring constant (\si{N/m}).}]{k}{\ensuremath{k}}
 \glsxtrnewsymbol[description={Mass (\si{kg}).}]{m}{\ensuremath{m}}
 \glsxtrnewsymbol[description={Dry mass; mass of rocket stage without propellant (\si{kg}).}]{md}{\ensuremath{m_d}}
+\glsxtrnewsymbol[description={Final mass (\si{kg}).}]{mf}{\ensuremath{m_f}}
+\glsxtrnewsymbol[description={Initial mass (\si{kg}).}]{mi}{\ensuremath{m_i}}
 \glsxtrnewsymbol[description={Propellant mass (\si{kg}).}]{mp}{\ensuremath{m_p}}
 \glsxtrnewsymbol[description={Total mass of remaining stages (\si{kg}).}]{mr}{\ensuremath{m_r}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
@@ -122,9 +124,12 @@
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
 \glsxtrnewsymbol[description={Position, scalar, at \(t=0\) (\si{m}).}]{rs0}{\ensuremath{r_0}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
+\glsxtrnewsymbol[description={Final time (\si{\s}).}]{tf}{\ensuremath{t_f}}
 \glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\left(\nicefrac{1}{2}\right)}}}
 \glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
+\glsxtrnewsymbol[description={Initial velocity, scalar (\si{m/s}).}]{vsi}{\ensuremath{v_i}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
+\glsxtrnewsymbol[description={Delta-V (\si{m/s}).}]{deltav}{\ensuremath{\Delta{}v}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
 \glsxtrnewsymbol[description={Angular frequency (\si{\per\s}).}]{omega}{\ensuremath{\omega}}
 \glsxtrnewsymbol[description={Propellant mass fraction.}]{zeta}{\ensuremath{\zeta}}
@@ -428,7 +433,7 @@ During the Apollo missions, the desired insertion orbit of the ascent stage was 
 
 The inner workings of the guidance algorithm are somewhat outside the scope of this workshop, and in fact are not derived in the Draper Lab document \cite{levine1971}. We can roughly describe our inferred understanding of the approach based upon other texts. A detailed derivation of multiple types of guidance is provided by Battin \cite{battin1999}, who was a core member of the Draper Lab during the Apollo era. A freely-available derivation that quite closely matches the Apollo algorithm is also provided by Townsend et al.~\cite{townsend1968}, although those authors do not specifically mention Apollo.
 
-Given the ascent target parameters, the guidance begins each polling loop by computing a velocity-to-be-gained. This is the difference between the target velocity and the current velocity, corrected for any velocity losses during the burn from gravitational acceleration. The change in velocity due to gravity was given by an expression obtained by integrating the gravitational acceleration analytically. The upper limit of that integration required an approximation of the remaining burn time (time-to-go estimate). The initial time-to-go estimate was a hard-coded value, but subsequent iterations obtained an estimate from a Taylor Series expansion of the well-known Tsiolkovsky Rocket Equation, using the velocity-to-be-gained as the delta-V. Finally, a control law, referred to as the ``linear guidance concept'' \cite{levine1971}, was used to choose the commanded thrust direction, so that the velocity-to-be-gained would fall to zero at the end of the burn, thus matching the target velocity, and the target radius would also be achieved. In addition, the algorithm contained several, somewhat more ad-hoc tweaks, such as prioritising radial thrust and performing bang-bang directional control of radial acceleration if the target radius was reached early.
+Given the ascent target parameters, the guidance begins each polling loop by computing a velocity-to-be-gained. This is the difference between the target velocity and the current velocity, corrected for any velocity losses during the burn from gravitational acceleration. The change in velocity due to gravity was given by an expression obtained by integrating the gravitational acceleration analytically. The upper limit of that integration required an approximation of the remaining burn time (time-to-go estimate). The initial time-to-go estimate was a hard-coded value, but subsequent iterations obtained an estimate from a Taylor Series expansion of the well-known Tsiolkovsky Rocket Equation (see Section~\ref{sec:tsiolkovsky}), using the velocity-to-be-gained as the delta-V. Finally, a control law, referred to as the ``linear guidance concept'' \cite{levine1971}, was used to choose the commanded thrust direction, so that the velocity-to-be-gained would fall to zero at the end of the burn, thus matching the target velocity, and the target radius would also be achieved. In addition, the algorithm contained several, somewhat more ad-hoc tweaks, such as prioritising radial thrust and performing bang-bang directional control of radial acceleration if the target radius was reached early.
 
 Given the Draper Lab's prior involvement with ballistic missile projects, such as the Minuteman ICBMs \cite{dennis2018}, the ascent guidance algorithm seems quite likely to have been influenced by missile systems. It also seems likely that earlier practical tests of those systems and other rockets lent some confidence to the early choice of guidance approaches. However, it is naturally extremely difficult to track down any details of large weapons systems for final confirmation.\footnote{I tried. Hopefully I'm not on any (additional) watch lists now. - J.~Merritt.}
 
@@ -501,7 +506,7 @@ where \gls{md} is the ``dry mass'' of the stage (ie.\ the mass without any prope
 \begin{align}
   \gls{md} &= \gls{mp} \left(\frac{1}{\gls{zeta}} - 1\right)
 \end{align}
-The dry mass, \gls{md}, is the mass of entire stage without fuel, and thus accounts for the mass of components such as the engines, the fuel tanks, and the payload. However, the payload mass is only approximately 30\% of the dry mass on average \cite{springmann2004}, so most of the dry mass is consumed by non-payload components. This percentage depends heavily on the mission type \cite{gerberich2013}, with wide variation, but it demonstrates the importance of the overall structure of the rocket compared with the payload.
+The dry mass, \gls{md}, is the mass of the entire stage without fuel, and thus accounts for the mass of components such as the engines, the fuel tanks, and the payload. However, the payload mass is only approximately 30\% of the dry mass on average \cite{springmann2004}, so most of the dry mass is consumed by non-payload components. This percentage depends heavily on the mission type \cite{gerberich2013}, with wide variation, but it demonstrates the importance of the overall structure of the rocket compared with the payload.
 
 Holt and Monk \cite{holt2009} provide some plots of typical propellant mass fractions for various launch systems. As a nominal figure we will choose \(\gls{zeta}=0.9\) for our simulations.
 
@@ -514,9 +519,9 @@ A commonly-used measure for the performance of a rocket engine is its specific i
   \gls{FTs} &= \gls{g0} \gls{Is} \dot{\gls{m}}
   \label{eq:fts-specific-impulse}
 \end{align}
-where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\) is the mass flow rate of propellant (the rate at which fuel is being burned). In the current discussion, this figure is valid only for a vacuum. Under conditions of atmospheric pressure at sea level, the effective \gls{Is}, and thus the thrust produced, is typically reduced by around 10\% \cite{kephart1971}.
+where \gls{g0} is the standard acceleration due to gravity and \(\dot{\gls{m}}\) is the mass flow rate of propellant (the rate at which propellant, including both the base fuel and oxidiser, is being burned). In the current discussion, this figure is valid only for a vacuum. Under conditions of atmospheric pressure at sea level, the effective \gls{Is}, and thus the thrust produced, is typically reduced by around 10\% \cite{kephart1971}.
 
-We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web that quote a figure more like \SI{350}{\s}, but we were unable to find any high-quality references to support this in the time prior to the workshop.}
+We will specify a LOx-RP1 engine with an \(\gls{Is} = \SI{300}{\s}\) \cite{huzel1967}.\footnote{There are sources on the web, particularly relating to the SpaceX Merlin engines, that quote a figure more like \SI{350}{\s}. However, we were unable to find any high-quality academic or NASA-endorsed references to support this in the time prior to the workshop. The reference we quote has a foreword written by Wernher von Braun, so it seems rather more trustworthy.}
 
 \section{Simulating Staging}
 
@@ -586,6 +591,7 @@ While the equation of motion of the system is:
     \gls{vs} \\
     \gls{g0}\gls{Is}\dot{\gls{m}} / (\gls{mp} + \gls{md} + \gls{mr})
   \end{bmatrix}
+  \label{eq:stage-eom}
 \end{align}
 where the new symbol, \gls{mr}, is the total mass of all remaining stages. The rate of change of the propellant is the mass flow rate, the rate of change of position is velocity, and the rate of change of velocity is the thrust force (Eq~\ref{eq:fts-specific-impulse}) divided by the total instantaneous mass. The burn for each stage will be conducted for \((\gls{mp}/\dot{\gls{m}})\)~\si{s}, which is the time required to burn all the propellant.
 
@@ -609,6 +615,74 @@ Figure~\ref{fig:staging-velocity-comparison} shows the effect of staging on the 
 \end{figure}
 
 \section{Tsiolkovsky Rocket Equation}
+\label{sec:tsiolkovsky}
+
+We can derive the famous Tsiolkovsky Rocket Equation from Eq~\ref{eq:stage-eom}. Start by subsituting the multiple mass components in the acceleration term by a single instantaneous mass:
+\begin{align}
+  \dot{\gls{vs}} &= \frac{\gls{g0}\gls{Is}\dot{\gls{m}}}{\gls{m}}
+\end{align}
+If we burn mass at a uniform rate then the instantaneous mass, \gls{m}, can be written as:
+\begin{align}
+  \gls{m}(\gls{t}) &= \gls{mi} - \dot{\gls{m}}\gls{t}
+\end{align}
+where \gls{mi} is the initial mass. Then we can integrate this equation to find the change in velocity due to the burn (final velocity, \gls{vs}, minus initial velocity, \gls{vsi}) as follows:
+\begin{align}
+  \gls{vs}
+  &=
+  \int_0^{\gls{tf}}\dot{\gls{vs}}\,d\gls{t} \\
+  &=
+  \int_0^{\gls{tf}}\frac{\gls{g0}\gls{Is}\dot{\gls{m}}}{\gls{mi} - \dot{\gls{m}}\gls{t}}\,d\gls{t} \\
+  &=
+  \gls{g0}\gls{Is}\dot{\gls{m}}
+  \left[
+    \frac{1}{-\dot{\gls{m}}}\ln\left(\gls{mi} - \dot{\gls{m}}\gls{t}\right)
+    \right]^{\gls{tf}}_0 + \gls{vsi} \\
+  &=
+  \gls{g0}\gls{Is}
+  \left(
+    \ln\gls{mi} - \ln(\gls{mi} - \dot{\gls{m}}\gls{tf})
+  \right) + \gls{vsi}
+\end{align}
+\begin{align}
+  \gls{vs} - \gls{vsi} = \gls{deltav}
+  &=
+  \gls{g0}\gls{Is} \ln\left(\frac{\gls{mi}}{\gls{mf}}\right)
+  \label{eq:tsiolkovsky}
+\end{align}
+where \gls{tf} is the duration or final time of the burn. \gls{mf} is the final mass, given by \(\gls{mf} = \gls{mi} - \dot{\gls{m}}\gls{tf}\). Eq~\ref{eq:tsiolkovsky} is the famous Tsiolkovsky Rocket Equation.
+
+The quantity \gls{deltav} (``Delta Vee'') is the change in vehicle velocity that would occur under the conditions we have described above: a vacuum burn with no gravity. This quantity expresses the ``magnitude'' of a spacecraft manouevre without referencing the mass of the system, which is of course always changing. Thus, it's a popular way to gauge the requirements of various manouevres in mission planning (eg.~\cite{bennett1970}). Due to the logarithm that appears in the equation, \gls{deltav} requirements of multiple manouevres compose by addition.
+
+We can thus verify our numerical \gls{deltav} findings from the one- and two-stage rocket configurations. For the single-stage rocket:
+\begin{align}
+  \gls{deltav}
+  &=
+  \gls{g0}\gls{Is}\ln\left(
+    \frac{\gls{mp}+\gls{md}}{\gls{md}}
+  \right) \\
+  &=
+  \SI{9.81}{m/s^2}\times\SI{300}{s}\times\ln\left(
+    \frac{\SI{500000}{kg} + \SI{55556}{kg}}{\SI{55556}{kg}}
+  \right) \\
+  &=
+  \SI{6776}{m/s}
+\end{align}
+And for the two-stage rocket, we simply add the \gls{deltav} from burning each stage (bearing in mind the slightly-different definitions of \gls{mp} and \gls{md}):
+\begin{align}
+  \gls{deltav}
+  &=
+  \gls{g0}\gls{Is}
+  \left[
+    \ln\left(
+      \frac{2\gls{mp} + 2\gls{md}}{\gls{mp} + 2\gls{md}}
+    \right)
+    +
+    \ln\left(
+      \frac{\gls{mp} + \gls{md}}{\gls{md}}
+    \right)
+  \right] \\
+  &= \SI{8536}{m/s}
+\end{align}
 
 
 % Symbol Glossary
