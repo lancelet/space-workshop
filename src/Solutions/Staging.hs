@@ -47,18 +47,20 @@ burnStage
   -> Double                      -- ^ Dry mass of the current stage (kg).
   -> Double                      -- ^ Total mass of remaining mass of stages (kg).
   -> Int                         -- ^ Number of integration steps.
+  -> Double                      -- ^ Initial time (s).
   -> T.State                     -- ^ Initial state.
   -> NonEmpty (Double, T.State)  -- ^ List of time and state tuples.
-burnStage mp0 mDry mRemaining nSteps state0
+burnStage mp0 mDry mRemaining nSteps time0 state0
   = ODE.integrate ODE.rk4Step state0 times gradFn
   where
-    -- Time at the end of the burn (s).
-    endBurnTime :: Double
-    endBurnTime = mp0 / mDot
-    
+    -- Duration of the burn (s).
+    burnDuration :: Double
+    burnDuration = mp0 / mDot
+
     -- Evaluation times (s).
     times :: NonEmpty Double
-    times = NonEmpty.fromList (ODE.linspace nSteps 0 endBurnTime)
+    times = NonEmpty.fromList
+            $ ODE.linspace nSteps time0 (time0 + burnDuration)
 
     -- Gradient function for ODE solver.
     gradFn :: (Double, T.State) -> Double :-* T.DState
@@ -71,13 +73,13 @@ burnStage mp0 mDry mRemaining nSteps state0
     -- Specific impulse (s).
     isp :: Double
     isp = 300.0
-  
+
 
 -- | Burn the single stage rocket only.
 burnSingleStage
   :: Int                          -- ^ Number of integration steps per stage.
   -> NonEmpty (Double, T.State)   -- ^ Time and state list.
-burnSingleStage nSteps = burnStage mp0 mDry 0.0 nSteps state0
+burnSingleStage nSteps = burnStage mp0 mDry 0.0 nSteps 0.0 state0
   where
     -- Initial state.
     state0 :: T.State
@@ -86,7 +88,7 @@ burnSingleStage nSteps = burnStage mp0 mDry 0.0 nSteps state0
              , T.position       = 0.0
              , T.velocity       = 0.0
              }
-    
+
     -- Starting propellant mass (kg).
     mp0 :: Double
     mp0 = 500000.0
@@ -104,11 +106,11 @@ burnTwoStage nSteps = stage1 <> stage2
   where
     -- Results from burning the first stage.
     stage1 :: NonEmpty (Double, T.State)
-    stage1 = burnStage mp0 mDry (mp0 + mDry) nSteps state01
+    stage1 = burnStage mp0 mDry (mp0 + mDry) nSteps 0.0 state01
 
     -- Results from burning the second stage.
     stage2 :: NonEmpty (Double, T.State)
-    stage2 = burnStage mp0 mDry 0 nSteps state02
+    stage2 = burnStage mp0 mDry 0 nSteps time2 state02
 
     -- Initial state of the first stage.
     state01 :: T.State
@@ -121,6 +123,10 @@ burnTwoStage nSteps = stage1 <> stage2
     -- Initial state of the second stage.
     state02 :: T.State
     state02 = (snd (NonEmpty.last stage1)) { T.propellantMass = mp0 }
+
+    -- Starting time of the second stage.
+    time2 :: Double
+    time2 = fst (NonEmpty.last stage1)
 
     -- Starting propellant mass for each stage.
     mp0 :: Double

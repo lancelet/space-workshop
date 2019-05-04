@@ -15,6 +15,7 @@ import           Data.AffineSpace   (AffineSpace, Diff, (.+^), (.-.))
 import           Data.VectorSpace   (VectorSpace)
 import           GHC.Generics       (Generic)
 
+
 -- | State of the system.
 data State
   = State
@@ -24,6 +25,7 @@ data State
     }
   deriving (Show)
 
+
 -- | Delta in state of the system.
 data DState
   = DState
@@ -32,6 +34,7 @@ data DState
     , dVelocity       :: Double
     }
   deriving (Show, Generic, AdditiveGroup, VectorSpace)
+
 
 -- | State is an AffineSpace instance, with DState as its associated vector
 --   space.

@@ -589,6 +589,25 @@ While the equation of motion of the system is:
 \end{align}
 where the new symbol, \gls{mr}, is the total mass of all remaining stages. The rate of change of the propellant is the mass flow rate, the rate of change of position is velocity, and the rate of change of velocity is the thrust force (Eq~\ref{eq:fts-specific-impulse}) divided by the total instantaneous mass. The burn for each stage will be conducted for \((\gls{mp}/\dot{\gls{m}})\)~\si{s}, which is the time required to burn all the propellant.
 
+\begin{problem}[label=staging]{Comparison of staging scenarios.}
+  In the file \filename{Staging.hs},
+  \begin{probitemize}
+  \item implement \code{equationOfMotion}
+  \item implement \code{burnStage}
+  \item implement \code{burnSingleStage}
+  \item implement \code{burnTwoStage}
+  \item run \code{plotVelocityComparison Screen}, to view a comparison of the velocity profiles achieved by the two different scenarios
+  \end{probitemize}
+\end{problem}
+
+Figure~\ref{fig:staging-velocity-comparison} shows the effect of staging on the velocity profiles of the two scenarios. As expected, both scenarios are identical until the time at which the first stage of the two-stage scenario is jettisoned. After ejection of the first stage dry mass, the velocity profile of the two-stage rocket increases compared with the single stage rocket.
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/staging-velocity-comparison}}
+  \caption{Velocity profile of the different staging scenarios. The two-stage rocket achieves a substantially higher final velocity despite the same propellant mass.}
+  \label{fig:staging-velocity-comparison}
+\end{figure}
+
 \section{Tsiolkovsky Rocket Equation}
 
 

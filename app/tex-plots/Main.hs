@@ -11,6 +11,7 @@ import           System.IO            (hFlush, stdout)
 import qualified Examples.ODEExamples as ODEExamples
 import qualified LunarAscent          as LunarAscent
 import qualified Plot                 as Plot
+import qualified Staging              as Staging
 
 
 main :: IO ()
@@ -22,6 +23,7 @@ main = do
           , (LunarAscent.plotLunarAscentVerticalRise, "lunar-ascent-vertical-rise")
           , (LunarAscent.plotLunarAscentBurnOnly, "lunar-ascent-burn-only")
           , (LunarAscent.plotLunarAscentMoonView, "lunar-ascent-moon-view")
+          , (Staging.plotVelocityComparison, "staging-velocity-comparison")
           ]
 
   putStrLn "Plotting diagrams for the notes."
