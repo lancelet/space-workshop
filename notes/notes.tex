@@ -110,15 +110,22 @@
 \sisetup{per-mode = symbol}
 \usepackage[symbols,nogroupskip]{glossaries-extra}
 \glsxtrnewsymbol[description={Acceleration (\si{\m/\s/\s}).}]{a}{\ensuremath{\mathbf{a}}}
+\glsxtrnewsymbol[description={Ellipse semi-major axis (\si{\m}).}]{as}{\ensuremath{a}}
+\glsxtrnewsymbol[description={Ellipse semi-minor axis (\si{\m}).}]{bs}{\ensuremath{b}}
 \glsxtrnewsymbol[description={Unit vector in the \(r\) direction.}]{er}{\ensuremath{\mathbf{e_r}}}
 \glsxtrnewsymbol[description={Unit vector in the \(x\) direction.}]{ex}{\ensuremath{\mathbf{e_x}}}
 \glsxtrnewsymbol[description={Unit vector in the \(y\) direction.}]{ey}{\ensuremath{\mathbf{e_y}}}
 \glsxtrnewsymbol[description={Unit vector in the \(\theta\) direction.}]{etheta}{\ensuremath{\mathbf{e_{\theta}}}}
+\glsxtrnewsymbol[description={Eccentricity.}]{e}{\ensuremath{e}}
+\glsxtrnewsymbol[description={Total orbital energy (\si{J}).}]{E}{\ensuremath{E}}
 \glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
 \glsxtrnewsymbol[description={Total force, scalar (\si{N}).}]{Fs}{\ensuremath{F}}
+\glsxtrnewsymbol[description={Force due to gravity (\si{N}).}]{FG}{\ensuremath{\mathbf{F_G}}}
 \glsxtrnewsymbol[description={Thrust force, scalar (\si{N}).}]{FTs}{\ensuremath{F_T}}
-\glsxtrnewsymbol[description={Standard gravity (\SI{9.80665}{m/s^2}).}]{g0}{\ensuremath{g_0}}
+\glsxtrnewsymbol[description={Standard Earth gravity (\SI{9.80665}{m/s^2}).}]{g0}{\ensuremath{g_0}}
+\glsxtrnewsymbol[description={Gravitational constant (\SI{6.67408E-11}{m^3 kg\per s^2}).}]{G}{\ensuremath{G}}
 \glsxtrnewsymbol[description={Time step (\si{s}).}]{dt}{\ensuremath{h}}
+\glsxtrnewsymbol[description={Specific angular momentum (\si{m^2\per\s}).}]{h}{\ensuremath{h_{\omega}}}
 \glsxtrnewsymbol[description={Vacuum specific impulse (\si{s}).}]{Is}{\ensuremath{I_s}}
 \glsxtrnewsymbol[description={Spring constant (\si{N/m}).}]{k}{\ensuremath{k}}
 \glsxtrnewsymbol[description={Mass (\si{kg}).}]{m}{\ensuremath{m}}
@@ -127,20 +134,31 @@
 \glsxtrnewsymbol[description={Initial mass (\si{kg}).}]{mi}{\ensuremath{m_i}}
 \glsxtrnewsymbol[description={Propellant mass (\si{kg}).}]{mp}{\ensuremath{m_p}}
 \glsxtrnewsymbol[description={Total mass of remaining stages (\si{kg}).}]{mr}{\ensuremath{m_r}}
+\glsxtrnewsymbol[description={Mass of dominant body (eg.\ a planet) (\si{kg}).}]{M}{\ensuremath{M}}
 \glsxtrnewsymbol[description={Number of moles of a substance.}]{N}{\ensuremath{N}}
 \glsxtrnewsymbol[description={Number of moles of a substance at \(t=0\).}]{N0}{\ensuremath{N_0}}
+\glsxtrnewsymbol[description={Momentum (\si{kg m\per\s}).}]{p}{\ensuremath{\mathbf{p}}}
 \glsxtrnewsymbol[description={Position (\si{m}).}]{r}{\ensuremath{\mathbf{r}}}
 \glsxtrnewsymbol[description={Position, scalar (\si{m}).}]{rs}{\ensuremath{r}}
 \glsxtrnewsymbol[description={Position, scalar, at \(t=0\) (\si{m}).}]{rs0}{\ensuremath{r_0}}
+\glsxtrnewsymbol[description={Apoapsis radius (\si{m}).}]{ra}{\ensuremath{r_a}}
+\glsxtrnewsymbol[description={Periapsis radius (\si{m}).}]{rp}{\ensuremath{r_p}}
+\glsxtrnewsymbol[description={Inner radius of Hohmann transfer(\si{m}).}]{r1}{\ensuremath{r_1}}
+\glsxtrnewsymbol[description={Outer radius of Hohmann transfer(\si{m}).}]{r2}{\ensuremath{r_2}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
 \glsxtrnewsymbol[description={Final time (\si{\s}).}]{tf}{\ensuremath{t_f}}
 \glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\left(\nicefrac{1}{2}\right)}}}
 \glsxtrnewsymbol[description={Velocity (\si{m/s}).}]{v}{\ensuremath{\mathbf{v}}}
 \glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
+\glsxtrnewsymbol[description={Apoapsis velocity, scalar (\si{m/s}).}]{va}{\ensuremath{v_a}}
+\glsxtrnewsymbol[description={Periapsis velocity, scalar (\si{m/s}).}]{vp}{\ensuremath{v_p}}
 \glsxtrnewsymbol[description={Initial velocity, scalar (\si{m/s}).}]{vsi}{\ensuremath{v_i}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Delta-V (\si{m/s}).}]{deltav}{\ensuremath{\Delta{}v}}
+\glsxtrnewsymbol[description={Velocity change for Hohmann transfer. (\si{m/s}).}]{deltav1}{\ensuremath{\Delta{}v_1}}
+\glsxtrnewsymbol[description={Velocity change for Hohmann transfer. (\si{m/s}).}]{deltav2}{\ensuremath{\Delta{}v_2}}
 \glsxtrnewsymbol[description={Radioactive decay constant (\si{\per\s}).}]{lambda}{\ensuremath{\lambda}}
+\glsxtrnewsymbol[description={Standard gravitational parameter (\si{m^3\per s^2}).}]{mu}{\ensuremath{\mu}}
 \glsxtrnewsymbol[description={Angle (radians).}]{theta}{\ensuremath{\theta}}
 \glsxtrnewsymbol[description={Angular frequency (\si{\per\s}).}]{omega}{\ensuremath{\omega}}
 \glsxtrnewsymbol[description={Propellant mass fraction.}]{zeta}{\ensuremath{\zeta}}
@@ -699,13 +717,15 @@ And for the two-stage rocket, we simply add the \gls{deltav} from burning each s
 
 In this chapter, we will set up our first 2D spacecraft manoeuvre in which the available analytical solution is only approximate (but still close enought to provide a guide).
 
-We will set up a Hohmann transfer, which is a way to transfer between two coplanar orbits \cite{battin1999}. To simplify the situation, we will assume that the source and destination orbits are circular. Analytical treatments of Hohmann transfer manoeuvres assume that an instantaneous impulse can be delivered to the spacecraft. In reality, this instantaneous impulse becomes a burn that is merely very short compared with the orbital periods involved.
+We will set up a Hohmann transfer, which is an elliptical transfer between two coplanar circular orbits \cite{battin1999,widnall2008}. Our analytical treatment of the Hohmann transfer manoeuvres will make the approximation that an instantaneous impulse can be delivered to the spacecraft, and its mass does not change, so that its motion obeys Kepler's laws at all times. In reality, this instantaneous impulse becomes a burn that is merely very short compared with the orbital periods involved, and the reaction mass used is small compared with the vehicle mass.
 
 The analytical derivation in this chapter involves some mathematics that is more involved than previous chapters. Feel free to skip it if necessary (only the results are important for the numerical simulation). We provide it because a short yet complete treatment is somewhat difficult to find online.
 
 \section{Acceleration in Polar Coordinates}
 
-Figure~\ref{fig:polar} shows a pair of 2D coordinate systems: an inertial system with orthogonal unit vectors \gls{ex} and \gls{ey}, and a non-inertial system, with instantaneous orthogonal unit vectors \gls{er} and \gls{etheta}, which correspond to the instantaneous directions of a polar coordinate system. A point is illustrated at a distance \gls{rs} from the origin at angle \gls{theta} from the \(x\) axis. Notice that if the point moves, then the basis vectors \gls{er} and \gls{etheta} would also change. We are going to describe motion in terms of the \gls{er} and \gls{etheta} directions, because the force applied to orbiting bodies will be applied only along \gls{er}. However, because these vectors constitute a non-inertial reference frame, we must account for their time dependence.
+To examine the Kepler problem in the next section, it is convenient to use polar coordinates. This is because the only force acting on the body is gravity, which is exerted only in the radial direction, and no force is exerted along the angular or circumferential direction. This results in more tractable solutions to the equations of motion.
+
+Figure~\ref{fig:polar} shows a pair of 2D coordinate systems: an inertial system with orthogonal unit vectors \gls{ex} and \gls{ey}, and a non-inertial system, with instantaneous orthogonal unit vectors \gls{er} and \gls{etheta}, which correspond to the instantaneous directions of a polar coordinate system. A point is illustrated at a distance \gls{rs} from the origin, at angle \gls{theta} from the \(x\) axis. Notice that if the point moves, then the basis vectors \gls{er} and \gls{etheta} would also change. In order to express equations of motion in these coordinates, we must account for the time-dependence of \gls{er} and \gls{etheta}, which is described in this section.
 
 \begin{figure}[htbp]
   \centering
@@ -742,32 +762,35 @@ We can write \gls{er} and \gls{etheta} in terms of \gls{ex} and \gls{ey} as foll
   \gls{er} &= \gls{ex}\cos\gls{theta} + \gls{ey}\sin\gls{theta} \\
   \gls{etheta} &= -\gls{ex}\sin\gls{theta} + \gls{ey}\cos\gls{theta}
 \end{align}
-Now consider the derivatives of these unit vectors with respect to the angle \gls{theta} (and notice that they have no dependence on \gls{rs}):
+This provides our fundamental link to an inertial frame of reference, which is the purpose of using \gls{ex} and \gls{ey}. Now consider the derivatives of these unit vectors with respect to the angle \gls{theta} (and notice that they have no dependence on \gls{rs}):
 \begin{align}
   \frac{d\gls{er}}{d\gls{theta}}
   &= -\gls{ex}\sin\gls{theta} + \gls{ey}\cos\gls{theta} = \gls{etheta} \\
   \frac{d\gls{etheta}}{d\gls{theta}}
   &= -\gls{ex}\cos\gls{theta} - \gls{ey}\sin\gls{theta} = -\gls{er}
 \end{align}
-As indicated, we will need the time derivatives of these basis vectors. Relative to the inertial system, they depend only on \gls{theta}, so the time derivatives can be expressed using the chain rule as follows:
+Relative to the inertial frame of reference, these unit basis vectors depend only on \gls{theta}, so the time derivatives can be expressed using the chain rule as follows:
 \begin{align}
   \dot{\gls{er}} &= \frac{d\gls{er}}{d\gls{theta}}\frac{d\gls{theta}}{d\gls{t}}
-    = \dot{\gls{theta}}\gls{etheta} \\
+  = \dot{\gls{theta}}\gls{etheta}
+  \label{eq:dot-er}
+  \\
   \dot{\gls{etheta}} &= \frac{d\gls{etheta}}{d\gls{theta}}\frac{d\gls{theta}}{d\gls{t}}
-    = -\dot{\gls{theta}}\gls{er}
+  = -\dot{\gls{theta}}\gls{er}
+  \label{eq:dot-etheta}
 \end{align}
-To describe motion in this coordinate system, we must have terms for position, velocity and acceleration. Position, \gls{r}, is given very simply by:
+To describe equations of motion in this coordinate system, we will require an expression for acceleration, which we will derive from expressions for position and velocity. Position, \gls{r}, is given very simply by:
 \begin{align}
   \gls{r} &= \gls{rs}\gls{er}
 \end{align}
-Velocity, \gls{v}, is then the time derivative, using the chain rule:
+Velocity, \gls{v}, is the time derivative of position, which we find using the chain rule and then substituting Eq~\ref{eq:dot-er} and Eq~\ref{eq:dot-etheta}:
 \begin{align}
   \gls{v} &= \frac{d\gls{r}}{d\gls{t}} \\
   &= \frac{d}{d\gls{t}}\,\gls{rs}\gls{er} \\
   &= \dot{\gls{rs}}\gls{er} + r\dot{\gls{er}} \\
   &= \dot{\gls{rs}}\gls{er} + r\dot{\gls{theta}}\gls{etheta}
 \end{align}
-Finally, acceleration, \gls{a}, is the time derivative of velocity:
+Finally, acceleration, \gls{a}, is the time derivative of velocity, again substituting Eq~\ref{eq:dot-er} and Eq~\ref{eq:dot-etheta}:
 \begin{align}
   \gls{a} &= \frac{d\gls{v}}{d\gls{t}} \\
   &= \frac{d}{d\gls{t}}\,\left(\dot{\gls{rs}}\gls{er} + r\dot{\gls{theta}}\gls{etheta}\right) \\
@@ -789,11 +812,226 @@ Finally, acceleration, \gls{a}, is the time derivative of velocity:
      \gls{rs}\ddot{\gls{theta}}
      + 2\dot{\gls{rs}}\dot{\gls{theta}}
      \right)\gls{etheta}
+     \label{eq:polar-accel}
 \end{align}
 
 \section{Kepler Problem and Elliptical Orbit Solutions}
 
-\section{Energetics of Transfer Orbits}
+The Kepler problem concerns the motion of a particle under the action of a central force whose magnitude varies according to an inverse-square law. In the current context, the central force is gravity, exerted by a dominant mass such as a planet, acting on a much less massive object such as a space vehicle.
+
+Gravity acts only in the radial direction, with a force \gls{FG}:
+\begin{align}
+  \gls{FG} &= -\frac{\gls{G}\gls{M}\gls{m}}{\gls{rs}^2}\gls{er}
+\end{align}
+in which \gls{G} is the gravitational constant, \gls{M} is the dominant mass (eg.\ the mass of a planet or moon), and \gls{m} is the much smaller mass, such as a space vehicle. To simplify the equation, we can introduce the standard gravitational parameter for a celestial body, \gls{mu}:
+\begin{align}
+  \gls{mu} = \gls{G}\gls{M}
+\end{align}
+This parameter is used frequently in astrodynamics formulas (eg.~\cite{levine1971}):
+\begin{align}
+  \gls{FG} &= -\frac{\gls{mu}\gls{m}}{\gls{rs}^2}\gls{er}
+  \label{eq:gravity}
+\end{align}
+Since we neglect all forces except gravity, the entire equation of motion of the vehicle can be expressed in polar coordinates using Equations~\ref{eq:polar-accel} and \ref{eq:gravity}:
+\begin{align}
+  -\frac{\gls{mu}}{\gls{rs}^2}\gls{er}
+  &= \left(
+     \ddot{\gls{rs}}
+     - \gls{rs}\dot{\gls{theta}}^2
+     \right)\gls{er}
+     + \left(
+     \gls{rs}\ddot{\gls{theta}}
+     + 2\dot{\gls{rs}}\dot{\gls{theta}}
+     \right)\gls{etheta}
+\end{align}
+We can now perform some mathematical substitutions to solve this equation of motion. We shall solve for the two different vector components in sequence.
+
+\subsection{Circumferential Component \gls{etheta}}
+
+The circumferential component has no force acting on it:
+\begin{align}
+  0 &=
+  \gls{rs}\ddot{\gls{theta}} + 2\dot{\gls{rs}}\dot{\gls{theta}}
+\end{align}
+At this point we can observe that:\footnote{These substitutions are a bit \emph{deus ex machina}, but bear with it; they have a physical meaning.}
+\begin{align}
+  0
+  &= \gls{rs}\ddot{\gls{theta}} + 2\dot{\gls{rs}}\dot{\gls{theta}} \\
+  &= \frac{1}{\gls{rs}}
+    \frac{d}{d\gls{t}}\left(\gls{rs}^2\dot{\gls{theta}}\right) \\
+  &= \frac{d}{d\gls{t}}\left(\gls{rs}^2\dot{\gls{theta}}\right)
+\end{align}
+This implies that the quantity whose time derivative is zero is constant:
+\begin{align}
+  \gls{rs}^2\dot{\gls{theta}} &= \gls{h}\;\textrm{ is constant} \label{eq:constant-sam}
+\end{align}
+where \gls{h} happens to correspond to the specific angular momentum:
+\begin{align}
+  \gls{h} 
+  &= \gls{rs}^2\dot{\gls{theta}} \\
+  &= \frac{\left| \gls{r} \times \gls{p} \right|}{\gls{m}} \\
+  &= \left| \gls{r} \times \gls{v} \right|
+\end{align}
+in which \gls{p} is the linear momentum, and the cross-product \((\gls{r}\times\gls{p})\) is the angular momemtum. Thus, the angular momentum of bodies in the Kepler problem is constant.
+
+\subsection{Radial Component \gls{er}}
+
+The radial component is acted upon by the central gravitational force:
+\begin{align}
+  -\frac{\gls{mu}}{\gls{rs}^2}
+  &= \ddot{\gls{rs}} - \gls{rs}\dot{\gls{theta}}^2 \label{eq:radial}
+\end{align}
+In order to solve this equation, we will aim write it as a differential equation for \((1/\gls{rs})\) as a function of \gls{theta}. This requires some substitutions. First, notice that:
+\begin{align}
+  \frac{d}{d\gls{t}}\left(\frac{1}{\gls{rs}}\right)
+  &= -\frac{1}{\gls{rs}^2}\dot{\gls{rs}}
+\end{align}
+Rearranging:
+\begin{align}
+  \dot{\gls{rs}} &= -\gls{rs}^2\frac{d}{d\gls{t}}\left(\frac{1}{\gls{rs}}\right)
+\end{align}
+But from Equation~\ref{eq:constant-sam}, we have that \(\gls{rs}^2 = \gls{h}/\dot{\gls{theta}}\), so:
+\begin{align}
+  \dot{\gls{rs}}
+  &= -\gls{rs}^2\frac{d}{d\gls{t}}\left(\frac{1}{\gls{rs}}\right) \\
+  &= -\frac{\gls{h}}{\dot{\gls{theta}}}\frac{d}{d\gls{t}}\left(\frac{1}{\gls{rs}}\right) \\
+  &= -\gls{h}\frac{d\gls{t}}{d\gls{theta}}\frac{d}{d\gls{t}}\left(\frac{1}{\gls{rs}}\right) \\
+  &= -\gls{h}\frac{d}{d\gls{theta}}\left(\frac{1}{\gls{rs}}\right)
+\end{align}
+Now we can differentiate this expression with respect to time to find an expression for \(\ddot{\gls{rs}}\):
+\begin{align}
+  \ddot{\gls{rs}}
+  &= -\gls{h}\frac{d^2}{d\gls{theta}^2}\left(\frac{1}{\gls{rs}}\right)\dot{\gls{theta}}
+\end{align}
+and again from Eq~\ref{eq:constant-sam}, we have \(\dot{\gls{theta}} = \gls{h}/\gls{rs}^2\), which we substitute to obtain:
+\begin{align}
+  \ddot{\gls{rs}}
+  &= -\frac{\gls{h}^2}{\gls{rs}^2}\frac{d^2}{d\gls{theta}^2}\left(\frac{1}{\gls{rs}}\right)
+\end{align}
+Now we substitute this back into the expression for the radial component, Eq~\ref{eq:radial}, also using the identity \(\gls{rs}\dot{\gls{theta}}^2 = \gls{h}^2/\gls{rs}^3\) from Eq~\ref{eq:constant-sam}:
+\begin{align}
+  -\frac{\gls{mu}}{\gls{rs}^2}
+  &= \ddot{\gls{rs}} - \gls{rs}\dot{\gls{theta}}^2 \\
+  &= -\frac{\gls{h}^2}{\gls{rs}^2}\frac{d^2}{d\gls{theta}^2}\left(\frac{1}{\gls{rs}}\right)
+     -\frac{\gls{h}^2}{\gls{rs}^3}
+\end{align}
+This is finally rearranged into the form we require:
+\begin{align}
+  \frac{d^2}{d\gls{theta}^2}\left(\frac{1}{\gls{rs}}\right) + \frac{1}{\gls{rs}}
+  &= \frac{\gls{mu}}{\gls{h}^2} \label{eq:kepler-ode}
+\end{align}
+This is a linear, \emph{second order} ODE, of the form:
+\begin{align}
+  \frac{d^2}{dx^2}\gls{f}(x) + \gls{f}(x) &= C \label{eq:kepler-ode-form}
+\end{align}
+where C is a constant. This equation has the general solution:
+\begin{align}
+  \gls{f}(x) &= C\left(1 + \gls{e}\cos(x + \psi)\right)
+\end{align}
+where \gls{e} and \(\psi\) are constants of integration. It can be confirmed that this is a solution to Equation~\ref{eq:kepler-ode-form} by directly differentiating and substituting. Thus the solution for Equation~\ref{eq:kepler-ode} is:
+\begin{align}
+  \frac{1}{\gls{rs}}
+  &= \frac{\gls{mu}}{\gls{h}^2}
+  \left(
+    1 + \gls{e}\cos(\gls{theta} + \psi)
+  \right)
+\end{align}
+We can choose to define the datum for angle \gls{theta} such that \(\psi = 0\) (which corresponds to \(\gls{theta} = 0\) when \gls{rs} is minimum), and rearrange to find the solution for \gls{rs}:
+\begin{align}
+  \gls{rs} &= \frac{\gls{h}^2/\gls{mu}}{1 + \gls{e}\cos\gls{theta}} \label{eq:kepler-solution}
+\end{align}
+
+\subsection{Elliptical Orbits}
+
+The solutions to Equation~\ref{eq:kepler-solution} can be categorized according to the value of the parameter, \gls{e}, which is called the eccentricity:
+\begin{pardescription}[leftmargin=4em,style=nextline]
+\item[\(\gls{e} = 0\)] circular orbit
+\item[\(\gls{e} < 1\)] elliptical orbit
+\item[\(\gls{e} = 1\)] parabolic orbit
+\item[\(\gls{e} > 1\)] hyperbolic orbit
+\end{pardescription}
+For Hohmann transfers, we are only concerned with circular and elliptical orbits.
+
+\section{Orbital Energetics}
+
+Under the sole action of gravity, which is a conservative force, the total energy of an object in orbit, \gls{E}, is constant, and is the sum of its kinetic and potential energy:
+\begin{align}
+  \gls{E} &= \frac{1}{2}\gls{m}\gls{vs}^2 - \frac{\gls{mu}\gls{m}}{\gls{rs}} \label{eq:orbit-energy}
+\end{align}
+in which \gls{vs} is the magnitude of the orbital velocity in this case. We can relate \gls{E} to the eccentricity of the orbit, \gls{e}, by computing \gls{E} specifically at periapsis (closest point of approach, where \(\gls{theta} = 0\)). At periapsis, \gls{rs} is given by:
+\begin{align}
+  \gls{rs} &= \frac{\gls{h}^2}{\gls{mu}(1 + \gls{e})} \label{eq:r-periapsis}
+\end{align}
+From Equations~\ref{eq:constant-sam} and \ref{eq:r-periapsis}, we have:
+\begin{align}
+  \gls{vs}^2 &= \frac{\gls{h}^2}{\gls{rs}^2} \\
+  &= \frac{\gls{mu}(1 + \gls{e})}{\gls{rs}}
+\end{align}
+Substituting these into Equation~\ref{eq:orbit-energy} gives:
+\begin{align}
+  \gls{E} &= \frac{1}{2}\gls{m}\gls{vs}^2 - \frac{\gls{mu}\gls{m}}{\gls{rs}} \\
+  &= \frac{1}{2}\frac{\gls{m}\gls{mu}}{\gls{rs}}(1+\gls{e})-\frac{\gls{m}\gls{mu}}{\gls{rs}} \\
+  &= \frac{1}{2}\frac{\gls{m}\gls{mu}}{\gls{rs}}(\gls{e} - 1) \\
+  &= \frac{1}{2}\gls{m}\gls{mu}\frac{\gls{mu}(\gls{e}-1)(\gls{e}+1)}{\gls{h}^2} \\
+  &= \frac{\gls{m}\gls{mu}^2}{2\gls{h}^2}(\gls{e}^2-1)
+\end{align}
+
+\section{Hohmann Transfer Velocities}
+
+From Equation~\ref{eq:kepler-solution}, we can write the 
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    % Main ellipse
+    \draw[ultra thick] (0,0) ellipse [x radius=3cm,y radius=2cm];
+    % Focus
+    \fill (2.235,0) circle [radius=0.1]
+      node [above left] {Focus};
+    % Background axes
+    \draw[semithick] (-3.5,0) -- (4,0);
+    \draw[semithick] (0,-3.8) -- (0,2.5);
+    % Periapsis and apoapsis radii
+    \draw[thick,<->] (2.235,-2.5) -- (3,-2.5) node [midway,below] {\gls{rp}};
+    \draw[thick,<->] (-3,-2.5) -- (2.235,-2.5) node [midway,below] {\gls{ra}};
+    % Semi-major axis
+    \draw[thick,<->] (0,-3.3) -- (3,-3.3) node [midway,below] {\gls{as}};
+    % Semi-minor axis
+    \draw[thick,<->] (3.5,0) -- (3.5,-2) node [midway,right] {\gls{bs}};
+    % Dashed dimensioning lines
+    \draw[semithick,dashed] (3,1) -- (3,-3.8);
+    \draw[semithick,dashed] (2.235,0.5) -- (2.235,-3);
+    \draw[semithick,dashed] (-3,1) -- (-3,-3);
+    \draw[semithick,dashed] (-1,-2) -- (4,-2);
+  \end{tikzpicture}
+  \caption{Ellipse geometric parameters.}
+  \label{fig:ellipse-geometry}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    % Focus
+    \fill (0,0) circle [radius=0.1];
+    % Circular orbits
+    \draw[ultra thick] (0,0) circle [radius=1];
+    \draw[ultra thick] (0,0) circle [radius=3];
+    % Transfer orbit
+    \draw[ultra thick] (1,0) arc [start angle=0,end angle=180,x radius=2cm,y radius=1.732cm];
+    % Labels
+    \draw (0,3) node [above] {\footnotesize{Outer orbit}};
+    \draw (0,-1) node [below] {\footnotesize{Inner orbit}};
+    \draw (-1,1.732) node [above] {\footnotesize{Transfer}};
+    % Radii
+    \draw[thick,->,shorten >=0.2mm] (0,0) -- (1,0) node [midway,below] {\gls{r1}};
+    \draw[thick,->,shorten >=0.2mm] (0,0) -- (-3,0) node [midway,below] {\gls{r2}};
+    % Delta-vs
+    \draw[thick,->] (1,0) -- (1,1.2) node [right] {\gls{deltav1}};
+    \draw[thick,->] (-3,0) -- (-3,-1.2) node [left] {\gls{deltav2}};
+  \end{tikzpicture}
+  \caption{Hohmann transfer geometry. The outer and inner orbits are circular, while the transfer orbit is elliptical. All three orbits share the same focus.}
+  \label{fig:hohmann-geometry}
+\end{figure}
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]

@@ -24,3 +24,9 @@ $ make                   # generates the LaTeX notes.pdf
 ```
 
 Be careful: the LaTeX file has `\nonstopmode` set so that it doesn't hang the CI build. It may be best to remove this when making local changes so that errors are more obvious.
+
+The Makefile for the notes supports a `watch` phony target to continuously watch the source files and re-run LaTeX as required:
+
+```
+$ make watch
+```
