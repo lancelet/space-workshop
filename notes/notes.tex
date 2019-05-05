@@ -153,6 +153,7 @@
 \glsxtrnewsymbol[description={Apoapsis velocity, scalar (\si{m/s}).}]{va}{\ensuremath{v_a}}
 \glsxtrnewsymbol[description={Periapsis velocity, scalar (\si{m/s}).}]{vp}{\ensuremath{v_p}}
 \glsxtrnewsymbol[description={Initial velocity, scalar (\si{m/s}).}]{vsi}{\ensuremath{v_i}}
+\glsxtrnewsymbol[description={Final velocity, scalar (\si{m/s}).}]{vsf}{\ensuremath{v_f}}
 \glsxtrnewsymbol[description={System state vector.}]{stvec}{\ensuremath{\mathbf{x}}}
 \glsxtrnewsymbol[description={Delta-V (\si{m/s}).}]{deltav}{\ensuremath{\Delta{}v}}
 \glsxtrnewsymbol[description={Velocity change for Hohmann transfer. (\si{m/s}).}]{deltav1}{\ensuremath{\Delta{}v_1}}
@@ -717,9 +718,11 @@ And for the two-stage rocket, we simply add the \gls{deltav} from burning each s
 
 In this chapter, we will set up our first 2D spacecraft manoeuvre in which the available analytical solution is only approximate (but still close enought to provide a guide).
 
-We will set up a Hohmann transfer, which is an elliptical transfer between two coplanar circular orbits \cite{battin1999,widnall2008}. Our analytical treatment of the Hohmann transfer manoeuvres will make the approximation that an instantaneous impulse can be delivered to the spacecraft, and its mass does not change, so that its motion obeys Kepler's laws at all times. In reality, this instantaneous impulse becomes a burn that is merely very short compared with the orbital periods involved, and the reaction mass used is small compared with the vehicle mass.
+We will set up a Hohmann transfer, which is an elliptical transfer between two coplanar circular orbits \cite{battin1999,widnall2008}. The geometry of the manoeuvre is shown below in Figure~\ref{fig:hohmann-geometry}. The spacecraft will start in the inner circular orbit. A short burn is performed which changes the velocity of the spacecraft by \gls{deltav1}, placing it into an elliptical transfer orbit of exactly the right size to intercept the outer orbit. Finally, when the intersection with the outer orbit is reached, another short burn is performed, changing the velocity by \gls{deltav2} to enter the outer orbit.
 
-The analytical derivation in this chapter involves some mathematics that is more involved than previous chapters. Feel free to skip it if necessary (only the results are important for the numerical simulation). We provide it because a short yet complete treatment is somewhat difficult to find online.
+Our analytical treatment of this manoeuvre will allow us to determine the approximate values of \gls{deltav1} and \gls{deltav2}. In doing so, we make the approximations that an instantaneous impulse can be delivered to the spacecraft, and that its mass does not change, so that its motion obeys Kepler's laws at all times. In reality, this instantaneous impulse becomes a burn that is merely very short compared with the orbital periods involved, and the reaction mass used is small compared with the vehicle mass.
+
+The analytical derivation in this chapter involves some mathematics that is more involved than previous chapters. Feel free to skip it if necessary, since only the results for \gls{deltav1} and \gls{deltav2} are important for the numerical simulation. We provide it because a short yet complete treatment is somewhat difficult to find online.
 
 \section{Acceleration in Polar Coordinates}
 
@@ -941,7 +944,7 @@ We can choose to define the datum for angle \gls{theta} such that \(\psi = 0\) (
   \gls{rs} &= \frac{\gls{h}^2/\gls{mu}}{1 + \gls{e}\cos\gls{theta}} \label{eq:kepler-solution}
 \end{align}
 
-\subsection{Elliptical Orbits}
+\subsection{Circular and Elliptical Orbits}
 
 The solutions to Equation~\ref{eq:kepler-solution} can be categorized according to the value of the parameter, \gls{e}, which is called the eccentricity:
 \begin{pardescription}[leftmargin=4em,style=nextline]
@@ -952,33 +955,9 @@ The solutions to Equation~\ref{eq:kepler-solution} can be categorized according 
 \end{pardescription}
 For Hohmann transfers, we are only concerned with circular and elliptical orbits.
 
-\section{Orbital Energetics}
-
-Under the sole action of gravity, which is a conservative force, the total energy of an object in orbit, \gls{E}, is constant, and is the sum of its kinetic and potential energy:
-\begin{align}
-  \gls{E} &= \frac{1}{2}\gls{m}\gls{vs}^2 - \frac{\gls{mu}\gls{m}}{\gls{rs}} \label{eq:orbit-energy}
-\end{align}
-in which \gls{vs} is the magnitude of the orbital velocity in this case. We can relate \gls{E} to the eccentricity of the orbit, \gls{e}, by computing \gls{E} specifically at periapsis (closest point of approach, where \(\gls{theta} = 0\)). At periapsis, \gls{rs} is given by:
-\begin{align}
-  \gls{rs} &= \frac{\gls{h}^2}{\gls{mu}(1 + \gls{e})} \label{eq:r-periapsis}
-\end{align}
-From Equations~\ref{eq:constant-sam} and \ref{eq:r-periapsis}, we have:
-\begin{align}
-  \gls{vs}^2 &= \frac{\gls{h}^2}{\gls{rs}^2} \\
-  &= \frac{\gls{mu}(1 + \gls{e})}{\gls{rs}}
-\end{align}
-Substituting these into Equation~\ref{eq:orbit-energy} gives:
-\begin{align}
-  \gls{E} &= \frac{1}{2}\gls{m}\gls{vs}^2 - \frac{\gls{mu}\gls{m}}{\gls{rs}} \\
-  &= \frac{1}{2}\frac{\gls{m}\gls{mu}}{\gls{rs}}(1+\gls{e})-\frac{\gls{m}\gls{mu}}{\gls{rs}} \\
-  &= \frac{1}{2}\frac{\gls{m}\gls{mu}}{\gls{rs}}(\gls{e} - 1) \\
-  &= \frac{1}{2}\gls{m}\gls{mu}\frac{\gls{mu}(\gls{e}-1)(\gls{e}+1)}{\gls{h}^2} \\
-  &= \frac{\gls{m}\gls{mu}^2}{2\gls{h}^2}(\gls{e}^2-1)
-\end{align}
-
 \section{Hohmann Transfer Velocities}
 
-From Equation~\ref{eq:kepler-solution}, we can write the 
+Figure~\ref{fig:ellipse-geometry} illustrates the geometry of an ellipse. The dimensions for its semi-minor axis, \gls{as}, and semi-major axis, \gls{bs}, are shown along with the radial distances of the periapsis (closest distance), \gls{rp}, and apoapsis (furthest distance), \gls{ra}.
 
 \begin{figure}[htbp]
   \centering
@@ -1008,6 +987,33 @@ From Equation~\ref{eq:kepler-solution}, we can write the
   \label{fig:ellipse-geometry}
 \end{figure}
 
+From Equation~\ref{eq:kepler-solution}, we can write the radius of an elliptical orbit at perapsis, \gls{rp} (when \(\gls{theta}=0\)), and apoapsis, \gls{ra} (when \(\gls{theta}=\pi\)), as:
+\begin{align}
+  \gls{rp} &= \frac{\gls{h}^2}{\gls{mu}(1+\gls{e})} &
+  \gls{ra} &= \frac{\gls{h}^2}{\gls{mu}(1-\gls{e})} \label{eq:radii1}
+\end{align}
+From Equation~\ref{eq:constant-sam}, we can express the velocity at the apses as:
+\begin{align}
+  \gls{vs}^2 &= \frac{\gls{h}^2}{\gls{rs}^2}\;\textrm{ at the apses only}
+\end{align}
+Substituting Eq~\ref{eq:radii1} into this expression yields velocities at periapsis and apoapsis:
+\begin{align}
+  \gls{vp}^2 &= \frac{\gls{mu}(1+\gls{e})}{\gls{rp}} &
+  \gls{va}^2 &= \frac{\gls{mu}(1-\gls{e})}{\gls{ra}}
+\end{align}
+We now introduce geometric relationships between the apsis radii and the eccentricity:
+\begin{align}
+  \gls{e} &= 1 - \frac{\gls{rp}}{\gls{as}} &
+  \gls{e} &= \frac{\gls{ra}}{\gls{as}} - 1
+\end{align}
+Which can be substituted to yield:
+\begin{align}
+  \gls{vp}^2 &= \gls{mu}\left(\frac{2}{\gls{rp}}-\frac{1}{\gls{as}}\right) &
+  \gls{va}^2 &= \gls{mu}\left(\frac{2}{\gls{ra}}-\frac{1}{\gls{as}}\right) &
+\end{align}
+
+Figure~\ref{fig:hohmann-geometry} illustrates the geometry of the Hohmann transfer itself. We will initially consider a transfer from the inner orbit to the outer one. An impulse, \gls{deltav1}, is applied to the inner circular orbit to enter the elliptical transfer orbit at its periapsis. Then, once the apoapsis of the transfer orbit is reached, another impulse, \gls{deltav2}, is applied to enter the outer orbit.
+
 \begin{figure}[htbp]
   \centering
   \begin{tikzpicture}
@@ -1032,6 +1038,43 @@ From Equation~\ref{eq:kepler-solution}, we can write the
   \caption{Hohmann transfer geometry. The outer and inner orbits are circular, while the transfer orbit is elliptical. All three orbits share the same focus.}
   \label{fig:hohmann-geometry}
 \end{figure}
+
+The velocity of the transfer orbit at its periapsis is given by the relationship for periapsis velocity in an elliptical orbit, substituting the radii in the diagram:
+\begin{align}
+  \gls{vp}^2 &= \gls{mu}\left(\frac{2}{\gls{r1}}-\frac{2}{\gls{r1}+\gls{r2}}\right)
+\end{align}
+Similarly for the transfer orbit velocity at apoapsis:
+\begin{align}
+  \gls{va}^2 &= \gls{mu}\left(\frac{2}{\gls{r2}}-\frac{2}{\gls{r1}+\gls{r2}}\right)
+\end{align}
+The velocity in both circular orbits is given by the same velocity relationships when \(\gls{e} = 0\):
+\begin{align}
+  \gls{vs}^2 &= \frac{\gls{mu}}{\gls{rs}}
+\end{align}
+Thus, we can write the required velocity change in the first burn, \gls{deltav1}, as:
+\begin{align}
+  \gls{deltav1} &= \gls{vp} - \gls{vsi} \\
+  &= \sqrt{\gls{mu}\left(\frac{2}{\gls{r1}}-\frac{2}{\gls{r1}+\gls{r2}}\right)}
+  - \sqrt{\frac{\gls{mu}}{\gls{r1}}}\\
+  &= \sqrt{
+    \gls{mu}
+    \frac{2\gls{r1}+2\gls{r2}-2\gls{r1}}{\gls{r1}(\gls{r1}+\gls{r2})}
+    }
+  - \sqrt{\frac{\gls{mu}}{\gls{r1}}}\\
+  &= \sqrt{\frac{\gls{mu}}{\gls{r1}}}
+  \left(
+  \sqrt{\frac{2\gls{r2}}{\gls{r1}+\gls{r2}}} - 1
+  \right) \label{eq:deltav1}
+\end{align}
+In the same way, the required velocity change in the second burn, \gls{deltav2}, is:
+\begin{align}
+  \gls{deltav2} &= \gls{vsf} - \gls{va} \\
+  &= \sqrt{\frac{\gls{mu}}{\gls{r2}}}
+  \left(
+  1 - \sqrt{\frac{2\gls{r1}}{\gls{r1}+\gls{r2}}}
+  \right) \label{eq:deltav2}
+\end{align}
+These final two equations, Eq~\ref{eq:deltav1} and Eq~\ref{eq:deltav2} are the results we will require in order to simulate the Hohmann transfer manoeuvre.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
