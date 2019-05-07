@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/lancelet/space-workshop.svg?branch=master)](https://travis-ci.org/lancelet/space-workshop)
 
-This workshop is still WIP. Estimated completion is currently 95%.
+This workshop contents are now complete. Final modifications and updates may still be made prior to LambdaJam 2019, but the current version is representative.
 
 The current notes for the workshop are available from
 [GitHub pages](https://lancelet.github.io/space-workshop), built using Travis CI.
