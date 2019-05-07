@@ -9,6 +9,14 @@ This workshop is still WIP. Estimated completion is currently 95%.
 The current notes for the workshop are available from
 [GitHub pages](https://lancelet.github.io/space-workshop), built using Travis CI.
 
+## Instructions for Participants
+
+Please make sure that you download the required dependencies for the workshop in advance. This can be done using:
+
+```
+$ stack --install-ghc test --only-dependencies
+```
+
 ## Developer Notes
 
 See the `.travis.yml` file for detailed CI build instructions.
