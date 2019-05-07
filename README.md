@@ -4,18 +4,20 @@
 
 [![Build Status](https://travis-ci.org/lancelet/space-workshop.svg?branch=master)](https://travis-ci.org/lancelet/space-workshop)
 
-This workshop contents are now complete. Final modifications and updates may still be made prior to LambdaJam 2019, but the current version is representative.
+The workshop contents are now complete. Final modifications and updates may still be made prior to LambdaJam 2019, but the current version is representative.
 
 The current notes for the workshop are available from
 [GitHub pages](https://lancelet.github.io/space-workshop), built using Travis CI.
 
 ## Instructions for Participants
 
-Please make sure that you download the required dependencies for the workshop in advance. This can be done using:
+Please make sure that you download the required dependencies for the workshop and [the notes](https://lancelet.github.io/space-workshop) in advance. We are using the [`stack`](https://www.haskellstack.org) build tool (apologies if this is not to your taste; PRs are very welcome!). Dependencies can be fetched by doing:
 
 ```
 $ stack --install-ghc test --only-dependencies
 ```
+
+in the checked-out repository.
 
 ## Developer Notes
 
