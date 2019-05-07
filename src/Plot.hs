@@ -132,55 +132,80 @@ xyChartEC chart = Chart.toRenderable $ do
 
 data OrbitSystem
   = OrbitSystem
-    { systemItems :: [OrbitSystemItem] }
+    { planet :: Planet
+    , systemItems :: [OrbitSystemItem]
+    }
+
+data Planet
+  = Planet
+    { name :: Text
+    , radius :: Double
+    , color :: Colour Double
+    }
+  
 data OrbitSystemItem
-  = Planet { name :: Text, radius :: Double, color :: Colour Double }
-  | Trajectory { name :: Text, namePos :: (Double, Double), points :: [(Double, Double)], color :: Colour Double }
+  = Trajectory
+    { points :: [(Double, Double)]
+    , color :: Colour Double
+    }
 
-
-plotOrbitSystem :: Output -> OrbitSystem -> IO ()
-plotOrbitSystem output system =
+plotOrbitSystem :: Output -> Double -> OrbitSystem -> IO ()
+plotOrbitSystem output vScale system =
   case output of
     Screen -> do
-      let png = plotOrbitSystemPNGBS system
+      let png = plotOrbitSystemPNGBS vScale system
       LBS.hPutStr stdout (ITermShow.displayImage png)
       putStrLn ""
     PGF filePath -> do
       let
-        dia = mconcat (plotSystemItem output <$> systemItems system)
+        dia = mconcat (plotSystemItem output vScale (planet system) <$> systemItems system)
+              <> plotPlanet (PGF filePath) (planet system)
         -- framed = D.bgFrame 400 D.white dia
       PGF.renderPGF filePath (D.mkWidth 400) dia
     PNG _ -> error "Not yet implemented"
     SVG filePath -> do
       let
-        dia = mconcat (plotSystemItem output <$> systemItems system)
+        dia = mconcat (plotSystemItem output vScale (planet system) <$> systemItems system)
+              <> plotPlanet (SVG filePath) (planet system)
         framed = D.bgFrame 400 D.white dia
       SVG.renderSVG filePath (D.mkWidth 1024) framed
 
 
-plotOrbitSystemPNGBS :: OrbitSystem -> LBS.ByteString
-plotOrbitSystemPNGBS system =
+plotOrbitSystemPNGBS :: Double -> OrbitSystem -> LBS.ByteString
+plotOrbitSystemPNGBS vScale system =
   let
-    dia = mconcat (plotSystemItem (PNG undefined) <$> systemItems system)
+    dia = mconcat (plotSystemItem (PNG undefined) vScale (planet system) <$> systemItems system)
+          <> plotPlanet (PNG undefined) (planet system)
     diaFramed = D.bgFrame 400 D.white dia
     img = BR.rasterRgb8 (D.dims2D 1200 1200) diaFramed
   in
     Png.encodePng img
 
 
+plotPlanet
+  :: ( D.Renderable (D.Path D.V2 Double) b
+     , D.Renderable (D.Text Double) b )
+  => Output
+  -> Planet
+  -> D.QDiagram b D.V2 Double D.Any
+plotPlanet output (Planet pName pRadius pColor)
+  = D.text (Text.unpack pName)
+    # D.fontSize (getFontSize output)
+    # D.fc D.black
+ <> D.circle pRadius
+    # D.fc pColor
+
+
 plotSystemItem
   :: ( D.Renderable (D.Path D.V2 Double) b
      , D.Renderable (D.Text Double) b )
   => Output
+  -> Double
+  -> Planet
   -> OrbitSystemItem
   -> D.QDiagram b D.V2 Double D.Any
-plotSystemItem output (Planet pname r c)
-  = D.text (Text.unpack pname) # D.fontSize (getFontSize output) # D.fc D.black
- <> D.circle r # D.fc c
-plotSystemItem output (Trajectory tname tnamePos pts c)
-  = D.beside (D.r2 tnamePos)
-             (D.fromVertices (D.p2 . fancyScale <$> pts) # D.lc c # D.pad 1.1)
-             (D.alignedText 0.5 0.0 (Text.unpack tname) # D.fontSize (getFontSize output) # D.fc c)
+plotSystemItem _ vScale (Planet _ pRadius _) (Trajectory pts c)
+  = D.fromVertices (D.p2 . fancyScale vScale pRadius <$> pts) # D.lc c # D.pad 1.1
 
 
 getFontSize :: Output -> D.Measured Double Double
@@ -189,13 +214,13 @@ getFontSize (PGF _) = D.output 12.0
 getFontSize _       = error "Not Implemented"
 
 
-fancyScale :: (Double, Double) -> (Double, Double)
-fancyScale (x, y) =
+fancyScale :: Double -> Double -> (Double, Double) -> (Double, Double)
+fancyScale vScale rad (x, y) =
   let
     r = sqrt ((x*x) + (y*y))
     theta = atan2 y x
 
-    r' = (r - 1731.1) * 10.0 + 1731.1
+    r' = (r - rad) * vScale + rad
     x' = r' * cos theta
     y' = r' * sin theta
   in

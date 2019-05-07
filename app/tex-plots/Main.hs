@@ -9,6 +9,7 @@ import           Control.Monad        (forM_)
 import           System.IO            (hFlush, stdout)
 
 import qualified Examples.ODEExamples as ODEExamples
+import qualified Hohmann              as Hohmann
 import qualified LunarAscent          as LunarAscent
 import qualified Plot                 as Plot
 import qualified Staging              as Staging
@@ -24,6 +25,10 @@ main = do
           , (LunarAscent.plotLunarAscentBurnOnly, "lunar-ascent-burn-only")
           , (LunarAscent.plotLunarAscentMoonView, "lunar-ascent-moon-view")
           , (Staging.plotVelocityComparison, "staging-velocity-comparison")
+          , (ODEExamples.plotVerticalThrow, "vertical-throw")
+          , (Hohmann.plotHighImpulseBurn, "hohmann-high-impulse")
+          , (Hohmann.plotLowImpulseBurn, "hohmann-low-impulse")
+          , (Hohmann.plotUltraLowImpulseBurn, "hohmann-ultra-low-impulse")
           ]
 
   putStrLn "Plotting diagrams for the notes."

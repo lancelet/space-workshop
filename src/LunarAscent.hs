@@ -52,12 +52,14 @@ plotLunarAscentMoonView output = do
     coastSteps = coast (Types.constants) (last burnSteps)
     rBurn = (eachN 10 burnSteps) <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
     rCoast = coastSteps <&> (\sim -> sim^.dynamics^.pos .# [si| km |]) <&> v2Tuple
-  Plot.plotOrbitSystem output
+  Plot.plotOrbitSystem output 20.0
     (Plot.OrbitSystem
-     [ Plot.Trajectory "Burn" (0,1) rBurn D.red
-     , Plot.Trajectory "Coast" (1,1) rCoast D.green
-     , Plot.Planet "Moon" 1731.1 D.grey
-     ])
+      { Plot.planet = Plot.Planet "Moon" 1731.1 D.lightgray
+      , Plot.systemItems =
+        [ Plot.Trajectory rBurn D.red
+        , Plot.Trajectory rCoast D.green
+        ]
+      })
 
 
 plotLunarAscentVerticalRise :: Plot.Output -> IO ()

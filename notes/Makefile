@@ -7,7 +7,7 @@ watch: notes.pdf
 
 .PHONY: clean
 clean:
-	rm -rf *.aux *.bbl *.blg *.fdb_latexmk *.fls *.log *.out *.toc
+	rm -rf *.aux *.bbl *.blg *.fdb_latexmk *.fls *.log *.out *.toc _minted-notes
 
 .PHONY: mrclean
 mrclean: clean
