@@ -112,6 +112,7 @@
 \glsxtrnewsymbol[description={Acceleration (\si{\m/\s/\s}).}]{a}{\ensuremath{\mathbf{a}}}
 \glsxtrnewsymbol[description={Ellipse semi-major axis (\si{\m}).}]{as}{\ensuremath{a}}
 \glsxtrnewsymbol[description={Ellipse semi-minor axis (\si{\m}).}]{bs}{\ensuremath{b}}
+\glsxtrnewsymbol[description={Distance travelled (\si{\m}).}]{ds}{\ensuremath{d}}
 \glsxtrnewsymbol[description={Unit vector in the \(r\) direction.}]{er}{\ensuremath{\mathbf{e_r}}}
 \glsxtrnewsymbol[description={Unit vector in the \(x\) direction.}]{ex}{\ensuremath{\mathbf{e_x}}}
 \glsxtrnewsymbol[description={Unit vector in the \(y\) direction.}]{ey}{\ensuremath{\mathbf{e_y}}}
@@ -121,6 +122,7 @@
 \glsxtrnewsymbol[description={A function.}]{f}{\ensuremath{f}}
 \glsxtrnewsymbol[description={Total force, scalar (\si{N}).}]{Fs}{\ensuremath{F}}
 \glsxtrnewsymbol[description={Force due to gravity (\si{N}).}]{FG}{\ensuremath{\mathbf{F_G}}}
+\glsxtrnewsymbol[description={Thrust force (\si{N}).}]{FT}{\ensuremath{\mathbf{F_T}}}
 \glsxtrnewsymbol[description={Thrust force, scalar (\si{N}).}]{FTs}{\ensuremath{F_T}}
 \glsxtrnewsymbol[description={Standard Earth gravity (\SI{9.80665}{m/s^2}).}]{g0}{\ensuremath{g_0}}
 \glsxtrnewsymbol[description={Gravitational constant (\SI{6.67408E-11}{m^3 kg\per s^2}).}]{G}{\ensuremath{G}}
@@ -147,6 +149,7 @@
 \glsxtrnewsymbol[description={Outer radius of Hohmann transfer(\si{m}).}]{r2}{\ensuremath{r_2}}
 \glsxtrnewsymbol[description={Time (\si{\s}).}]{t}{\ensuremath{t}}
 \glsxtrnewsymbol[description={Final time (\si{\s}).}]{tf}{\ensuremath{t_f}}
+\glsxtrnewsymbol[description={Allowable error in time (\si{\s}).}]{tepsilon}{\ensuremath{t_{\epsilon}}}
 \glsxtrnewsymbol[description={Radioactive half life (\si{\s}).}]{thalf}{\ensuremath{t_{\left(\nicefrac{1}{2}\right)}}}
 \glsxtrnewsymbol[description={Velocity (\si{m/s}).}]{v}{\ensuremath{\mathbf{v}}}
 \glsxtrnewsymbol[description={Velocity, scalar (\si{m/s}).}]{vs}{\ensuremath{v}}
@@ -491,7 +494,7 @@ Although the details above are unlikely to be investigated deeply during the wor
   \end{probitemize}
 \end{problem}
 
-Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phase of the lunar ascent. This closely matches the published vertical rise phase reported in Bennett~\cite{bennett1970} (Figure~13). Figure~\ref{fig:lunar-ascent-burn-only} shows the entire orbital insertion phase, which corresponds to Figures~14 and 15 from Bennett~\cite{bennett1970}. Finally, Figure~\ref{fig:lunar-ascent-moon-view} shows a moon-centred view of the burn and later coasting orbit, computed numerically. In Figure~\ref{fig:lunar-ascent-moon-view}, the radial altitude above the moon is magnified by a factor of 10 to better distinguish the orbits. This is common in many illustrations of lunar orbits (for example, Figure~12 of Bennett~\cite{bennett1970}).
+Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phase of the lunar ascent. This closely matches the published vertical rise phase reported in Bennett~\cite{bennett1970} (Figure~13). Figure~\ref{fig:lunar-ascent-burn-only} shows the entire orbital insertion phase, which corresponds to Figures~14 and 15 from Bennett~\cite{bennett1970}. Finally, Figure~\ref{fig:lunar-ascent-moon-view} shows a moon-centred view of the burn and later coasting orbit, computed numerically. In Figure~\ref{fig:lunar-ascent-moon-view}, the radial altitude above the moon is magnified by a factor of 20 to better distinguish the orbits. This is common in many illustrations of lunar orbits (for example, Figure~12 of Bennett~\cite{bennett1970}).
 
 \begin{figure}[htbp]
   \resizebox{\textwidth}{!}{\input{fig/lunar-ascent-vertical-rise}}
@@ -508,7 +511,7 @@ Figure~\ref{fig:lunar-ascent-vertical-rise} shows the initial vertical rise phas
 \begin{figure}[htbp]
   \centering
   \resizebox{0.5\textwidth}{!}{\input{fig/lunar-ascent-moon-view}}
-  \caption{Moon-centred view of the burn and coasting phases. The radial (altitude) scale above the lunar surface is magnified by a factor of 10.}
+  \caption{Moon-centred view of the burn and coasting phases. The radial (altitude) scale above the lunar surface is magnified by a factor of 20.}
   \label{fig:lunar-ascent-moon-view}
 \end{figure}
 
@@ -943,6 +946,7 @@ We can choose to define the datum for angle \gls{theta} such that \(\psi = 0\) (
 \begin{align}
   \gls{rs} &= \frac{\gls{h}^2/\gls{mu}}{1 + \gls{e}\cos\gls{theta}} \label{eq:kepler-solution}
 \end{align}
+This equation happens to be the equation for a conic section.
 
 \subsection{Circular and Elliptical Orbits}
 
@@ -957,7 +961,7 @@ For Hohmann transfers, we are only concerned with circular and elliptical orbits
 
 \section{Hohmann Transfer Velocities}
 
-Figure~\ref{fig:ellipse-geometry} illustrates the geometry of an ellipse. The dimensions for its semi-minor axis, \gls{as}, and semi-major axis, \gls{bs}, are shown along with the radial distances of the periapsis (closest distance), \gls{rp}, and apoapsis (furthest distance), \gls{ra}.
+Figure~\ref{fig:ellipse-geometry} illustrates the geometry of an ellipse. The dimensions for its semi-minor axis, \gls{as}, and semi-major axis, \gls{bs}, are shown along with the radial distances of the periapsis (closest distance), \gls{rp}, and apoapsis (furthest distance), \gls{ra}, of an orbit with the more massive body at the focus.
 
 \begin{figure}[htbp]
   \centering
@@ -987,12 +991,12 @@ Figure~\ref{fig:ellipse-geometry} illustrates the geometry of an ellipse. The di
   \label{fig:ellipse-geometry}
 \end{figure}
 
-From Equation~\ref{eq:kepler-solution}, we can write the radius of an elliptical orbit at perapsis, \gls{rp} (when \(\gls{theta}=0\)), and apoapsis, \gls{ra} (when \(\gls{theta}=\pi\)), as:
+From Equation~\ref{eq:kepler-solution}, we can write the radius of an elliptical orbit at perapsis, \gls{rp} (when \(\gls{theta}=0\)), and apoapsis, \gls{ra} (when \(\gls{theta}=\pi\)), in terms of the orbital parameters, as:
 \begin{align}
   \gls{rp} &= \frac{\gls{h}^2}{\gls{mu}(1+\gls{e})} &
   \gls{ra} &= \frac{\gls{h}^2}{\gls{mu}(1-\gls{e})} \label{eq:radii1}
 \end{align}
-From Equation~\ref{eq:constant-sam}, we can express the velocity at the apses as:
+From Equation~\ref{eq:constant-sam}, we can express the velocity at the apses, when the radius and velocity are exactly perpendicular, as:
 \begin{align}
   \gls{vs}^2 &= \frac{\gls{h}^2}{\gls{rs}^2}\;\textrm{ at the apses only}
 \end{align}
@@ -1006,13 +1010,13 @@ We now introduce geometric relationships between the apsis radii and the eccentr
   \gls{e} &= 1 - \frac{\gls{rp}}{\gls{as}} &
   \gls{e} &= \frac{\gls{ra}}{\gls{as}} - 1
 \end{align}
-Which can be substituted to yield:
+Which can be substituted to yield:\footnote{This relationship actually holds for any radius (it is referred to as the \emph{vis-viva equation}), but we chose to derive it at these geometric points only, because this allows us to forego a description of orbit energies, making our derivation here slightly shorter.}
 \begin{align}
   \gls{vp}^2 &= \gls{mu}\left(\frac{2}{\gls{rp}}-\frac{1}{\gls{as}}\right) &
   \gls{va}^2 &= \gls{mu}\left(\frac{2}{\gls{ra}}-\frac{1}{\gls{as}}\right) &
 \end{align}
 
-Figure~\ref{fig:hohmann-geometry} illustrates the geometry of the Hohmann transfer itself. We will initially consider a transfer from the inner orbit to the outer one. An impulse, \gls{deltav1}, is applied to the inner circular orbit to enter the elliptical transfer orbit at its periapsis. Then, once the apoapsis of the transfer orbit is reached, another impulse, \gls{deltav2}, is applied to enter the outer orbit.
+Figure~\ref{fig:hohmann-geometry} illustrates the geometry of the Hohmann transfer itself. We will initially consider a transfer from the inner orbit to the outer one. A velocity change, \gls{deltav1}, is applied to the inner circular orbit to enter the elliptical transfer orbit at its periapsis. Then, once the apoapsis of the transfer orbit is reached, another velocity change, \gls{deltav2}, is applied to enter the outer orbit.
 
 \begin{figure}[htbp]
   \centering
@@ -1074,7 +1078,161 @@ In the same way, the required velocity change in the second burn, \gls{deltav2},
   1 - \sqrt{\frac{2\gls{r1}}{\gls{r1}+\gls{r2}}}
   \right) \label{eq:deltav2}
 \end{align}
-These final two equations, Eq~\ref{eq:deltav1} and Eq~\ref{eq:deltav2} are the results we will require in order to simulate the Hohmann transfer manoeuvre.
+These final two equations, Eq~\ref{eq:deltav1} and Eq~\ref{eq:deltav2}, are the results we will require in order to simulate the Hohmann transfer manoeuvre.
+
+\section{Simulating the Hohmann Transfer}
+
+To simulate the Hohmann transfer, we will separate the manoeuvre into several parts. We will examine the behaviour of the inner and outer orbits as coasting manoeuvres, and we will split the transfer orbit into three parts as shown in Figure~\ref{fig:hohmann-simulation}: a first burn, followed by a coasting trajectory, followed by a second burn.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    % Focus
+    \fill (0,0) circle [radius=0.1];
+    % Circular orbits
+    \draw[thick,dashed] (0,0) circle [radius=1];
+    \draw[thick,dashed] (0,0) circle [radius=3];
+    % Transfer orbit
+    \draw[ultra thick,red] (1,0) arc [start angle=0,end angle=15,x radius=2cm,y radius=1.732cm];
+    \draw[ultra thick,grey] (0.932,0.448) arc [start angle=15,end angle=180,x radius=2cm,y radius=1.732cm];
+    \draw[ultra thick, red] (-3,0) arc [start angle=180,end angle=195,radius=3cm];
+    % Horizontal line of apses
+    \draw[semithick] (-3.5,0) -- (3.5,0);
+    % Angle
+    \fill (0.732,0.866) circle [radius=0.075];
+    \draw[semithick] (0,0) -- (2.186,2.598);
+    \draw[semithick,->,shorten >=1mm,shorten <=1mm] (2,0) arc [start angle=0,end angle=50,radius=2] node [midway,right] {\gls{theta}};
+    % Labels
+    \draw[red] (1,0) node [below right] {\footnotesize{First burn}};
+    \draw[red] (-3,0) node [below left] {\footnotesize{Second burn}};
+    \draw (-1,1.732) node [above] {\footnotesize{Coast}};
+  \end{tikzpicture}
+  \caption{Simulated burns for the Hohmann transfer (red) and coasting trajectory (black). The first burn will start at \(\gls{theta}=0\), while the second burn will start at \(\gls{theta}=\pi\). Both burns will be oriented along the instantaneous velocity vector of the craft.}
+  \label{fig:hohmann-simulation}
+\end{figure}
+
+We will model a rocket engine which has a constant thrust (ie.\ it is not throttleable), so that the burn time is determined by reaching the pre-computed velocity for each given orbit.
+
+\subsection{Terminating ODE Integration}
+
+So far, when integrating ODEs, we have supplied a list of times at which the ODE should be evaluated, from which the ODE driver has computed a list of time steps. Now, we want to simulate a scenario in which we don't know the termination time. Instead, the termination of ODE integration will be determined by the ODE state; in this case, when the magnitude of the velocity reaches a pre-determined value.
+
+To achieve this, we will modify the function being integrated to return an \emph{optional} result: \code{(time, state) -> Maybe (time :-* diff)}. A return value of \code{Nothing} indicates that the ODE has run past its termination.
+
+In addition, we will supply a means to ensure we determine the termination time with a specified accuracy, \gls{tepsilon}. This will be achieved by halving the time step successively at the end of the integration until the time step that is taken, \gls{dt}, satisfies \(\gls{dt} < \gls{tepsilon}\).
+
+\begin{problem}[label=terminatingIntegration]{Terminating ODE Integration.}
+  In the file \filename{ODE.hs},
+  \begin{probitemize}
+  \item implement \code{rk4StepTerminating}, which modifies the RK4 step to handle the possibility of the gradient function returning \code{Nothing} at any step
+  \item implement \code{integrateTerminating}, which performs terminating integration, bisecting the step at the end to achieve a given accuracy in termination time
+  \end{probitemize}
+  In \filename{ODEExamples.hs},
+  \begin{probitemize}
+  \item run \code{plotVerticalThrow Screen}, to view a plot of integrating an ODE representing a vertical throw, which terminates when the velocity reaches zero
+  \end{probitemize}
+\end{problem}
+
+Figure~\ref{fig:vertical-throw} shows an example of an ODE terminating itself using \code{integrateTerminating}. The ODE simulates throwing an object vertically upward in a constant gravitational field. The initial conditions supply a positive vertical velocity, and the ODE is set up to terminate when the velocity reaches zero. The time step of the simulation is set to \SI{0.5}{\s}, but near the end, the halving of the time step is visible as it iterates toward a more accurate completion time. In this simulation, \(\gls{tepsilon}=\SI{0.001}{\s}\).
+
+\begin{figure}[htbp]
+  \resizebox{\textwidth}{!}{\input{fig/vertical-throw}}
+  \caption{Illustration of halving the integration time step to find a more accurate completion time of a simulation.}
+  \label{fig:vertical-throw}
+\end{figure}
+
+In this case, we are using a binary signal to indicate termination. There are other possibilities, such as supplying a locally-monotonic function, which allow more efficient isolation of termination by root finding.
+
+\subsection{Equations of Motion}
+
+The state for the Hohmann transfer simulation will include mass, \gls{m}, distance travelled, \gls{ds}, vector position, \gls{r}, and vector velocity, \gls{v}:
+\begin{align}
+  \gls{stvec} &= \begin{bmatrix}\gls{m}\\\gls{ds}\\\gls{r}\\\gls{v}\end{bmatrix}
+\end{align}
+Distance travelled is tracked so that we can more easily determine when to terminate the numerical simulations of the circular orbits. We terminate the circular orbit simulations when they reach particular angles, but since angles are periodic (ie.\ \(\gls{theta}=0=2\pi\)), we use the distance traveled to roughly isolate which orbital pass we happen to be on.
+
+\subsubsection{Coasting Trajectory}
+
+The equation of motion for a coasting trajectory is given as follows:
+\begin{align}
+  \dot{\gls{stvec}}
+  = \begin{bmatrix}\dot{\gls{m}}\\\dot{\gls{ds}}\\\dot{\gls{r}}\\\dot{\gls{v}}\end{bmatrix}
+  &= \begin{bmatrix}
+    0 \\
+    |\gls{v}| \\
+    \gls{v} \\
+    \gls{FG}/\gls{m}
+  \end{bmatrix}
+\end{align}
+where \gls{FG}, the force due to gravity, is given by:
+\begin{align}
+  \gls{FG} &= -\frac{\gls{mu}\gls{m}}{|\gls{r}|^2}\frac{\gls{r}}{|\gls{r}|}
+\end{align}
+
+\subsubsection{Burn Trajectory}
+
+Each burn will be aligned with the direction of the vehicle's current velocity. The equation of motion during a burn is given as:
+\begin{align}
+  \dot{\gls{stvec}}
+  = \begin{bmatrix}\dot{\gls{m}}\\\dot{\gls{ds}}\\\dot{\gls{r}}\\\dot{\gls{v}}\end{bmatrix}
+  &= \begin{bmatrix}
+    -\dot{\gls{m}} \\
+    |\gls{v}| \\
+    \gls{v} \\
+    (\gls{FG} + \gls{FT})/\gls{m}
+  \end{bmatrix}
+\end{align}
+in which the thrust force, \gls{FT}, is:
+\begin{align}
+  \gls{FT} &= \gls{g0}\gls{Is}\dot{\gls{m}} \frac{\gls{v}}{|\gls{v}|}
+\end{align}
+\(\dot{\gls{m}}\) is constant during the burn.
+
+\begin{problem}[label=hohmann]{Hohmann transfer numerical simulation.}
+  In the file \filename{Hohmann.hs},
+  \begin{probitemize}
+  \item implement \code{angle}
+  \item implement \code{gravity}
+  \item implement \code{thrust}
+  \item implement \code{terminateWhen}
+  \item implement \code{coast}
+  \item implement \code{burn}
+  \end{probitemize}
+  In \filename{Hohmann.hs},
+  \begin{probitemize}
+  \item run \code{plotHighImpulseBurn Screen}, to view a plot of a simulated normal high-impulse Hohmann transfer
+  \item run \code{plotlowimpulseburn screen}, to view a plot of a simulated low-impulse hohmann transfer
+  \item run \code{plotLowUltraImpulseBurn Screen}, to view a plot of a simulated ultra-low-impulse Hohmann transfer
+  \end{probitemize}
+\end{problem}
+
+Figure~\ref{fig:hohmann-high-impulse} shows a numerical simulation of a Hohmann transfer as it would normally be performed. The burns in this case are representative of a chemical rocket of approximately the same size as the Ascent Propulsion System (APS) of the lunar ascent stage of the Apollo missions, and a vehical of a similar mass (\(\gls{Is}=\SI{310}{s}\), \(\dot{\gls{m}}=\SI{5.13}{kg\per\s}\), \(\gls{m}=\SI{3000}{kg}\)). The burn periods are so short that they are negligible compared with the rest of the orbit, and are thus well-approximated as instantaneous impulses.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.5\textwidth}{!}{\input{fig/hohmann-high-impulse}}
+  \caption{High impulse Hohmann transfer numerical simulation, using parameters representative of a chemical rocket. The nominal transfer is from 20 nautical miles to 60 nautical miles of altitude. The burn trajectories (shown in red) are so short as to be invisible. The altitude scale is magnified by a factor of 20.}
+  \label{fig:hohmann-high-impulse}
+\end{figure}
+
+Figure~\ref{fig:hohmann-low-impulse} is a low-impulse scenario (\(\gls{Is}=\SI{200}{s}\), \(\dot{\gls{m}}=\SI{0.2}{kg\per\s}\), \(\gls{m}=\SI{3000}{kg}\)), in which the impulse is low enough that the burn periods are visible in the trajectory. However, a similar manouvre is still performed, and the analytical prediction is quite representative of the numerical result.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.5\textwidth}{!}{\input{fig/hohmann-low-impulse}}
+  \caption{Low impulse Hohmann transfer simulation. The nominal transfer is from 20 nautical miles to 60 nautical miles of altitude. The burn trajectories are visible but still short enough that the analytical solution is valid. The altitude scale is magnified by a factor of 20.}
+  \label{fig:hohmann-low-impulse}
+\end{figure}
+
+Finally, Figure~\ref{fig:hohmann-ultra-low-impulse} shows an much lower-impulse scenario (only \SI{~75}{N} acting on a \SI{3000}{kg} spacecraft), resulting in an outcome which is clearly different from the analytical solution. This is expected, since the thrust is definitely not instantaneous, and large portions of the trajectory are produced under thrust conditions.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.5\textwidth}{!}{\input{fig/hohmann-ultra-low-impulse}}
+  \caption{Ultra-low impulse Hohmann transfer numerical simulation. The nominal transfer is from 20 nautical miles to 60 nautical miles of altitude. Now the burn trajectories are more substantial and detrimentally affect the final orbit, so that the analytical solution is entirely non-representative of the outcome. The altitude scale is magnified by a factor of 20.}
+  \label{fig:hohmann-ultra-low-impulse}
+\end{figure}
+
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]

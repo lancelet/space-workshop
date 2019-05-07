@@ -22,6 +22,9 @@ module ODE
   , integrateWithDiff
   , rk4Step
   , eulerStep
+    -- ** self-terminating versions
+  , integrateTerminating
+  , rk4StepTerminating
     -- ** Euler's method for Double only
   , integrateEulerDouble
   , eulerStepDouble
@@ -30,6 +33,7 @@ module ODE
 import           Data.AffineSpace   (AffineSpace, Diff, (.+^))
 import           Data.Basis         (Basis, HasBasis)
 import           Data.LinearMap     ((:-*), lapply)
+import qualified Data.List          as List
 import           Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.MemoTrie      (HasTrie)
@@ -212,7 +216,7 @@ integrateWithDiff
   -> NonEmpty (time, state, time :-* diff)  -- ^ Computed states
 integrateWithDiff -- stepper x0 (t0 :| ts) f =
   = todo (FallbackSolution Solutions.ODE.integrateWithDiff)
-  
+
 
 {------------------------------------------------------------------------------
 Problem 2: Implement 4th-order Runge-Kutta Integration (RK4)
@@ -243,6 +247,52 @@ rk4Step
   -> (time, state)                     -- ^ After the step @(t, x)@
 rk4Step -- dt f q@(t, x)
   = todo (FallbackSolution Solutions.ODE.rk4Step)
+
+
+
+-- | Stepper function for ODE integration that can terminate.
+type TerminatingStepper time state
+   = time
+  -> ((time, state) -> Maybe (time :-* Diff state))
+  -> (time, state)
+  -> Maybe (time, state)
+
+
+-- | Driver for an ODE that terminates itself.
+--
+-- Bisection is used to find a terminal value for the ODE at a time whose error
+-- is less than @tEpsilon@.
+integrateTerminating
+  :: forall state diff time s.
+     ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar time, Ord time, Fractional s )
+  => TerminatingStepper time state             -- ^ Stepper to use.
+  -> time                                      -- ^ Allowable error in the final time.
+  -> time                                      -- ^ Step size @dt@.
+  -> (time, state)                             -- ^ Initial state.
+  -> ((time, state) -> Maybe (time :-* diff))  -- ^ Gradient function.
+  -> NonEmpty (time, state)                    -- ^ Computed states.
+integrateTerminating {- stepper tEpsilon dt state0 f -}
+  = todo (FallbackSolution Solutions.ODE.integrateTerminating)
+
+
+-- | Single step of terminating 4th-order Runge-Kutta integration.
+--
+-- A result is only returned if all none of the function evaluations indicate
+-- termination.
+rk4StepTerminating
+  :: ( AffineSpace state
+     , diff ~ Diff state, VectorSpace diff
+     , HasBasis time, HasTrie (Basis time)
+     , s ~ Scalar time, s ~ Scalar diff, Fractional s )
+  => time                                            -- ^ Step size @dt@
+  -> ((time, state) -> Maybe (time :-* Diff state))  -- ^ Gradient function @f (x, t)@
+  -> (time, state)                                   -- ^ Before the step @(t, x)@
+  -> Maybe (time, state)                             -- ^ Optional @(t, x)@ after the step
+rk4StepTerminating {- dt f (t, x) -}
+  = todo (FallbackSolution Solutions.ODE.rk4StepTerminating)
 
 
 {- $setup
