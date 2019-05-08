@@ -5,6 +5,7 @@ extra-deps:
 - iterm-show-0.1.0.1
 - diagrams-pgf-1.4.1
 - diagrams-postscript-1.4.1
+- haskell-src-exts-1.21.0
 - posix-pty-0.2.1.1
 - tasty-hedgehog-0.2.0.0
 - texrunner-0.0.1.2
