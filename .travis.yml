@@ -23,13 +23,13 @@ before_install:
 
 jobs:
   include:
-    - stage: lens
-      name: "Cache lens and its dependencies"
+    - stage: bigdeps
+      name: "Cache some big / time-consuming dependencies"
       addons:
         apt:
           packages:
             - libgmp-dev
-      script: stack --no-terminal install lens
+      script: stack --no-terminal install diagrams-core lens singletons
     - stage: build
       name: "Build library and notes"
       addons:
@@ -70,5 +70,5 @@ jobs:
           branch: master
 
 stages:
-  - lens
+  - bigdeps
   - build
