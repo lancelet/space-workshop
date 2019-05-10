@@ -38,24 +38,31 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-install:
-# Build dependencies
-- stack --no-terminal --install-ghc test --only-dependencies
+jobs:
+  include:
+    - stage: lens
+      script: stack --no-terminal install lens
+    - stage: deps
+      script: stack --no-terminal --install-ghc test --only-dependencies
+    - stage: build
+      script:
+      - export IDDQD=1
+      - stack --no-terminal test --haddock --no-haddock-deps
+    - stage: notes
+      script:
+      - stack exec tex-plots
+      - export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
+      - sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
+      - sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
+      - pushd notes; make; popd
+      - cp notes/notes.pdf gh-pages/notes.pdf
+      - cp logo.svg gh-pages/logo.svg
 
-script:
-# Build the package, its tests, and its docs and run the tests
-- export IDDQD=1
-- stack --no-terminal test --haddock --no-haddock-deps
-# Generate PGF diagrams for the notes
-- stack exec tex-plots
-# Set publication date strings
-- export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
-- sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
-- sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
-# Build the notes and GH Pages site
-- pushd notes; make; popd
-- cp notes/notes.pdf gh-pages/notes.pdf
-- cp logo.svg gh-pages/logo.svg
+stages:
+  - lens
+  - deps
+  - build
+  - notes
 
 # Deploy necessary components to GitHub Pages
 deploy:
