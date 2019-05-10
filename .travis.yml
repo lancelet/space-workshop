@@ -29,7 +29,7 @@ jobs:
         apt:
           packages:
             - libgmp-dev
-      script: stack --no-terminal install diagrams-core lens singletons
+      script: stack --no-terminal install diagrams-core JuicyPixels lens singletons
     - stage: build
       name: "Build library and notes"
       addons:
