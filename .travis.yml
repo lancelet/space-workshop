@@ -13,24 +13,6 @@ cache:
   directories:
   - $HOME/.stack
 
-# Ensure necessary system libraries are present
-addons:
-  apt:
-    sources:
-      - sourceline: 'ppa:jonathonf/texlive-2018'
-    packages:
-      - libgmp-dev
-      - texlive-fonts-recommended
-      - texlive-generic-extra
-      - texlive-latex-extra
-      - texlive-luatex
-      - texlive-publishers
-      - texlive-science
-      - texlive-xetex
-      - latexmk
-      - fonts-lmodern
-      - fonts-texgyre
-      - python-pygments
 
 before_install:
 # Download and unpack the stack executable
@@ -41,15 +23,36 @@ before_install:
 jobs:
   include:
     - stage: lens
+      addons:
+        apt:
+          packages:
+            - libgmp-dev
       script: stack --no-terminal install lens
     - stage: deps
+      addons:
+        apt:
+          packages:
+            - libgmp-dev
       script: stack --no-terminal --install-ghc test --only-dependencies
     - stage: build
+      addons:
+        apt:
+          packages:
+            - libgmp-dev
+            - texlive-fonts-recommended
+            - texlive-generic-extra
+            - texlive-latex-extra
+            - texlive-luatex
+            - texlive-publishers
+            - texlive-science
+            - texlive-xetex
+            - latexmk
+            - fonts-lmodern
+            - fonts-texgyre
+            - python-pygments
       script:
       - export IDDQD=1
       - stack --no-terminal test --haddock --no-haddock-deps
-    - stage: notes
-      script:
       - stack exec tex-plots
       - export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
       - sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
