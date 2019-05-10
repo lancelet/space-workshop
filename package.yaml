@@ -71,6 +71,14 @@ executables:
     dependencies:
     - space-workshop
 
+  dpendulum:
+    main:                Main.hs
+    source-dirs:         app/dpendulum
+    ghc-options:         *ghc-options
+    dependencies:
+    - space-workshop
+    - optparse-applicative
+
   tex-plots:
     main:                Main.hs
     source-dirs:         app/tex-plots

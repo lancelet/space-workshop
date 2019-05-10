@@ -9,10 +9,16 @@ Equations from here: https://en.wikipedia.org/wiki/Double_pendulum
 {-# LANGUAGE NegativeLiterals #-}
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE TypeOperators    #-}
-module DoublePendulum where
+module DoublePendulum
+  ( -- * Types
+    RenderParams(..)
+  , Params(..)
+  , State(..)
+    -- * Functions
+  , doublePendulumSim
+  ) where
 
-import           Codec.Picture                       (Image,
-                                                      PixelRGBA8 (PixelRGBA8),
+import           Codec.Picture                       (Image, PixelRGBA8,
                                                       PixelRGBF)
 import qualified Codec.Picture                       as P
 import qualified Codec.Picture.Types                 as P
@@ -34,6 +40,7 @@ import qualified Graphics.Rasterific.Transformations as R
 import qualified ODE                                 as ODE
 
 
+{-
 test :: IO ()
 test = do
   let
@@ -59,6 +66,7 @@ test = do
                    }
 
   doublePendulumSim rp params state0 2.0 4 10 "test.gif"
+-}
 
 
 doublePendulumSim
@@ -126,7 +134,7 @@ takeGroupN n v =
 seqPairs :: [a] -> [(a, a)]
 seqPairs (a : b : []) = [(a, b)]
 seqPairs (a : b : xs) = (a, b) : seqPairs (b : xs)
-seqPairs _ = []
+seqPairs _            = []
 
 
 averageImages :: [Image PixelRGBF] -> Image PixelRGBF
@@ -177,7 +185,7 @@ renderFrame rp p states =
       case tracePixelWidth rp of
         Just w  -> (R.transform (R.applyTransformation xform) trace, w)
         Nothing -> (mempty, 0)
-        
+
   in
     P.promoteImage
     $ P.dropAlphaLayer
