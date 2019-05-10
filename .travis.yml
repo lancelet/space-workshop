@@ -12,25 +12,8 @@ language: generic
 cache:
   directories:
   - $HOME/.stack
+  timeout: 1000
 
-# Ensure necessary system libraries are present
-addons:
-  apt:
-    sources:
-      - sourceline: 'ppa:jonathonf/texlive-2018'
-    packages:
-      - libgmp-dev
-      - texlive-fonts-recommended
-      - texlive-generic-extra
-      - texlive-latex-extra
-      - texlive-luatex
-      - texlive-publishers
-      - texlive-science
-      - texlive-xetex
-      - latexmk
-      - fonts-lmodern
-      - fonts-texgyre
-      - python-pygments
 
 before_install:
 # Download and unpack the stack executable
@@ -38,31 +21,54 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-install:
-# Build dependencies
-- stack --no-terminal --install-ghc test --only-dependencies
+jobs:
+  include:
+    - stage: bigdeps
+      name: "Cache some big / time-consuming dependencies"
+      addons:
+        apt:
+          packages:
+            - libgmp-dev
+      script: stack --no-terminal install diagrams-core JuicyPixels lens singletons
+    - stage: build
+      name: "Build library and notes"
+      addons:
+        apt:
+          sources:
+            - sourceline: 'ppa:jonathonf/texlive-2018'
+          packages:
+            - libgmp-dev
+            - texlive-fonts-recommended
+            - texlive-generic-extra
+            - texlive-latex-extra
+            - texlive-luatex
+            - texlive-publishers
+            - texlive-science
+            - texlive-xetex
+            - latexmk
+            - fonts-lmodern
+            - fonts-texgyre
+            - python-pygments
+      script:
+      - stack --no-terminal --install-ghc test --only-dependencies
+      - export IDDQD=1
+      - stack --no-terminal test --haddock --no-haddock-deps
+      - stack exec tex-plots
+      - export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
+      - sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
+      - sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
+      - pushd notes; make; popd
+      - cp notes/notes.pdf gh-pages/notes.pdf
+      - cp logo.svg gh-pages/logo.svg
+      deploy:
+        provider: pages
+        local_dir: gh-pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        keep_history: true
+        on:
+          branch: master
 
-script:
-# Build the package, its tests, and its docs and run the tests
-- export IDDQD=1
-- stack --no-terminal test --haddock --no-haddock-deps
-# Generate PGF diagrams for the notes
-- stack exec tex-plots
-# Set publication date strings
-- export PUB_DATE=$(date '+%Y-%m-%dT%H:%M:%S%z')
-- sed -i -e "s/PUBDATE/${PUB_DATE}/" notes/notes.tex
-- sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
-# Build the notes and GH Pages site
-- pushd notes; make; popd
-- cp notes/notes.pdf gh-pages/notes.pdf
-- cp logo.svg gh-pages/logo.svg
-
-# Deploy necessary components to GitHub Pages
-deploy:
-  provider: pages
-  local_dir: gh-pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  keep_history: true
-  on:
-    branch: master
+stages:
+  - bigdeps
+  - build

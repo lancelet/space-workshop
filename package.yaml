@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 build-tools:
 - wshterm
+- ghcid
 
 dependencies:
 - base >= 4.7 && < 5
@@ -51,7 +52,7 @@ library:
   source-dirs: src
 
 _ghc-options: &ghc-options
-  - -O0
+  - -O2
   - -threaded
   - -rtsopts
   - -with-rtsopts=-N
