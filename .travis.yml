@@ -12,6 +12,7 @@ language: generic
 cache:
   directories:
   - $HOME/.stack
+  timeout: 1000
 
 
 before_install:
@@ -23,18 +24,14 @@ before_install:
 jobs:
   include:
     - stage: lens
+      name: "Cache lens and its dependencies"
       addons:
         apt:
           packages:
             - libgmp-dev
       script: stack --no-terminal install lens
-    - stage: deps
-      addons:
-        apt:
-          packages:
-            - libgmp-dev
-      script: stack --no-terminal --install-ghc test --only-dependencies
     - stage: build
+      name: "Build library and notes"
       addons:
         apt:
           packages:
@@ -51,6 +48,7 @@ jobs:
             - fonts-texgyre
             - python-pygments
       script:
+      - stack --no-terminal --install-ghc test --only-dependencies
       - export IDDQD=1
       - stack --no-terminal test --haddock --no-haddock-deps
       - stack exec tex-plots
@@ -60,19 +58,16 @@ jobs:
       - pushd notes; make; popd
       - cp notes/notes.pdf gh-pages/notes.pdf
       - cp logo.svg gh-pages/logo.svg
+      deploy:
+        provider: pages
+        local_dir: gh-pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        keep_history: true
+        on:
+          branch: master
 
 stages:
   - lens
   - deps
   - build
-  - notes
-
-# Deploy necessary components to GitHub Pages
-deploy:
-  provider: pages
-  local_dir: gh-pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  keep_history: true
-  on:
-    branch: master
