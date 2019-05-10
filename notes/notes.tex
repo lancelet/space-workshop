@@ -359,7 +359,7 @@ To motivate the generalized form of Euler's method, let's consider simple harmon
 \item Position, \gls{rs}
 \item Velocity, \gls{vs}
 \end{paritemize}
-The data type \code{State} in \filename{ODEExamples.hs} describes this state, which is the \code{AffineSpace} of the problem. It introduces statically type-checked units from the \hspackage{units} package for length and velocity. The data type \code{DState} is the correspondng \code{VectorSpace} of the problem, representing deltas in the state.
+The data type \code{StateSHM} in \filename{ODEExamples.hs} describes this state, which is the \code{AffineSpace} of the problem. It introduces statically type-checked units from the \hspackage{units} package for length and velocity. The data type \code{DStateSHM} is the correspondng \code{VectorSpace} of the problem, representing deltas in the state.
 
 In SHM, a linear spring force, \gls{Fs}, is proportional to the position, \gls{rs}, with a spring constant, \gls{k}:
 \begin{align}
