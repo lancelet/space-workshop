@@ -38,7 +38,9 @@ dependencies:
 - linear
 - MemoTrie
 - mtl
+- parallel
 - primitive
+- Rasterific
 - text
 - transformers
 - units
