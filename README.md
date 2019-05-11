@@ -19,6 +19,12 @@ $ stack --install-ghc test --only-dependencies
 
 in the checked-out repository.
 
+## Docker Option
+
+If you are unable to obtain the required dependencies prior to the workshop, we will be distributing (on temporary loan only) USB flash drives containing a Docker image with the dependencies pre-installed. If you use this option, please copy everything off the USB drive before passing it on. Please then follow the instructions in the README from the flash drive.
+
+For reference, the Docker image itself was built using the [CI pipeline here](https://gitlab.com/jmerritt/haskell-space-workshop-docker-image), but the USB Flash drive also contains a snapshot of this GitHub repository and the notes.
+
 ## Developer Notes
 
 See the `.travis.yml` file for detailed CI build instructions.
