@@ -59,6 +59,7 @@ jobs:
       - sed -i -e "s/{{PUB_DATE}}/${PUB_DATE}/" gh-pages/index.html
       - pushd notes; make; popd
       - cp notes/notes.pdf gh-pages/notes.pdf
+      - cp notes/intro-slides.pdf gh-pages/intro-slides.pdf
       - cp logo.svg gh-pages/logo.svg
       deploy:
         provider: pages
