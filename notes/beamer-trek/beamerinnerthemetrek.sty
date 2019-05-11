@@ -1,0 +1,256 @@
+\makeatletter
+
+\def\largecircle{%
+  \tikz[baseline]{
+    \fill (0,0.75ex) circle (0.75ex);
+  }%
+}
+
+\defbeamertemplate*{itemize item}{trek}{\largecircle}
+
+\defbeamertemplate*{itemize subitem}{trek}{\largecircle}
+
+\defbeamertemplate*{itemize subsubitem}{trek}{\largecircle}
+
+\defbeamertemplate*{itemize/enumerate body begin}{trek}{%
+  \renewcommand{\theenumi}{\ifnum\value{enumi}<10 0\fi\arabic{enumi}}%
+  \renewcommand{\theenumii}{\ifnum\value{enumii}<10 0\fi\arabic{enumii}}%
+  \renewcommand{\theenumiii}{\ifnum\value{enumiii}<10 0\fi\arabic{enumiii}}%
+  \setlength\labelsep{\the\trek@titlegap}%
+  %\setlength\itemsep{0pt}%  TODO: arrange item separation nicely
+}
+
+\defbeamertemplate*{enumerate item}{trek}{%
+  % height of "cursor button"
+  \newdimen\cursor@height%
+  \setbox0=\hbox{\usebeamerfont{itemize/enumerate body}ML8}%
+  \cursor@height=\ht0%
+  \advance\cursor@height by 0.6ex%
+  % draw the enumerate item
+  \tikz[baseline]{
+    \draw (0,-0.3ex) node [
+    xscale=-1,
+    trek cursor,
+    trek/cursor/width=\the\trek@cursorwidth,
+    trek/cursor/height=\the\cursor@height
+    ] {};
+    \draw (-0.3ex,0) node [anchor=south east,inner sep=0,line width=0] {%
+      \color{black}\insertenumlabel%
+    };
+     \filldraw (\the\trek@buttongap,-0.3ex) rectangle ++(\the\trek@titlegap,\the\cursor@height);
+  }%
+}
+
+\defbeamertemplate*{enumerate subitem}{trek}{%
+  % height of "cursor button"
+  \newdimen\cursor@height%
+  \setbox0=\hbox{\usebeamerfont{itemize/enumerate subbody}ML8}%
+  \cursor@height=\ht0%
+  \advance\cursor@height by 0.6ex%
+  % width of "00"
+  \newdimen\prev@width%
+  \setbox0=\hbox{00}%
+  \prev@width=\wd0%
+  % width of cursor
+  \newdimen\cursor@width%
+  \cursor@width=\the\trek@cursorwidth%
+  \advance\cursor@width by \prev@width%
+  % draw the enumerate subitem
+  \tikz[baseline]{
+    \draw (0,-0.3ex) node [
+    xscale=-1,
+    trek cursor,
+    trek/cursor/width=\the\cursor@width,
+    trek/cursor/height=\the\cursor@height
+    ]{};
+    \draw (-0.3ex,0) node [anchor=south east,inner sep=0,line width=0] {%
+      \color{black}\insertenumlabel-\insertsubenumlabel%
+    };
+    \filldraw (\the\trek@buttongap,-0.3ex) rectangle ++(\the\trek@titlegap,\the\cursor@height);
+  }%
+}
+
+\defbeamertemplate*{enumerate subsubitem}{trek}%
+{%
+  % height of "cursor button"
+  \newdimen\cursor@height%
+  \setbox0=\hbox{\usebeamerfont{itemize/enumerate subsubbody}ML8}%
+  \cursor@height=\ht0%
+  \advance\cursor@height by 0.6ex%
+  % width of "00"
+  \newdimen\prev@width%
+  \setbox0=\hbox{00}%
+  \prev@width=\wd0%
+  % width of cursor
+  \newdimen\cursor@width%
+  \cursor@width=\the\trek@cursorwidth%
+  \advance\cursor@width by \prev@width%
+  \advance\cursor@width by \prev@width%
+  % draw the enumerate subsubitem
+  \tikz[baseline]{
+    \draw (0,-0.3ex) node [
+    xscale=-1,
+    trek cursor,
+    trek/cursor/width=\the\cursor@width,
+    trek/cursor/height=\the\cursor@height
+    ]{};
+    \draw (-0.3ex,0) node [anchor=south east,inner sep=0,line width=0] {%
+      \color{black}\insertenumlabel-\insertsubenumlabel-\insertsubsubenumlabel%
+    };
+    \filldraw (\the\trek@buttongap,-0.3ex) rectangle ++(\the\trek@titlegap,\the\cursor@height);
+  }%
+}
+
+\defbeamertemplate*{title page}{trek}{%
+  % Measure size of subtitle, to go in the top right corner
+  \newdimen\@subtitlewidth%
+  \newdimen\@subtitleheight%
+  \setbox0=\hbox{\usebeamerfont{subtitle}\insertsubtitle}%
+  \@subtitlewidth=\wd0%
+  \setbox1=\hbox{\usebeamerfont{subtitle}8ML}%
+  \@subtitleheight=\ht1%
+  % Compute height of frametitle region
+  \newdimen\frametitle@height%
+  \frametitle@height=\@subtitleheight%
+  \advance \frametitle@height by \trek@margin%
+  % Measure size of institute, to go in the bottom right corner
+  \newdimen\@institutewidth%
+  \newdimen\@instituteheight%
+  \setbox0=\hbox{\usebeamerfont{institute}\insertinstitute}%
+  \@institutewidth=\wd0%
+  \setbox1=\hbox{\usebeamerfont{institute}8ML}%
+  \@instituteheight=\ht1%
+  % Origin of the NE "cursor" (right-most knobbly thing)
+  \newdimen\cursorne@x%
+  \newdimen\cursorne@y%
+  \cursorne@x=\paperwidth%
+  \advance \cursorne@x by -\the\trek@margin%
+  \advance \cursorne@x by -\the\trek@cursorwidth%
+  \cursorne@y=\paperheight%
+  \advance \cursorne@y by -\the\trek@margin%
+  \advance \cursorne@y by -\the\@subtitleheight%
+  % Origin of NW "cursor"
+  \newdimen\cursornw@x%
+  \newdimen\cursornw@y%
+  \cursornw@x=\trek@cursorwidth%
+  \advance \cursornw@x by \trek@margin%
+  \cursornw@y=\cursorne@y%
+  % Origin of the title (center of baseline)
+  \newdimen\subtitle@x%
+  \newdimen\subtitle@y%
+  \subtitle@x=-\the\@subtitlewidth%
+  \divide \subtitle@x by 2%
+  \advance \subtitle@x by \the\cursorne@x%
+  \advance \subtitle@x by -\the\trek@titlegap%
+  \subtitle@y=\the\cursorne@y%
+  % Top bar
+  \newdimen\topbar@x%
+  \newdimen\topbar@y%
+  \newdimen\topbar@width%
+  \topbar@x=\the\cursornw@x%
+  \advance \topbar@x by \the\trek@titlegap%
+  \topbar@y=\the\cursornw@y%
+  \topbar@width=\the\paperwidth%
+  \advance \topbar@width by -\the\topbar@x%
+  \advance \topbar@width by -\the\trek@margin%
+  \advance \topbar@width by -\the\@subtitlewidth%
+  \advance \topbar@width by -\the\trek@cursorwidth%
+  \advance \topbar@width by -\the\trek@titlegap%
+  \advance \topbar@width by -\the\trek@titlegap%
+  % Origin of the SW "cursor" (left-most knobbly thing)
+  \newdimen\cursorsw@x%
+  \newdimen\cursorsw@y%
+  \cursorsw@x=\the\trek@cursorwidth%
+  \advance \cursorsw@x by \the\trek@margin%
+  \cursorsw@y=\the\trek@margin%
+  % Origin of the institute (center of baseline)
+  \newdimen\institute@x%
+  \newdimen\institute@y%
+  \institute@x=\the\@institutewidth%
+  \divide \institute@x by 2%
+  \advance \institute@x by \the\cursorsw@x%
+  \advance \institute@x by \the\trek@titlegap%
+  \institute@y=\cursorsw@y%
+  % Bottom bar
+  \newdimen\bottombar@x%
+  \newdimen\bottombar@y%
+  \newdimen\bottombar@width%
+  \bottombar@x=\the\cursorsw@x%
+  \advance \bottombar@x by \the\@institutewidth%
+  \advance \bottombar@x by \the\trek@titlegap%
+  \advance \bottombar@x by \the\trek@titlegap%
+  \bottombar@y=\the\cursorsw@y%
+  \bottombar@width=\the\paperwidth%
+  \advance \bottombar@width by -\the\bottombar@x%
+  \advance \bottombar@width by -\the\trek@margin%
+  \advance \bottombar@width by -\the\trek@cursorwidth%
+  \advance \bottombar@width by -\the\trek@titlegap%
+  % Origin of the SE "cursor"
+  \newdimen\cursorse@x%
+  \newdimen\cursorse@y%
+  \cursorse@x=\paperwidth%
+  \advance\cursorse@x by -\the\trek@margin%
+  \advance\cursorse@x by -\the\trek@cursorwidth%
+  \cursorse@y=\the\cursorsw@y%
+  % Typeset the title
+  \vspace{-1.2pt}%
+  \leavevmode%
+  \hskip-\the\trek@full@sidebar@width%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=\paperheight,left]{subtitle}%
+      \begin{tikzpicture}
+        \useasboundingbox (0,0) rectangle (\paperwidth,\paperheight);
+        %\draw [draw=none,fill=red] (0,0) rectangle (\paperwidth,\paperheight);
+        % NE cursor
+        \draw (\the\cursorne@x,\the\cursorne@y) node [
+        trek cursor,
+        trek/cursor/width=\the\trek@cursorwidth,
+        trek/cursor/height=\the\@subtitleheight
+        ]{};
+        % subtitle text
+        \draw (\the\subtitle@x,\the\subtitle@y) node [anchor=base,inner sep=0]
+        {\usebeamerfont{subtitle}\insertsubtitle};
+        % top bar
+        \filldraw (\the\topbar@x,\the\topbar@y) rectangle ++(\the\topbar@width,\the\@subtitleheight);
+        % NW cursor
+        \draw (\the\cursornw@x,\the\cursornw@y) node [
+        trek cursor,
+        xscale=-1,
+        trek/cursor/width=\the\trek@cursorwidth,
+        trek/cursor/height=\the\@subtitleheight
+        ]{};
+        % cursor at left
+        \draw (\the\cursorsw@x,\the\cursorsw@y) node [
+        trek cursor,
+        xscale=-1,
+        trek/cursor/width=\the\trek@cursorwidth,
+        trek/cursor/height=\the\@instituteheight
+        ]{};
+        % institute text
+        \draw (\the\institute@x,\the\institute@y) node [anchor=base,inner sep=0]
+        {\usebeamerfont{institute}\insertinstitute};
+        % bottom bar
+        \filldraw (\the\bottombar@x,\the\bottombar@y) rectangle ++(\the\bottombar@width,\the\@subtitleheight);
+        % SE cursor
+        \draw (\the\cursorse@x,\the\cursorse@y) node [
+        trek cursor,
+        trek/cursor/width=\the\trek@cursorwidth,
+        trek/cursor/height=\the\@instituteheight
+        ]{};
+        % logo and title
+        \draw (\paperwidth/2,\paperheight/2) node [anchor=center] {
+          \parbox{\paperwidth}{
+            \begin{center}
+              \inserttitlegraphic\par
+              {\usebeamercolor[fg]{title}\usebeamerfont{title}\vspace{1ex}\inserttitle}\par
+              {\usebeamercolor[fg]{author}\usebeamerfont{author}\insertauthor}\par
+              {\usebeamercolor[fg]{date}\usebeamerfont{date}\insertdate}\par
+            \end{center}
+          }
+        };
+      \end{tikzpicture}%
+    \end{beamercolorbox}%
+  }%
+}%
+
+\makeatother

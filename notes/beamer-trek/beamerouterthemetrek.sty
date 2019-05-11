@@ -1,0 +1,274 @@
+\RequirePackage{etex}
+\RequirePackage{tikz}
+\RequirePackage{trek-shapes}
+
+\mode<presentation>
+
+\makeatletter
+
+% Basic dimensions of the trek theme
+\newdimen\trek@margin
+\newdimen\trek@titlegap
+\newdimen\trek@elbow@height
+\newdimen\trek@elbow@outer@radius
+\newdimen\trek@elbow@inner@radius
+\newdimen\trek@cursorwidth
+\newdimen\trek@sidebar@width
+\newdimen\trek@left@footline@elbow@width
+\newdimen\trek@buttongap
+\trek@margin=2mm
+\trek@titlegap=1.0mm
+\trek@elbow@height=10mm
+\trek@elbow@outer@radius=6mm
+\trek@elbow@inner@radius=3mm
+\trek@cursorwidth=5mm
+\trek@sidebar@width=16mm
+\trek@left@footline@elbow@width=25mm
+\trek@buttongap=0.5mm
+
+% Derived dimensions
+\newdimen\trek@full@sidebar@width
+\newdimen\trek@margin@right
+\trek@full@sidebar@width=\trek@sidebar@width
+\advance \trek@full@sidebar@width by \trek@margin
+\trek@margin@right=\trek@margin
+\advance \trek@margin@right by \trek@margin
+
+\setbeamersize{sidebar width left=\the\trek@full@sidebar@width}
+\setbeamersize{text margin left=\the\trek@margin}
+\setbeamersize{text margin right=\the\trek@margin@right}
+
+\defbeamertemplate*{headline}{trek theme}{}
+
+\defbeamertemplate*{navigation symbols}{trek theme}{}
+
+\defbeamertemplate*{frametitle}{trek theme}
+{%
+  % Measure height and width of the frametitle text
+  \newdimen\@titletextwidth%
+  \newdimen\@titletextheight%
+  \setbox0=\hbox{\usebeamerfont{frametitle}\insertframetitle}%
+  \@titletextwidth=\wd0%
+  \setbox1=\hbox{\usebeamerfont{frametitle}8ML}%
+  \@titletextheight=\ht1%
+  % Compute height of frametitle region (including top margin)
+  \newdimen\frametitle@height%
+  \frametitle@height=\trek@elbow@height%
+  \advance \frametitle@height by \trek@margin%
+  % Origin of the "cursor" (right-most knobbly thing)
+  \newdimen\cursor@x%
+  \newdimen\cursor@y%
+  \cursor@x=\paperwidth%
+  \advance \cursor@x by -\the\trek@margin%
+  \advance \cursor@x by -\the\trek@cursorwidth%
+  \cursor@y=\trek@elbow@height%
+  \advance \cursor@y by -\the\@titletextheight%
+  % Origin of the title (center of baseline)
+  \newdimen\title@x%
+  \newdimen\title@y%
+  \title@x=-\the\@titletextwidth%
+  \divide \title@x by 2%
+  \advance \title@x by \the\cursor@x%
+  \advance \title@x by -\the\trek@titlegap%
+  \title@y=\cursor@y%
+  % Handle first page and other pages differently
+  \ifnum\c@framenumber=1%
+  % === TITLE SLIDE ===
+  \else%
+  % === NORMAL SLIDE ===
+  % Origin and width of the "elbow"
+  \newdimen\elbow@x%
+  \newdimen\elbow@y%
+  \elbow@x=-\the\@titletextwidth%
+  \divide \elbow@x by 2%
+  \advance \elbow@x by \title@x%
+  \advance \elbow@x by -\the\trek@titlegap%
+  \elbow@y=\cursor@y%
+  \newdimen\elbow@width%
+  \elbow@width=\the\elbow@x%
+  \advance \elbow@width by -\the\trek@margin%
+  % Typeset the title
+  \vspace{-1.2pt}%
+  \leavevmode%
+  \hskip-\the\trek@full@sidebar@width% skip horizontally back across the sidebar width
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=\the\frametitle@height,left]{frametitle}%
+      \begin{tikzpicture}
+        \useasboundingbox (0,0) rectangle (\paperwidth,\the\frametitle@height);
+        % \draw [draw=none,fill=red] (0,0) rectangle (\paperwidth,\the\frametitle@height);
+        % cursor at the right
+        \draw (\the\cursor@x,\the\cursor@y) node [
+        trek cursor,
+        trek/cursor/width=\the\trek@cursorwidth,
+        trek/cursor/height=\the\@titletextheight
+        ]{};
+        % title text
+        \draw (\the\title@x,\the\title@y) node [anchor=base,inner sep=0]
+        {\usebeamerfont{frametitle}\insertframetitle};
+        % elbow
+        \draw (\the\elbow@x,\the\elbow@y) node [
+        trek elbow,
+        trek/elbow/bar height=\the\@titletextheight,
+        trek/elbow/height=\the\trek@elbow@height,
+        trek/elbow/sidebar width=\the\trek@sidebar@width,
+        trek/elbow/outer radius=\the\trek@elbow@outer@radius,
+        trek/elbow/inner radius=\the\trek@elbow@inner@radius,
+        trek/elbow/width=\the\elbow@width
+        ]{};
+      \end{tikzpicture}%
+    \end{beamercolorbox}%
+  }%
+  \fi%
+}
+
+\defbeamertemplate*{footline}{trek theme}
+{%
+  % Height and width of footer title text
+  \newdimen\@footertextwidth%
+  \newdimen\@footertextheight%
+  \setbox0=\hbox{\usebeamerfont{title in head/foot}\insertshorttitle}%
+  \@footertextwidth=\wd0%
+  \setbox1=\hbox{\usebeamerfont{title in head/foot}ML8}%
+  \@footertextheight\ht1%
+  % Height of entire footer region
+  \newdimen\footline@height%
+  \footline@height=\the\trek@elbow@height%
+  \advance\footline@height by \the\trek@margin%
+  % Position and dimensions of elbow
+  \newdimen\elbow@x%
+  \newdimen\elbow@y%
+  \newdimen\elbow@height%
+  \elbow@x = \the\trek@left@footline@elbow@width%
+  \advance \elbow@x by \the\trek@margin%
+  \elbow@y = \the\trek@margin%
+  \advance \elbow@y by \the\@footertextheight%
+  \elbow@height = \the\footline@height%
+  \advance \elbow@height by -\the\trek@margin%
+  % Position of title
+  \newdimen\half@title@width%
+  \newdimen\title@x%
+  \newdimen\title@y%
+  \half@title@width=\@footertextwidth%
+  \divide \half@title@width by 2%
+  \title@x = \elbow@x%
+  \advance \title@x by \the\trek@titlegap%
+  \title@y = \elbow@y%
+  \advance \title@y by -\the\@footertextheight%
+  % Position of right cursor
+  \newdimen\cursor@x%
+  \newdimen\cursor@y%
+  \cursor@x = \paperwidth%
+  \advance \cursor@x by -\the\trek@margin%
+  \advance \cursor@x by -\the\trek@cursorwidth%
+  \cursor@y = \title@y%
+  % Dimensions of central bar
+  \newdimen\bar@x%
+  \newdimen\bar@y%
+  \newdimen\bar@width%
+  \bar@x = \title@x%
+  \advance \bar@x by \the\@footertextwidth%
+  \advance \bar@x by \the\trek@titlegap%
+  \bar@y = \title@y%
+  \bar@width = \cursor@x%
+  \advance \bar@width by -\the\bar@x%
+  \advance \bar@width by -\the\trek@titlegap%
+  % Handle title slide differently
+  \ifnum\c@framenumber=1%
+  % === TITLE SLIDE ===
+  \else%
+  % === NORMAL SLIDE ===
+  % Typeset the footline
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=\the\footline@height,left]{title in head/foot}%
+      \begin{tikzpicture}%
+        \useasboundingbox (0,0) rectangle (\paperwidth,\the\footline@height);
+        %\draw [draw=none,fill=red] (0,0) rectangle (\paperwidth,\the\footline@height);
+        % left footline elbow
+        \draw (\the\elbow@x,\the\elbow@y) node [
+          yscale=-1,
+          trek elbow,
+          trek/elbow/bar height=\the\@footertextheight,
+          trek/elbow/sidebar width=\the\trek@sidebar@width,
+          trek/elbow/inner radius=\the\trek@elbow@inner@radius,
+          trek/elbow/outer radius=\the\trek@elbow@outer@radius,
+          trek/elbow/height=\the\elbow@height,
+          trek/elbow/width=\the\trek@left@footline@elbow@width
+        ]{};
+        % left footline title
+        \draw (\the\title@x,\the\title@y) node [anchor=base west,inner sep=0]
+          {\usebeamerfont{title in head/foot}\insertshorttitle};
+        % central bar
+        \filldraw (\the\bar@x,\the\bar@y) rectangle ++(\the\bar@width,\the\@footertextheight);
+        % right cursor
+        \draw (\the\cursor@x,\the\cursor@y) node [
+          trek cursor,
+          trek/cursor/width=\the\trek@cursorwidth,
+          trek/cursor/height=\the\@footertextheight
+        ]{};
+      \end{tikzpicture}%
+    \end{beamercolorbox}%
+  }%
+  \fi%
+}
+
+\defbeamertemplate*{sidebar left}{trek theme}
+{%
+  % Measure height and width of the frametitle text
+  \newdimen\@titletextheight%
+  \setbox0=\hbox{\usebeamerfont{frametitle}8ML}%
+  \@titletextheight=\ht0%
+  % Compute height of frametitle region (including top margin)
+  \newdimen\frametitle@height%
+  \frametitle@height=\trek@elbow@height%
+  \advance \frametitle@height by \trek@margin%
+  % Height and width of footer title text
+  \newdimen\@footertextheight%
+  \setbox0=\hbox{\usebeamerfont{title in head/foot}ML8}%
+  \@footertextheight\ht0%
+  % Height of entire footer region
+  \newdimen\footline@height%
+  \footline@height=\the\trek@elbow@height%
+  \advance\footline@height by \the\trek@margin%
+  % Dimensions of sidebar
+  \newdimen\sidebar@x%
+  \newdimen\sidebar@y%
+  \newdimen\sidebar@width%
+  \newdimen\sidebar@height%
+  \newdimen\sidebar@totalwidth%
+  \newdimen\sidebar@totalheight%
+  \sidebar@x = \the\trek@margin%
+  \sidebar@y = \the\footline@height%
+  \advance \sidebar@y by \the\trek@titlegap%
+  \sidebar@width = \the\trek@sidebar@width%
+  \sidebar@height = \paperheight%
+  \advance \sidebar@height by -\the\frametitle@height%
+  \advance \sidebar@height by -\the\footline@height%
+  \advance \sidebar@height by -\the\trek@titlegap%
+  \advance \sidebar@height by -\the\trek@titlegap%
+  \sidebar@totalwidth = \the\trek@sidebar@width%
+  \advance \sidebar@totalwidth by \the\trek@margin%
+  \sidebar@totalheight = \paperheight%
+  % Handle title slide differently
+  \ifnum\c@framenumber=1%
+  % === TITLE SLIDE ===
+  \else%
+  % === NORMAL SLIDE ===
+  % Typeset the sidebar
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\the\sidebar@totalwidth,ht=\paperheight,left]{sidebar}%
+      \begin{tikzpicture}
+        \useasboundingbox (0,0) rectangle (\the\sidebar@totalwidth,\the\sidebar@totalheight);
+        %\draw [draw=none,fill=red] (0,0) rectangle (\the\sidebar@totalwidth,\the\sidebar@totalheight);
+        % sidebar rectangle
+        \filldraw (\the\sidebar@x,\the\sidebar@y) rectangle ++(\the\sidebar@width,\the\sidebar@height);
+      \end{tikzpicture}%
+    \end{beamercolorbox}%
+  }%
+  \fi%
+}
+
+\makeatother
+
+\mode<all>

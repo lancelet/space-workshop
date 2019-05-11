@@ -1,0 +1,113 @@
+\RequirePackage{tikz}
+
+\makeatletter
+
+% Trek cursor shape
+\pgfkeys{/tikz/trek/cursor/width/.initial = 20mm}
+\pgfkeys{/tikz/trek/cursor/height/.initial = 7.5mm}
+\pgfdeclareshape{trek cursor}
+{
+  \saveddimen\width{\pgf@x = \pgfkeysvalueof{/tikz/trek/cursor/width}}
+  \saveddimen\height{\pgf@x = \pgfkeysvalueof{/tikz/trek/cursor/height}}
+  \savedanchor\centerpoint{
+    \pgf@x = 0.5\wd\pgfnodeparttextbox
+    \pgf@y = 0.5\ht\pgfnodeparttextbox
+  }
+  \anchor{center}{\centerpoint}
+  
+  \backgroundpath{
+    \pgf@xc = \height
+    \divide \pgf@xc by 2
+    \pgf@xa = \width
+    \advance \pgf@xa by -\pgf@xc
+    \pgf@ya = \height
+    \pgf@xb = \pgf@xa
+    \pgf@yb = 0mm
+    \pgfpathmoveto{\pgfpoint{0}{0}}
+    \pgfpathlineto{\pgfpoint{0}{\height}}
+    \pgfpathlineto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+    \pgfpatharcto{\height/2}{\height/2}{0}{0}{0}{\pgfpoint{\pgf@xb}{\pgf@yb}}
+    \pgfpathclose
+    \pgfusepath{fill,draw}
+  }
+}
+
+% Trek circular bullet
+\pgfkeys{/tikz/trek/circular bullet/radius/.initial = 1.25mm}
+\pgfdeclareshape{trek circular bullet}
+{
+  \saveddimen\width{\pgf@x = 2\pgfkeysvalueof{/tikz/trek/circular bullet/radius}}
+  \saveddimen\height{\pgf@x = 2\pgfkeysvalueof{/tikz/trek/circular bullet/radius}}
+  \savedanchor\centerpoint{
+    \pgf@x = 0.5\wd\pgfnodeparttextbox
+    \pgf@y = 0.5\ht\pgfnodeparttextbox
+  }
+  \anchor{center}{\centerpoint}
+  \savedanchor\basepoint{
+    \pgf@x = 0.5\wd\pgfnodeparttextbox
+    \pgf@y = 0.0\wd\pgfnodeparttextbox
+  }
+  \anchor{base}{\basepoint}
+
+  \foregroundpath{
+    \pgfpathcircle{\pgfpoint{0}{0}}{\pgfkeysvalueof{/tikz/trek/circular bullet/radius}}
+    \pgfpathclose
+    \pgfusepath{fill}
+  }
+}
+% Command to draw the circle inline in a document
+\newcommand{\trekcircle}{%
+  \newdimen\@trek@lineheight%
+  \setbox0=\hbox{I}%
+  \@trek@lineheight=\ht0%
+  \begin{tikzpicture}[baseline=-0.5\@trek@lineheight]
+    \draw node (0,0) [trek circular bullet]{};
+  \end{tikzpicture}%
+}                 
+
+% Trek elbow shape
+\pgfkeys{/tikz/trek/elbow/bar height/.initial = 7.5mm}
+\pgfkeys{/tikz/trek/elbow/outer radius/.initial = 3mm}
+\pgfkeys{/tikz/trek/elbow/inner radius/.initial = 1mm}
+\pgfkeys{/tikz/trek/elbow/sidebar width/.initial = 5mm}
+\pgfkeys{/tikz/trek/elbow/width/.initial = 30mm}
+\pgfkeys{/tikz/trek/elbow/height/.initial = 10mm}
+\pgfdeclareshape{trek elbow}
+{
+  \saveddimen\barheight{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/bar height}}
+  \saveddimen\outerradius{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/outer radius}}
+  \saveddimen\innerradius{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/inner radius}}
+  \saveddimen\sidebarwidth{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/sidebar width}}
+  \saveddimen\width{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/width}}
+  \saveddimen\height{\pgf@x = \pgfkeysvalueof{/tikz/trek/elbow/height}}
+  \savedanchor\centerpoint{
+    \pgf@x = 0.5\wd\pgfnodeparttextbox
+    \pgf@y = 0.5\ht\pgfnodeparttextbox
+  }
+  \anchor{center}{\centerpoint}
+
+  \backgroundpath{
+    \pgf@xa = -\width
+    \advance \pgf@xa by \outerradius
+    \pgf@ya = \barheight
+    \advance \pgf@ya by -\outerradius
+    \pgf@yb = -\height
+    \advance \pgf@yb by \barheight
+    \pgf@xb = -\width
+    \advance \pgf@xb by \sidebarwidth
+    \pgf@xc = \pgf@xb
+    \advance \pgf@xc by \innerradius
+    \pgfpathmoveto{\pgfpoint{0}{0}}
+    \pgfpathlineto{\pgfpoint{0}{\barheight}}
+    \pgfpathlineto{\pgfpoint{\pgf@xa}{\barheight}}
+    \pgfpatharcto{\outerradius}{\outerradius}{0}{0}{1}{\pgfpoint{-\width}{\pgf@ya}}
+    \pgfpathlineto{\pgfpoint{-\width}{\pgf@yb}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@yb}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{-\innerradius}}
+    \pgfpatharcto{\innerradius}{\innerradius}{0}{0}{0}{\pgfpoint{\pgf@xc}{0}}
+    \pgfpathclose
+    \pgfusepath{fill,draw}
+  }
+}
+
+\makeatother
