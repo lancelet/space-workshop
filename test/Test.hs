@@ -3,8 +3,6 @@ module Main where
 import qualified Test.DocTest as DocTest
 import qualified Test.Tasty as Tasty
 
-import qualified TestTridiagonal as Tridiagonal
-
 
 main :: IO ()
 main = doctests
@@ -13,7 +11,7 @@ main = doctests
 
 tests :: Tasty.TestTree
 tests = Tasty.testGroup "Tests"
-  [ Tridiagonal.tests
+  [
   ]
 
 
