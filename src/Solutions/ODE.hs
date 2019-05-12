@@ -114,7 +114,7 @@ rk4StepTerminating h f (t, x) =
     o6 = 1/6
     o3 = 1/3
     tf = t ^+^ h
-    midt = tf ^/ 2
+    midt = t ^+^ (h ^/ 2)
     ldx dxdt = lapply dxdt h
   in do
     k1 <- ldx <$> f(t,    x          )
@@ -199,7 +199,7 @@ rk4Step h f (t, x) =
     o6 = 1/6
     o3 = 1/3
     tf = t ^+^ h
-    midt = tf ^/ 2
+    midt = t ^+^ (h ^/ 2)
 
     k1 = lapply (f (t,    x          )) h
     k2 = lapply (f (midt, x .+^ k1^/2)) h
