@@ -110,13 +110,13 @@ plotBurn output burndt isp mDot = do
     -- Simulation parameters.
     params :: T.Params
     params = T.Params
-             { T.mu   = 4.905e12  -- value for the moon (m^3/s^2)
-             , T.mDot = mDot      -- kg/s
-             , T.isp  = isp       -- Specific impulse (s)
-             , T.r1   = 1780e3    -- inner radius (m) ; ~20 nautical miles
-             , T.r2   = 1860e3    -- outer radius (m) ; ~60 nautical miles
-             , T.dt   = 10        -- time step (s)
-             , T.tEps = 0.01      -- event accuracy (s)
+             { T.mu    = 4.905e12  -- value for the moon (m^3/s^2)
+             , T.mDot  = mDot      -- kg/s
+             , T.isp   = isp       -- Specific impulse (s)
+             , T.r1    = 1780e3    -- inner radius (m) ; ~20 nautical miles
+             , T.r2    = 1860e3    -- outer radius (m) ; ~60 nautical miles
+             , T.tStep = 10        -- time step (s)
+             , T.tEps  = 0.01      -- event accuracy (s)
              }
 
     -- Initial state at some radius.
@@ -130,7 +130,7 @@ plotBurn output burndt isp mDot = do
 
     -- Parameters for a burn.
     burnParams :: T.Params
-    burnParams = params { T.dt = burndt }
+    burnParams = params { T.tStep = burndt }
 
     -- Periapsis velocity of transfer trajectory. This is use as a terminal
     -- velocity for the first burn.

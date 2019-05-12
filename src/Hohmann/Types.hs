@@ -21,13 +21,13 @@ import           Orphans            ()
 -- | Fixed parameters for the Hohmann simulation.
 data Params
   = Params
-    { mu   :: Double  -- ^ Standard gravitational parameter (m^3/s^2).
-    , mDot :: Double  -- ^ Mass flow rate (kg/s)
-    , isp  :: Double  -- ^ Vacuum specific impulse (s).
-    , r1   :: Double  -- ^ Inner circular orbit radius (m).
-    , r2   :: Double  -- ^ Outer circular orbit radius (m).
-    , dt   :: Double  -- ^ Time step (s).
-    , tEps :: Double  -- ^ t_epsilon: accuracy of start/stop (s).
+    { mu    :: Double  -- ^ Standard gravitational parameter (m^3/s^2).
+    , mDot  :: Double  -- ^ Mass flow rate (kg/s)
+    , isp   :: Double  -- ^ Vacuum specific impulse (s).
+    , r1    :: Double  -- ^ Inner circular orbit radius (m).
+    , r2    :: Double  -- ^ Outer circular orbit radius (m).
+    , tStep :: Double  -- ^ Time step (s).
+    , tEps  :: Double  -- ^ t_epsilon: accuracy of start/stop (s).
     }
 
 
