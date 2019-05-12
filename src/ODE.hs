@@ -44,21 +44,15 @@ import qualified Solutions.ODE
 import           Todo               (FallbackSolution (FallbackSolution), todo)
 
 
-{------------------------------------------------------------------------------
-Problem 1: Euler integration.
-
-a) Implement Euler's method specialized to Double. The relevant
-   equations are:
-
-     tNext = t + dt
-
-     xNext = x + dx
-           = x + (dx/dt)*dt
-           = x + dt * f (t, x)
--------------------------------------------------------------------------------}
-
-
 -- | Single step of Euler integration (specialized to 'Double').
+--
+-- Euler's method specialized to Double. The relevant equations are:
+--
+--   tNext = t + h
+--
+--   xNext = x + h
+--         = x + (dx/dt)*h
+--         = x + h * f (t, x)
 --
 -- Example:
 --
@@ -71,31 +65,24 @@ a) Implement Euler's method specialized to Double. The relevant
 --   |   |             |    |  |
 --   |   |             |    |  --- x = 5 before the time step
 --   |   |             |    ------ t = 2 before the time step
---   |   |             ----------- dt = 1 is the time step
+--   |   |             ----------- h = 1 is the time step
 --   |   ---- x = 4 after the time step
 --   -------- t = 3 after the time step
 -- @
 --
 eulerStepDouble
-  :: Double                        -- ^ Step size @dt@
+  :: Double                        -- ^ Step size @h@
   -> ((Double, Double) -> Double)  -- ^ Gradient function @f (t, x)@
   -> (Double, Double)              -- ^ Time and state before the step @(t, x)@
   -> (Double, Double)              -- ^ Time and state after the step @(t, x)@
-eulerStepDouble -- dt f q@(t, x)
+eulerStepDouble -- h f q@(t, x)
   = todo (FallbackSolution Solutions.ODE.eulerStepDouble)
 
 
-{------------------------------------------------------------------------------
-b) Implement a driver for multiple steps of Euler integration.
-
-The NonEmpty.scanl function is a convenient way to drive the
-computation and accumulate results:
-
-NonEmpty.scanl :: Foldable f => (b-> a -> b) -> b -> f a -> NonEmpty b
--------------------------------------------------------------------------------}
-
-
 -- | Integrate an ODE using Euler's method (specialized to 'Double').
+--
+-- NOTE: The NonEmpty.scanl function is a convenient way to drive the
+--       computation.
 --
 -- Example:
 --
@@ -141,11 +128,6 @@ linspace n xStart xEnd =
     [ f i | i <- [0 .. n] ]
 
 
-{------------------------------------------------------------------------------
-c) Generalize the Euler step to the vector-space classes.
--------------------------------------------------------------------------------}
-
-
 -- | Single step of Euler integration.
 --
 -- Example:
@@ -158,11 +140,11 @@ eulerStep
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar diff, s ~ Scalar time )
-  => time                              -- ^ Step size @dt@
+  => time                              -- ^ Step size @h@
   -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
   -> (time, state)                     -- ^ Before the step @(t, x)@
   -> (time, state)                     -- ^ After the step @(t, x)@
-eulerStep -- dt f (t, x)
+eulerStep -- h f (t, x)
   = todo (FallbackSolution Solutions.ODE.eulerStep)
 
 
@@ -172,11 +154,6 @@ type Stepper time state
   -> ((time, state) -> time :-* Diff state)
   -> (time, state)
   -> (time, state)
-
-
-{------------------------------------------------------------------------------
-d) Generalize the integration driver to the vector-space classes.
--------------------------------------------------------------------------------}
 
 
 -- | Integrate an ODE.
@@ -218,36 +195,31 @@ integrateWithDiff -- stepper x0 (t0 :| ts) f =
   = todo (FallbackSolution Solutions.ODE.integrateWithDiff)
 
 
-{------------------------------------------------------------------------------
-Problem 2: Implement 4th-order Runge-Kutta Integration (RK4)
-
-The equations for a single step of RK4 are as follows:
-
-  k1 = dt * f (t, x)
-  k2 = dt * f (t + 0.5*dt, x + 0.5*k1)
-  k3 = dt * f (t + 0.5*dt, x + 0.5*k2)
-  k4 = dt * f (t + dt, x + k3)
-
-  dx = (1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4
-
-  xNext = x + dx
-  tNext = t + dt
--------------------------------------------------------------------------------}
-
-
 -- | Single step of 4th-order Runge-Kutta integration.
+--
+--
+-- The equations for a single step of RK4 are as follows:
+--
+--   k1 = h * f (t, x)
+--   k2 = h * f (t + 0.5*h, x + 0.5*k1)
+--   k3 = h * f (t + 0.5*h, x + 0.5*k2)
+--   k4 = h * f (t + h, x + k3)
+--
+--   dx = (1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4
+--
+--   xNext = x + dx
+--   tNext = t + h
 rk4Step
   :: ( AffineSpace state
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar diff, s ~ Scalar time, Fractional s )
-  => time                              -- ^ Step size @dt@
+  => time                              -- ^ Step size @h@
   -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
   -> (time, state)                     -- ^ Before the step @(t, x)@
   -> (time, state)                     -- ^ After the step @(t, x)@
-rk4Step -- dt f q@(t, x)
+rk4Step -- h f q@(t, x)
   = todo (FallbackSolution Solutions.ODE.rk4Step)
-
 
 
 -- | Stepper function for ODE integration that can terminate.
@@ -270,11 +242,11 @@ integrateTerminating
      , s ~ Scalar time, Ord time, Fractional s )
   => TerminatingStepper time state             -- ^ Stepper to use.
   -> time                                      -- ^ Allowable error in the final time.
-  -> time                                      -- ^ Step size @dt@.
+  -> time                                      -- ^ Step size @h@.
   -> (time, state)                             -- ^ Initial state.
   -> ((time, state) -> Maybe (time :-* diff))  -- ^ Gradient function.
   -> NonEmpty (time, state)                    -- ^ Computed states.
-integrateTerminating {- stepper tEpsilon dt state0 f -}
+integrateTerminating {- stepper tEpsilon h state0 f -}
   = todo (FallbackSolution Solutions.ODE.integrateTerminating)
 
 
@@ -287,11 +259,11 @@ rk4StepTerminating
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar time, s ~ Scalar diff, Fractional s )
-  => time                                            -- ^ Step size @dt@
+  => time                                            -- ^ Step size @h@
   -> ((time, state) -> Maybe (time :-* Diff state))  -- ^ Gradient function @f (x, t)@
   -> (time, state)                                   -- ^ Before the step @(t, x)@
   -> Maybe (time, state)                             -- ^ Optional @(t, x)@ after the step
-rk4StepTerminating {- dt f (t, x) -}
+rk4StepTerminating {- h f (t, x) -}
   = todo (FallbackSolution Solutions.ODE.rk4StepTerminating)
 
 

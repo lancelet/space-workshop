@@ -55,11 +55,11 @@ integrateTerminating
      , s ~ Scalar time, Ord time, Fractional s )
   => TerminatingStepper time state             -- ^ Stepper to use.
   -> time                                      -- ^ Allowable error in the final time.
-  -> time                                      -- ^ Step size @dt@.
+  -> time                                      -- ^ Step size @h@.
   -> (time, state)                             -- ^ Initial state.
   -> ((time, state) -> Maybe (time :-* diff))  -- ^ Gradient function.
   -> NonEmpty (time, state)                    -- ^ Computed states.
-integrateTerminating stepper tEpsilon dt state0 f =
+integrateTerminating stepper tEpsilon h state0 f =
   let
 
     -- Use a list internally, to avoid duplicating starting elements
@@ -93,7 +93,7 @@ integrateTerminating stepper tEpsilon dt state0 f =
           in
             unfold1 ++ listIntegrator (dt'^/2) state0''
 
-  in state0 :| listIntegrator dt state0
+  in state0 :| listIntegrator h state0
 
 
 -- | Single step of terminating 4th-order Runge-Kutta integration.
@@ -105,17 +105,17 @@ rk4StepTerminating
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar time, s ~ Scalar diff, Fractional s )
-  => time                                            -- ^ Step size @dt@
+  => time                                            -- ^ Step size @h@
   -> ((time, state) -> Maybe (time :-* Diff state))  -- ^ Gradient function @f (x, t)@
   -> (time, state)                                   -- ^ Before the step @(t, x)@
   -> Maybe (time, state)                             -- ^ Optional @(t, x)@ after the step
-rk4StepTerminating dt f (t, x) =
+rk4StepTerminating h f (t, x) =
   let
     o6 = 1/6
     o3 = 1/3
-    tf = t ^+^ dt
+    tf = t ^+^ h
     midt = tf ^/ 2
-    ldx dxdt = lapply dxdt dt
+    ldx dxdt = lapply dxdt h
   in do
     k1 <- ldx <$> f(t,    x          )
     k2 <- ldx <$> f(midt, x .+^ k1^/2)
@@ -190,21 +190,21 @@ rk4Step
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar diff, s ~ Scalar time, Fractional s )
-  => time                              -- ^ Step size @dt@
+  => time                              -- ^ Step size @h@
   -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
   -> (time, state)                     -- ^ Before the step @(t, x)@
   -> (time, state)                     -- ^ After the step @(t, x)@
-rk4Step dt f (t, x) =
+rk4Step h f (t, x) =
   let
     o6 = 1/6
     o3 = 1/3
-    tf = t ^+^ dt
+    tf = t ^+^ h
     midt = tf ^/ 2
 
-    k1 = lapply (f (t,    x          )) dt
-    k2 = lapply (f (midt, x .+^ k1^/2)) dt
-    k3 = lapply (f (midt, x .+^ k2^/2)) dt
-    k4 = lapply (f (tf,   x .+^ k3   )) dt
+    k1 = lapply (f (t,    x          )) h
+    k2 = lapply (f (midt, x .+^ k1^/2)) h
+    k3 = lapply (f (midt, x .+^ k2^/2)) h
+    k4 = lapply (f (tf,   x .+^ k3   )) h
     xf = x .+^ o6*^k1 .+^ o3*^k2 .+^ o3*^k3 .+^ o6*^k4
   in
     (tf, xf)
@@ -216,17 +216,16 @@ eulerStep
      , diff ~ Diff state, VectorSpace diff
      , HasBasis time, HasTrie (Basis time)
      , s ~ Scalar diff, s ~ Scalar time )
-  => time                              -- ^ Step size @dt@
+  => time                              -- ^ Step size @h@
   -> ((time, state) -> time :-* diff)  -- ^ Gradient function @f (x, t)@
   -> (time, state)                     -- ^ Before the step @(t, x)@
   -> (time, state)                     -- ^ After the step @(t, x)@
-eulerStep dt f q@(t, x) = (t ^+^ dt, x .+^ lapply (f q) dt)
+eulerStep h f q@(t, x) = (t ^+^ h, x .+^ lapply (f q) h)
 
 
 -------------------------------------------------------------------------------
 -- Euler's method specialized to Double only
 -------------------------------------------------------------------------------
-
 
 -- | Integrate an ODE using Euler's method (specialized to 'Double').
 integrateEulerDouble
@@ -248,4 +247,4 @@ eulerStepDouble
   -> ((Double, Double) -> Double)  -- ^ Gradient function @f@
   -> (Double, Double)              -- ^ State before the step @(x, y)@
   -> (Double, Double)              -- ^ State after the step @(x, y)@
-eulerStepDouble dt f q@(t, x) = (t + dt, x + (dt*f q))
+eulerStepDouble h f q@(t, x) = (t + h, x + (h*f q))
