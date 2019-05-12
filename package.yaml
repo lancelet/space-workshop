@@ -1,18 +1,17 @@
 name:                space-workshop
 version:             0.1.0.0
-github:              "githubuser/space-workshop"
+github:              "lancelet/space-workshop"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2019 Author name here"
+author:              "Jonathan Merritt and Luke Clifton"
+maintainer:          "j.s.merritt@gmail.com.com"
+copyright:           "2019 Jonathan Merritt and Luke Clifton"
 
 extra-source-files:
 - README.md
 - ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
+synopsis:            LambdaJam 2019 Spaceflight Workshop
+category:            Math
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
