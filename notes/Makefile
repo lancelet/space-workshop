@@ -5,11 +5,15 @@ notes.pdf: notes.tex references.bib
 	latexmk -lualatex -latexoption=-shell-escape $(PREVIEW_CONTINUOUSLY) notes.tex
 
 intro-slides.pdf: intro-slides.tex
-	TEXINPUTS=$(TEXINPUTS):./beamer-trek latexmk -lualatex intro-slides.tex
+	TEXINPUTS=$(TEXINPUTS):./beamer-trek latexmk -lualatex $(PREVIEW_CONTINUOUSLY) intro-slides.tex
 
 .PHONY: watch
 watch: PREVIEW_CONTINUOUSLY='-pvc'
-watch: notes.pdf intro-slides.pdf
+watch: notes.pdf
+
+.PHONY: watch-slides
+watch-slides: PREVIEW_CONTINUOUSLY='-pvc'
+watch-slides: intro-slides.pdf
 
 .PHONY: clean
 clean:
