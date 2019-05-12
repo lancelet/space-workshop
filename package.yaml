@@ -32,20 +32,15 @@ dependencies:
 - diagrams-lib
 - diagrams-pgf
 - diagrams-rasterific
-- diagrams-svg
 - iterm-show
 - JuicyPixels
 - lens
 - linear
 - MemoTrie
-- mtl
-- primitive
 - text
-- transformers
 - units
 - units-defs
 - vector
-- vector-algorithms
 - vector-space
 
 library:
@@ -62,13 +57,6 @@ _ghc-options: &ghc-options
   - -Wmissing-import-lists
 
 executables:
-
-  drag-plots:
-    main:                Main.hs
-    source-dirs:         app/drag-plots
-    ghc-options:         *ghc-options
-    dependencies:
-    - space-workshop
 
   tex-plots:
     main:                Main.hs

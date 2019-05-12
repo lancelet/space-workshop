@@ -19,7 +19,6 @@ import qualified Data.Text                                 as Text
 import           Data.VectorSpace                          (Scalar, VectorSpace)
 import qualified Diagrams.Backend.PGF                      as PGF
 import qualified Diagrams.Backend.Rasterific               as BR
-import qualified Diagrams.Backend.SVG                      as SVG
 import           Diagrams.Prelude                          (( # ))
 import qualified Diagrams.Prelude                          as D
 import qualified Diagrams.TwoD.Text                        as D
@@ -32,7 +31,6 @@ import           System.IO                                 (stdout)
 data Output
   = Screen
   | PNG FilePath
-  | SVG FilePath
   | PGF FilePath
 
 
@@ -100,7 +98,6 @@ xyChart out t x y items =
          putStrLn ""
        PGF filePath -> plotXYChartPGF filePath chart
        PNG _ -> error "Not yet implemented"
-       SVG _ -> error "Not yet implemented"
 
 
 plotXYChartPNGBS :: XYChart -> IO LBS.ByteString
@@ -163,12 +160,6 @@ plotOrbitSystem output vScale system =
         -- framed = D.bgFrame 400 D.white dia
       PGF.renderPGF filePath (D.mkWidth 400) dia
     PNG _ -> error "Not yet implemented"
-    SVG filePath -> do
-      let
-        dia = mconcat (plotSystemItem output vScale (planet system) <$> systemItems system)
-              <> plotPlanet (SVG filePath) (planet system)
-        framed = D.bgFrame 400 D.white dia
-      SVG.renderSVG filePath (D.mkWidth 1024) framed
 
 
 plotOrbitSystemPNGBS :: Double -> OrbitSystem -> LBS.ByteString
