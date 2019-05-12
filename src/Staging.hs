@@ -120,5 +120,6 @@ plotVelocityComparison output =
       "Single Stage vs Two Stage Velocity Comparison"
       "Time (s)"
       "Velocity (m/s)"
+      []
       [ Plot.Line "Single Stage" v1Stage
       , Plot.Line "Two Stage" v2Stage ]

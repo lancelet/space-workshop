@@ -71,6 +71,7 @@ plotEulerDoubleExpDecay out = do
     "Radioactive Decay of Pu-238 - Analytical vs Euler"
     "Time (t) - years"
     "Amount (N) - fraction of original"
+    []
     [ Plot.Line "Analytical Solution" (analytic (ODE.linspace 50 0.0 200.0))
     , Plot.Points "Euler (dt=40 years)" (numerical (ODE.linspace 6 0.0 200.0))
     , Plot.Points "Euler (dt=20 years)" (numerical (ODE.linspace 11 0.0 200.0))
@@ -272,5 +273,6 @@ plotVerticalThrow out = do
     "Vertical Throw Example - Bisection of Termination"
     "Time (s)"
     "Height (m)"
+    []
     [ Plot.Line "RK4 (dt = 0.01s)" (heights 0.01)
     , Plot.Points "RK4 (dt = 0.5s)" (heights 0.5) ]
