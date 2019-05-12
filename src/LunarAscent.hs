@@ -58,6 +58,7 @@ plotLunarAscentMoonView output = do
       , Plot.systemItems =
         [ Plot.Trajectory rBurn D.red
         , Plot.Trajectory rCoast D.green
+        , Plot.AltitudeCircle 1749.2 "" D.gray
         ]
       })
 
