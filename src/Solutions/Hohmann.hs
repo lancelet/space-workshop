@@ -87,7 +87,7 @@ coast params shouldTerminate s0 =
 
   in ODE.integrateTerminating ODE.rk4StepTerminating
                               (T.tEps params)
-                              (T.dt params)
+                              (T.tStep params)
                               s0
                               gradFn
 
@@ -116,6 +116,6 @@ burn params velF s0 =
 
   in ODE.integrateTerminating ODE.rk4StepTerminating
                               (T.tEps params)
-                              (T.dt params)
+                              (T.tStep params)
                               s0
                               gradFn
