@@ -1,5 +1,5 @@
-:seti -Wno-missing-import-lists
 :set prompt "\ESC[34mλ> \ESC[m"
+:seti -Wno-missing-import-lists
 :seti -XDataKinds
 :seti -XFlexibleContexts
 :seti -XScopedTypeVariables
