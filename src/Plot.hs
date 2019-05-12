@@ -1,11 +1,37 @@
+{-|
+Module      : Plot
+Description : Abstracted plotting capabilities.
+
+This module adds a thin layer of abstraction on top of the Chart library. It
+has served well as a way to switch between Chart and gnuplot during
+development of the workshop.
+-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-module Plot where
-
+module Plot
+  ( -- * XY Charts
+    -- ** Types
+    Output (Screen, PNG, PGF)
+  , XYChart (title, xLabel, yLabel, chartItems)
+  , Title(Title)
+  , XLabel(XLabel)
+  , YLabel(YLabel)
+  , Item(Line, Points)
+    -- ** Functions
+  , xyChart
+  , xyChartUnits
+    -- * Orbit system plot
+    -- ** Types
+  , OrbitSystem(OrbitSystem, planet, systemItems)
+  , Planet(Planet, name, radius, color)
+  , OrbitSystemItem(Trajectory, points, color)
+    -- ** Functions
+  , plotOrbitSystem
+  ) where
 
 import qualified Codec.Picture.Png                         as Png
 import           Control.Lens                              ((.=))
@@ -28,38 +54,76 @@ import qualified ITermShow
 import           System.IO                                 (stdout)
 
 
+-- | Output location for a plot.
 data Output
-  = Screen
-  | PNG FilePath
-  | PGF FilePath
+  = Screen        -- ^ Output to the screen (ITermShow and wshterm)
+  | PNG FilePath  -- ^ Save to a PNG file
+  | PGF FilePath  -- ^ Save to a PGF file (for LaTeX)
 
 
+-- | Data for an xy-chart.
+--
+-- An @XYChart@ is a chart on x-y orthogonal axes.
 data XYChart
   = XYChart
-    { title      :: !Title
+    { -- | Title for the chart.
+      title      :: !Title
+      -- | Label for the x-axis.
     , xLabel     :: !XLabel
+      -- | Label for the y-axis.
     , yLabel     :: !YLabel
+      -- | Items in the chart.
     , chartItems :: [Item Double Double]
     }
+
+
 newtype Title = Title { unTitle :: Text } deriving (IsString)
 newtype XLabel = XLabel { unXLabel :: Text } deriving (IsString)
 newtype YLabel = YLabel { unYLabel :: Text } deriving (IsString)
+
+
+-- | Items that can appear in an 'XYChart'.
 data Item x y
-  = Line Text [(x, y)]
-  | Points Text [(x, y)]
+  = Line Text [(x, y)]     -- ^ A plotted line.
+  | Points Text [(x, y)]   -- ^ A set of plotted points.
 
 
+-- | Plot an 'XYChart'.
+xyChart
+  :: Output                -- ^ Output location.
+  -> Title                 -- ^ Title of the chart.
+  -> XLabel                -- ^ X-axis label.
+  -> YLabel                -- ^ Y-axis label.
+  -> [Item Double Double]  -- ^ List of items to plot.
+  -> IO ()                 -- ^ IO action.
+xyChart out t x y items =
+  let chart = XYChart t x y items
+  in case out of
+       Screen -> do
+         pngBS <- plotXYChartPNGBS chart
+         LBS.hPutStr stdout (ITermShow.displayImage pngBS)
+         putStrLn ""
+
+       PGF filePath -> plotXYChartPGF filePath chart
+
+       PNG filePath -> do
+         pngBS <- plotXYChartPNGBS chart
+         LBS.writeFile filePath pngBS
+
+
+-- | Plot an 'XYChart' whose plot items contain units.
 xyChartUnits
   :: forall dimx dimy unitx unity l.
      ( DMV.ValidDLU dimx l unitx
      , DMV.ValidDLU dimy l unity )
-  => Output
-  -> Title
-  -> XLabel
-  -> YLabel
-  -> (unitx, unity)
+  => Output           -- ^ Output location.
+  -> Title            -- ^ Title of the chart.
+  -> XLabel           -- ^ X-axis label.
+  -> YLabel           -- ^ Y-axis label.
+  -> (unitx, unity)   -- ^ Units for the x and y axes.
   -> [Item (DMV.Qu dimx l Double) (DMV.Qu dimy l Double)]
-  -> IO ()
+                      -- ^ List of items to plot.
+  -> IO ()            -- ^ IO action.
 xyChartUnits out t x y (ux, uy) items
   = xyChart out t x y (itemInUnits (ux, uy) <$> items)
 
@@ -79,25 +143,6 @@ itemInUnits (ux, uy) item =
     case item of
       Line t xys   -> Line t (inu <$> xys)
       Points t xys -> Points t (inu <$> xys)
-
-
-xyChart
-  :: Output
-  -> Title
-  -> XLabel
-  -> YLabel
-  -> [Item Double Double]
-  -> IO ()
-xyChart out t x y items =
-  let
-    chart = XYChart t x y items
-  in case out of
-       Screen -> do
-         png <- plotXYChartPNGBS chart
-         LBS.hPutStr stdout (ITermShow.displayImage png)
-         putStrLn ""
-       PGF filePath -> plotXYChartPGF filePath chart
-       PNG _ -> error "Not yet implemented"
 
 
 plotXYChartPNGBS :: XYChart -> IO LBS.ByteString
@@ -127,39 +172,55 @@ xyChartEC chart = Chart.toRenderable $ do
     Points label pts -> Chart.plot (Chart.points (Text.unpack label) pts)
 
 
+-- | Data for an orbital system plot.
+--
+-- An orbital system plot typically contains a planet or moon and trajectories.
 data OrbitSystem
   = OrbitSystem
-    { planet :: Planet
+    { planet      :: Planet
     , systemItems :: [OrbitSystemItem]
     }
 
+
+-- | Planet data.
 data Planet
   = Planet
-    { name :: Text
+    { name   :: Text
     , radius :: Double
-    , color :: Colour Double
+    , color  :: Colour Double
     }
-  
+
+
+-- | Items that can appear in an orbit system plot.
 data OrbitSystemItem
   = Trajectory
     { points :: [(Double, Double)]
-    , color :: Colour Double
+    , color  :: Colour Double
     }
 
-plotOrbitSystem :: Output -> Double -> OrbitSystem -> IO ()
+
+-- | Plots an orbit system.
+plotOrbitSystem
+  :: Output        -- ^ Output location.
+  -> Double        -- ^ Vertical scale factor for the altitude.
+  -> OrbitSystem   -- ^ OrbitSystem to plot.
+  -> IO ()         -- ^ IO action.
 plotOrbitSystem output vScale system =
   case output of
     Screen -> do
-      let png = plotOrbitSystemPNGBS vScale system
-      LBS.hPutStr stdout (ITermShow.displayImage png)
+      let pngBS = plotOrbitSystemPNGBS vScale system
+      LBS.hPutStr stdout (ITermShow.displayImage pngBS)
       putStrLn ""
+
     PGF filePath -> do
       let
         dia = mconcat (plotSystemItem output vScale (planet system) <$> systemItems system)
               <> plotPlanet (PGF filePath) (planet system)
-        -- framed = D.bgFrame 400 D.white dia
       PGF.renderPGF filePath (D.mkWidth 400) dia
-    PNG _ -> error "Not yet implemented"
+
+    PNG filePath -> do
+      let pngBS = plotOrbitSystemPNGBS vScale system
+      LBS.writeFile filePath pngBS
 
 
 plotOrbitSystemPNGBS :: Double -> OrbitSystem -> LBS.ByteString
@@ -196,17 +257,22 @@ plotSystemItem
   -> OrbitSystemItem
   -> D.QDiagram b D.V2 Double D.Any
 plotSystemItem _ vScale (Planet _ pRadius _) (Trajectory pts c)
-  = D.fromVertices (D.p2 . fancyScale vScale pRadius <$> pts) # D.lc c # D.pad 1.1
+  = D.fromVertices (D.p2 . altitudeScale vScale pRadius <$> pts) # D.lc c # D.pad 1.1
 
 
+-- | Get font size for an OrbitSystem plot.
+--
+-- "Good" font sizes seem to depend on our output device, so here we can
+-- switch between different font sizes depending on the output device.
 getFontSize :: Output -> D.Measured Double Double
+getFontSize Screen  = D.output 30.0
 getFontSize (PNG _) = D.output 30.0
 getFontSize (PGF _) = D.output 12.0
-getFontSize _       = error "Not Implemented"
 
 
-fancyScale :: Double -> Double -> (Double, Double) -> (Double, Double)
-fancyScale vScale rad (x, y) =
+-- | Perform vertical scaling of altitude distance.
+altitudeScale :: Double -> Double -> (Double, Double) -> (Double, Double)
+altitudeScale vScale rad (x, y) =
   let
     r = sqrt ((x*x) + (y*y))
     theta = atan2 y x
