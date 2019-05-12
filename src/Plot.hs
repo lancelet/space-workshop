@@ -160,7 +160,7 @@ plotXYChartPNGBS :: XYChart -> IO LBS.ByteString
 plotXYChartPNGBS chart = do
   env <- Chart.defaultEnv Chart.vectorAlignmentFns 500 375
   let dia = fst $ Chart.runBackendR env (Chart.toRenderable (xyChartEC chart))
-  let img = BR.rasterRgb8 (D.mkWidth 1600) dia
+  let img = BR.rasterRgb8 (D.mkWidth 1200) dia
   pure (Png.encodePng img)
 
 
@@ -248,7 +248,7 @@ plotOrbitSystemPNGBS vScale system =
     dia = mconcat (plotSystemItem (PNG undefined) vScale (planet system) <$> systemItems system)
           <> plotPlanet (PNG undefined) (planet system)
     diaFramed = D.bgFrame 400 D.white dia
-    img = BR.rasterRgb8 (D.dims2D 1200 1200) diaFramed
+    img = BR.rasterRgb8 (D.dims2D 1000 1000) diaFramed
   in
     Png.encodePng img
 
