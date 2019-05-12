@@ -1233,6 +1233,29 @@ Finally, Figure~\ref{fig:hohmann-ultra-low-impulse} shows a much lower-impulse s
   \label{fig:hohmann-ultra-low-impulse}
 \end{figure}
 
+\chapter{Suggested Projects}
+
+This chapter lists some potential projects which could follow on from the workshop.
+
+\section{Simulate a Launch from Earth}
+
+Simulating launches from Earth's surface is an interesting problem, since it is necessary to model atmospheric drag forces and to have some kind of guidance approach. Kephart \cite{kephart1971} provides an excellent template for the overall simulation. Many options for guidance are possible, but an interesting approach is to use numerical optimisation to determine a desired trajectory (eg.\ \cite{dileep2015,dukeman2008}). Numerical optimisation could allow for objective functions that not only minimise fuel use but also avoid other undesirable trajectory charateristics, such as high aerodynamic pressures and large down-range displacement prior to first-stage separation.
+
+\section{Simulate Guidance for an Asteroid Rendezvous}
+
+Guelman \cite{guelman1991} provides a complete guidance approach for rendezvous with an asteroid. Such a rendezvous is challenging because there may be many unknowns, such as the gravitational constant, rate of rotation and shape of the asteroid. The approach taken in this paper involves a spiralling manouvre into a direct parking orbit, using a relatively low-thrust, throttleable engine. The entire guidance algorithm and dynamics of the approach can be simulated using the methods from this workshop.
+
+\section{Simulate a Halo Orbit}
+
+A proposal for NASA's Deep Space Gateway involves an orbit around a Lagrange point, called a Halo Orbit. Numerical simulation of these orbits is necessary for mission planning, and is a more challenging, multi-body problem. Tackling this project will involve substantial independent reading, but a good summary of the objectives and approaches is provided by Davis \cite{davis2017}.
+
+\section{FRP Simulation}
+
+Investigate solving ODEs using an FRP framework instead of the more imperative approach we have taken in this workshop.
+
+It is possible to solve ODEs using existing FRP libraries (eg.\ \hspackage{Yampa}, \hspackage{netwire}, etc), but these libraries typically only use Euler integration, which is usually regarded as too inaccurate even for basic spaceflight problems. What would be required for general scientific use is an FRP library with a pluggable integrator, with adaptive step size, which would also have to work correctly with whatever event or behaviour framework that library used. This appears to be an open problem.
+
+Some initial work on an FRP framework specifically for numerical solution of ODEs has been done in \href{https://github.com/luke-clifton/dynamical/}{\texttt{dynamical}}.
 
 % Symbol Glossary
 \printunsrtglossary[type=symbols,style=long]
