@@ -25,6 +25,14 @@ If you are unable to obtain the required dependencies prior to the workshop, we 
 
 For reference, the Docker image itself was built using the [CI pipeline here](https://gitlab.com/jmerritt/haskell-space-workshop-docker-image), but the USB Flash drive also contains a snapshot of this GitHub repository and the notes.
 
+## Solutions
+
+Solutions are provided in the `Solutions` sub-modules. To use them, either call them directly from the problem code, OR set the environment variable `IDDQD=1`, which will cause the `todo` function to use the fallback solutions:
+
+```
+$ export IDDQD=1  # causes the `todo` function to use the provided solutions
+```
+
 ## Developer Notes
 
 See the `.travis.yml` file for detailed CI build instructions.
