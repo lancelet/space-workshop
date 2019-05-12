@@ -48,16 +48,17 @@ terminateWhen
   :: Bool      -- ^ when True, terminate
   -> a         -- ^ value to wrap
   -> Maybe a
-terminateWhen = todo (FallbackSolution Solutions.Hohmann.terminateWhen)
+terminateWhen {- shouldTerminate value -}
+  = todo (FallbackSolution Solutions.Hohmann.terminateWhen)
 
 
 -- | Compute a coasting trajectory.
 --
--- The coasting trajectory is terminated once the craft reaches a given
--- termination angle.
+-- This will involve using ODE.integrateTerminating, with the ODE for coasting
+-- (see the notes).
 coast
   :: T.Params                    -- ^ Simulation parameters.
-  -> (T.State -> Bool)           -- ^ Termination condition (True to terminate).
+  -> (T.State -> Bool)           -- ^ Termination condition (@True@ to terminate).
   -> (Double, T.State)           -- ^ Initial time and state.
   -> NonEmpty (Double, T.State)  -- ^ Simulation steps.
 coast = todo (FallbackSolution Solutions.Hohmann.coast)
@@ -67,6 +68,9 @@ coast = todo (FallbackSolution Solutions.Hohmann.coast)
 --
 -- The burn trajectory is terminated once the craft reaches a given
 -- velocity magnitude.
+--
+-- This will involve using ODE.integrateTerminating, with the ODE for a burn
+-- (see the notes).
 burn
   :: T.Params                    -- ^ Simulation parameters.
   -> Double                      -- ^ Termination velocity (m/s).
