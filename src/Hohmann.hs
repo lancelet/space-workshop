@@ -165,6 +165,9 @@ plotBurn output burndt isp mDot = do
                           [ Plot.Trajectory (kmTrajectory burn1) D.red
                           , Plot.Trajectory (kmTrajectory transferCoast) D.black
                           , Plot.Trajectory (kmTrajectory burn2) D.red
-                          , Plot.Trajectory (kmTrajectory coastInner) D.lightgray
-                          , Plot.Trajectory (kmTrajectory coastOuter) D.lightgray
+                          , Plot.Trajectory (kmTrajectory coastInner) D.skyblue
+                          , Plot.Trajectory (kmTrajectory coastOuter) D.skyblue
+                          , Plot.AltitudeCircle 1780 "40 km" D.gray
+                          , Plot.AltitudeCircle 1820 "80 km" D.gray
+                          , Plot.AltitudeCircle 1860 "120 km" D.gray
                           ]})

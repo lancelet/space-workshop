@@ -11,6 +11,7 @@ development of the workshop.
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE NegativeLiterals           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 module Plot
   ( -- * XY Charts
@@ -29,7 +30,8 @@ module Plot
     -- ** Types
   , OrbitSystem(OrbitSystem, planet, systemItems)
   , Planet(Planet, name, radius, color)
-  , OrbitSystemItem(Trajectory, points, color)
+  , OrbitSystemItem(Trajectory, points, color, AltitudeCircle, altitude,
+                    altLabel)
     -- ** Functions
   , plotOrbitSystem
   ) where
@@ -209,6 +211,11 @@ data OrbitSystemItem
     { points :: [(Double, Double)]
     , color  :: Colour Double
     }
+  | AltitudeCircle
+    { altitude :: Double
+    , altLabel :: Text
+    , color    :: Colour Double
+    }
 
 
 -- | Plots an orbit system.
@@ -270,6 +277,15 @@ plotSystemItem
   -> D.QDiagram b D.V2 Double D.Any
 plotSystemItem _ vScale (Planet _ pRadius _) (Trajectory pts c)
   = D.fromVertices (D.p2 . altitudeScale vScale pRadius <$> pts) # D.lc c # D.pad 1.1
+plotSystemItem output vScale (Planet _ pRadius _) (AltitudeCircle alt lbl c)
+  = D.circle (scalarAltitudeScale vScale pRadius alt)
+    # D.lc c
+    # D.lwO 1
+    # D.dashingN [0.01, 0.01] 0
+ <> D.alignedText 0.5 (-1.0) (Text.unpack lbl)
+    # D.fontSize (0.6 * getFontSize output)
+    # D.fc D.gray
+    # D.translateY (scalarAltitudeScale vScale pRadius alt)
 
 
 -- | Get font size for an OrbitSystem plot.
@@ -282,15 +298,22 @@ getFontSize (PNG _) = D.output 30.0
 getFontSize (PGF _) = D.output 12.0
 
 
--- | Perform vertical scaling of altitude distance.
+-- | Perform vertical scaling of altitude distance on a vector.
 altitudeScale :: Double -> Double -> (Double, Double) -> (Double, Double)
 altitudeScale vScale rad (x, y) =
   let
     r = sqrt ((x*x) + (y*y))
     theta = atan2 y x
 
-    r' = (r - rad) * vScale + rad
+    r' = scalarAltitudeScale vScale rad r
     x' = r' * cos theta
     y' = r' * sin theta
   in
     (x', y')
+
+
+-- | Perform vertical scaling of altitude distance.
+scalarAltitudeScale :: Double -> Double -> Double -> Double
+scalarAltitudeScale vScale planetRadius r
+  = vScale * (r - planetRadius) + planetRadius
+
