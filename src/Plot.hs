@@ -20,6 +20,7 @@ module Plot
   , Title(Title)
   , XLabel(XLabel)
   , YLabel(YLabel)
+  , XYOption(XRange)
   , Item(Line, Points)
     -- ** Functions
   , xyChart
@@ -67,13 +68,15 @@ data Output
 data XYChart
   = XYChart
     { -- | Title for the chart.
-      title      :: !Title
+      title        :: !Title
       -- | Label for the x-axis.
-    , xLabel     :: !XLabel
+    , xLabel       :: !XLabel
       -- | Label for the y-axis.
-    , yLabel     :: !YLabel
+    , yLabel       :: !YLabel
+      -- | Options for the chart.
+    , chartOptions :: [XYOption Double Double]
       -- | Items in the chart.
-    , chartItems :: [Item Double Double]
+    , chartItems   :: [Item Double Double]
     }
 
 
@@ -88,16 +91,22 @@ data Item x y
   | Points Text [(x, y)]   -- ^ A set of plotted points.
 
 
+-- | Options for an XYChart.
+data XYOption x y
+  = XRange !x !x    -- ^ Specify a range for the x-axis.
+
+
 -- | Plot an 'XYChart'.
 xyChart
-  :: Output                -- ^ Output location.
-  -> Title                 -- ^ Title of the chart.
-  -> XLabel                -- ^ X-axis label.
-  -> YLabel                -- ^ Y-axis label.
-  -> [Item Double Double]  -- ^ List of items to plot.
-  -> IO ()                 -- ^ IO action.
-xyChart out t x y items =
-  let chart = XYChart t x y items
+  :: Output                    -- ^ Output location.
+  -> Title                     -- ^ Title of the chart.
+  -> XLabel                    -- ^ X-axis label.
+  -> YLabel                    -- ^ Y-axis label.
+  -> [XYOption Double Double]  -- ^ Options for the plot.
+  -> [Item Double Double]      -- ^ List of items to plot.
+  -> IO ()                     -- ^ IO action.
+xyChart out t x y options items =
+  let chart = XYChart t x y options items
   in case out of
        Screen -> do
          pngBS <- plotXYChartPNGBS chart
@@ -125,7 +134,7 @@ xyChartUnits
                       -- ^ List of items to plot.
   -> IO ()            -- ^ IO action.
 xyChartUnits out t x y (ux, uy) items
-  = xyChart out t x y (itemInUnits (ux, uy) <$> items)
+  = xyChart out t x y [] (itemInUnits (ux, uy) <$> items)
 
 
 itemInUnits
@@ -170,6 +179,9 @@ xyChartEC chart = Chart.toRenderable $ do
   forM_ (chartItems chart) $ \case
     Line label pts -> Chart.plot (Chart.line (Text.unpack label) [pts])
     Points label pts -> Chart.plot (Chart.points (Text.unpack label) pts)
+  forM_ (chartOptions chart) $ \case
+    XRange minX maxX -> Chart.layout_x_axis . Chart.laxis_generate .=
+      Chart.scaledAxis Chart.def (minX, maxX)
 
 
 -- | Data for an orbital system plot.

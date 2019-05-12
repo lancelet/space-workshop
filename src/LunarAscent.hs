@@ -78,6 +78,7 @@ plotLunarAscentVerticalRise output = do
     "Vertical Rise Phase (16 seconds)"
     "Down Range (m)"
     "Altitude (m)"
+    [Plot.XRange -200 200]
     [ Plot.Line "Ascent Trajectory" rInitRise
     , Plot.Points "2s markers (one every 2s)" twoSecondFlags
     ]
@@ -93,6 +94,7 @@ plotLunarAscentBurnOnly output = do
     "Lunar Ascent Burn Trajectory"
     "Down Range (km)"
     "Altitude (km)"
+    []
     [ Plot.Line "Burn Trajectory" rBurn
     ]
 
