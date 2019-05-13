@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-ghcid -c "stack ghci"
+stack exec ghcid -- -c 'stack ghci'
