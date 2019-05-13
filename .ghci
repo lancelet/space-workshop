@@ -1,4 +1,4 @@
-:set prompt "\ESC[34mλ> \ESC[m"
+:set prompt "ghci> "
 :seti -Wno-missing-import-lists
 :seti -XDataKinds
 :seti -XFlexibleContexts
