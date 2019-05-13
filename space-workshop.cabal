@@ -1,0 +1,103 @@
+name:                space-workshop
+version:             0.1.0.0
+synopsis:            LambdaJam 2019 Spaceflight Workshop
+description:         Please see the README on GitHub at <https://github.com/githubuser/space-workshop#readme>
+
+license:             BSD3
+author:              "Jonathan Merritt and Luke Clifton"
+maintainer:          "j.s.merritt@gmail.com.com"
+copyright:           "2019 Jonathan Merritt and Luke Clifton"
+category:            Math
+build-type:          Simple
+extra-source-files:
+  README.md
+  ChangeLog.md
+cabal-version:       >=1.10
+
+homepage:            https://github.com/lancelet/space-workshop
+bug-reports:         https://github.com/lancelet/space-workshop/issues
+source-repository head
+  type: git
+  location: https://github.com/lancelet/space-workshop.git
+
+library
+  exposed-modules:
+    Examples.ODEExamples
+    , Hohmann
+    , Hohmann.Types
+    , LunarAscent
+    , LunarAscent.AGC
+    , LunarAscent.Types
+    , ODE
+    , Orphans
+    , Plot
+    , Solutions.Hohmann
+    , Solutions.ODE
+    , Solutions.Staging
+    , Staging
+    , Staging.Types
+    , Todo
+    , Units
+
+  build-depends:
+    base >= 4.7 && < 5
+    , bytestring
+    , Chart
+    , Chart-diagrams
+    , colour
+    , diagrams-lib
+    , diagrams-pgf
+    , diagrams-rasterific
+    , iterm-show
+    , JuicyPixels
+    , lens
+    , linear
+    , MemoTrie
+    , text
+    , units
+    , units-defs
+    , vector
+    , vector-space
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options: -Wall -Wredundant-constraints
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  default-language:    Haskell2010
+  hs-source-dirs: test
+  main-is: Test.hs
+  build-depends:
+    base
+    , space-workshop
+    , bytestring
+    , Chart
+    , Chart-diagrams
+    , colour
+    , diagrams-lib
+    , diagrams-pgf
+    , diagrams-rasterific
+    , iterm-show
+    , JuicyPixels
+    , lens
+    , linear
+    , MemoTrie
+    , text
+    , units
+    , units-defs
+    , vector
+    , vector-space
+
+    , doctest
+    , hedgehog
+    , tasty
+    , tasty-hedgehog
+
+executable tex-plots
+  default-language:    Haskell2010
+  hs-source-dirs: app/tex-plots
+  ghc-options: -Wall
+  main-is: Main.hs
+  build-depends:
+    base >= 4.7 && < 5
+    , space-workshop

@@ -1,5 +1,6 @@
 .stack-work/
-space-workshop.cabal
 *~
 .DS_Store
 *.ps
+dist-newstyle/
+.ghc.environment.*
