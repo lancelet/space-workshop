@@ -11,10 +11,16 @@ The current notes for the workshop are available from
 
 ## Instructions for Participants
 
-Please make sure that you download the required dependencies for the workshop and [the notes](https://lancelet.github.io/space-workshop) in advance. We are using the [`stack`](https://www.haskellstack.org) build tool (apologies if this is not to your taste; PRs are very welcome!). Dependencies can be fetched by doing:
+Please make sure that you download the required dependencies for the workshop and [the notes](https://lancelet.github.io/space-workshop) in advance. We support the [`stack`](https://www.haskellstack.org) and `cabal` build tools. Dependencies can be fetched by doing:
 
 ```
 $ stack --install-ghc test --only-dependencies
+```
+
+or
+
+```
+$ cabal new-build --only-dependencies test:tests
 ```
 
 in the checked-out repository.
@@ -43,6 +49,16 @@ A manual build can be performed as follows:
 $ export IDDQD=1
 $ stack test
 $ stack exec tex-plots   # generates PGF-format plots for the LaTeX notes
+$ cd notes
+$ make                   # generates the LaTeX notes.pdf
+```
+
+Or with `cabal`:
+
+```
+$ export IDDQD=1
+$ cabal new-test
+$ cabal new-run tex-plots   # generates PGF-format plots for the LaTeX notes
 $ cd notes
 $ make                   # generates the LaTeX notes.pdf
 ```
