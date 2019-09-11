@@ -109,7 +109,7 @@ makeLenses ''DStateSHM
 
 
 -- Connects State and DState into an AffineSpace/VectorSpace structure.
-instance (AdditiveGroup a, Num a) => AffineSpace (StateSHM a) where
+instance (AdditiveGroup a) => AffineSpace (StateSHM a) where
   type Diff (StateSHM a) = DStateSHM a
   s1 .-. s2 = DStateSHM
               { _dpos = s1^.pos |-| s2^.pos

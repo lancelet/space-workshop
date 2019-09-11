@@ -118,7 +118,7 @@ data BurnInterp
 
 burn
   :: forall a.
-     ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
+     ( InnerSpace a, a ~ Scalar a, RealFloat a, Basis a ~ (), HasBasis a )
   => BurnInterp
   -> Int
   -> Constants a
@@ -149,7 +149,7 @@ eachN n (x:xs) = x : eachN n (drop (n - 1) xs)
 
 coast
   :: forall a.
-     ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
+     ( InnerSpace a, a ~ Scalar a, RealFloat a, Basis a ~ (), HasBasis a )
   => Constants a
   -> Sim a
   -> [Sim a]
@@ -175,7 +175,7 @@ coast constants sim =
 
 burnStep
   :: forall a.
-     ( InnerSpace a, a ~ Scalar a, RealFloat a, Ord a, Basis a ~ (), HasBasis a, Show a )
+     ( InnerSpace a, a ~ Scalar a, RealFloat a, Basis a ~ (), HasBasis a )
   => Int                       -- number of time steps in the 2 second period
   -> Constants a               -- simulation constants
   -> AscentTarget a            -- ascent target
@@ -227,7 +227,7 @@ burnStep nSteps constants target sim =
 
 
 gradFn
-  :: ( InnerSpace a, a ~ Scalar a, HasBasis a, Basis a ~ (), Floating a, Ord a, Show a )
+  :: ( InnerSpace a, a ~ Scalar a, HasBasis a, Basis a ~ (), Floating a, Ord a )
   => Constants a
   -> U.AngAcceleration a       -- ^ commanded angular acceleration
   -> Maybe (EngineShutoff a)   -- ^ possible engine shutoff time
@@ -259,7 +259,7 @@ gradFn constants angAccel shutoff (t, dyn) =
 
 
 gradFnNoThrust
-  :: ( InnerSpace a, a ~ Scalar a, HasBasis a, Basis a ~ (), Floating a, Ord a, Show a )
+  :: ( InnerSpace a, a ~ Scalar a, HasBasis a, Basis a ~ (), Floating a )
   => Constants a
   -> (U.Time a, Dynamics a)    -- ^ time and system dynamic state
   -> U.Time a :-* DDynamics a  -- ^ gradient of dynamic state

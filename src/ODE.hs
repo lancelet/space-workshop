@@ -166,10 +166,8 @@ type Stepper time state
 -- >>> integrate eulerStep x0 times f
 -- (1.0,50.0) :| [(2.0,40.0),(3.0,32.0)]
 integrate
-  :: ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  :: ( diff ~ Diff state
+     , HasBasis time )
   => Stepper time state                 -- ^ Stepper function
   -> state                              -- ^ Initial state
   -> NonEmpty time                      -- ^ Evaluation times
@@ -181,11 +179,9 @@ integrate -- stepper x0 (t0 :| ts) f
 
 -- | Integrate an ODE, recording the gradient.
 integrateWithDiff
-  :: forall state diff time s.
-     ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  :: forall state diff time.
+     ( diff ~ Diff state
+     , HasBasis time )
   => Stepper time state                     -- ^ Stepper function
   -> state                                  -- ^ Initial state
   -> NonEmpty time                          -- ^ Evaluation times
@@ -236,9 +232,8 @@ type TerminatingStepper time state
 -- is less than @tEpsilon@.
 integrateTerminating
   :: forall state diff time s.
-     ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
+     ( diff ~ Diff state
+     , HasBasis time
      , s ~ Scalar time, Ord time, Fractional s )
   => TerminatingStepper time state             -- ^ Stepper to use.
   -> time                                      -- ^ Allowable error in the final time.
