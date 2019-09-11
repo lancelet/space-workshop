@@ -49,9 +49,8 @@ type TerminatingStepper time state
 -- is less than @tEpsilon@.
 integrateTerminating
   :: forall state diff time s.
-     ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
+     ( diff ~ Diff state
+     , HasBasis time
      , s ~ Scalar time, Ord time, Fractional s )
   => TerminatingStepper time state             -- ^ Stepper to use.
   -> time                                      -- ^ Allowable error in the final time.
@@ -75,7 +74,7 @@ integrateTerminating stepper tEpsilon h state0 f =
 
         unfold1 :: [(time, state)]
         unfold1 = List.unfoldr stepFn state0'
-      in 
+      in
         -- If our time step is less than the required error, then we
         -- know that our end point is definitely within tEpsilon and
         -- we can terminate. Otherwise we have to get closer to the end
@@ -131,11 +130,9 @@ rk4StepTerminating h f (t, x) =
 
 -- | Integrate an ODE.
 integrate
-  :: forall state diff time s.
-     ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  :: forall state diff time.
+     ( diff ~ Diff state
+     , HasBasis time )
   => Stepper time state                 -- ^ Stepper function
   -> state                              -- ^ Initial state
   -> NonEmpty time                      -- ^ Evaluation times
@@ -151,11 +148,9 @@ integrate stepper x0 (t0 :| ts) f =
 
 -- | Integrate an ODE, recording the gradient.
 integrateWithDiff
-  :: forall state diff time s.
-     ( AffineSpace state
-     , diff ~ Diff state, VectorSpace diff
-     , HasBasis time, HasTrie (Basis time)
-     , s ~ Scalar diff, s ~ Scalar time, Fractional s )
+  :: forall state diff time.
+     ( diff ~ Diff state
+     , HasBasis time )
   => Stepper time state                     -- ^ Stepper function
   -> state                                  -- ^ Initial state
   -> NonEmpty time                          -- ^ Evaluation times

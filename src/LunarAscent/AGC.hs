@@ -33,7 +33,7 @@ import qualified Units             as U
 -- | Ascent guidance program P12.
 p12
   :: forall a.
-     ( InnerSpace a, a ~ Scalar a, Floating a, Ord a, Basis a ~ (), HasBasis a, Show a )
+     ( InnerSpace a, a ~ Scalar a, Floating a, Ord a, Basis a ~ (), HasBasis a )
   => Constants a
   -> AscentTarget a
   -> Sim a
@@ -170,7 +170,7 @@ mfcsToLocal p v a =
 -- | Rotate vector 90 degrees clockwise.
 qRotatedCW
   :: forall d l c a.
-     ( VectorSpace a, Fractional (Scalar a), Num a, InnerSpace a
+     ( VectorSpace a, Num a, InnerSpace a
      , U.Normalize (U.Normalize d) ~ U.Normalize d )
   => U.Qu d l (V2 c a) -> U.Qu (U.Normalize d) l (V2 c a)
 qRotatedCW v =
