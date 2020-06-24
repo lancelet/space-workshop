@@ -43,6 +43,10 @@ $ export IDDQD=1  # causes the `todo` function to use the provided solutions
 
 See the `.travis.yml` file for detailed CI build instructions.
 
+Building the manual requires:
+  - TexLive (I use a full installation via nixpkgs)
+  - pygments, for code formatting
+
 A manual build can be performed as follows:
 
 ```
